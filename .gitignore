@@ -1,0 +1,31 @@
+# Build outputs
+dist/
+target/
+.output/
+
+# Dependencies
+node_modules/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Gemini/AI
+.gemini/
+.agents/workflows/*.log
+.agents/skills/*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Tauri specific
+src-tauri/target/
+src-tauri/gen/
