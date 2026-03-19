@@ -119,3 +119,85 @@ The Settings Hub is organized into five primary functional vertical tabs to main
 ## 3. Configuration Persistence
 
 All settings are stored locally via `Tauri Store` in `%APPDATA%/flux-player/`. No cloud sync is utilized.
+
+# Settings Spec - Additional Settings
+
+This adds new playback settings for playlist and queue behavior.
+
+---
+
+## Section C Additions: Playback & Performance
+
+### Auto-Queue Library Items
+
+**Purpose:** Control whether playing media from the Library automatically creates a queue or plays single items only.
+
+**Location:** Settings → Playback & Performance → Auto-Queue Library Items
+
+**Default Value:** Smart (queue episodes in series folders)
+
+**Options:**
+
+#### Option 1: Never
+- **Behavior:** Single-item playback only
+- **Use Case:** Users who prefer manual control, never want auto-play
+- **Example:** Click "Inception" → Plays only Inception → Stops when finished
+
+#### Option 2: Smart (Default)
+- **Behavior:** Auto-queue only for detected series/albums
+- **Detection Rules:**
+  - Files in same folder with sequential episode numbers (S01E01, S01E02, etc.)
+  - Audio files with matching album metadata
+  - Standalone movies/tracks play individually
+- **Example:** 
+  - Click "Blue Lock Episode 1" → Auto-queues all episodes
+  - Click "Inception" (standalone) → Plays only Inception
+
+#### Option 3: Always
+- **Behavior:** Any Library playback creates queue from current filtered view
+- **Queue Logic:** All items AFTER the clicked item in the current sort order
+- **Example:**
+  - Library filtered to "Action Movies, A-Z"
+  - Click "Blue Lock" (3rd alphabetically)
+  - Queue = [Blue Lock, Guardians, Inception, ...] (all remaining items)
+
+**UI Component:**
+```
+Auto-Queue Library Items
+  ○ Never (single-item playback only)
+  ● Smart (queue episodes in series folders)
+  ○ Always (queue from current filtered view)
+```
+
+---
+
+### Video-to-Audio Transition
+
+**Purpose:** Control player behavior when transitioning from video to audio in mixed playlists.
+
+**Location:** Settings → Playback & Performance → Video-to-Audio Transition
+
+**Default Value:** Return to Library
+
+**Options:**
+
+#### Option 1: Return to Library (Default)
+- **Behavior:** When video ends and audio begins, route back to Library
+- **Rationale:** Most users browse while listening to music
+- **Island:** Morphs to audio state, user stays in Library
+
+#### Option 2: Stay in Now Playing
+- **Behavior:** Remain in Now Playing section, show visualizer for audio
+- **Rationale:** Immersive, theater-like experience
+- **Island:** Shows audio visualizer in full Now Playing view
+
+**UI Component:**
+```
+Video-to-Audio Transition
+  ● Return to Library
+  ○ Stay in Now Playing (show visualizer)
+```
+
+---
+
+These additions complete the playback customization options for queue and playlist behavior.

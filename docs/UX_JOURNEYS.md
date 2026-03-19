@@ -171,3 +171,307 @@ This document outlines the step-by-step user experience (UX) flows for key inter
 2. **The Save:** Flux downloads the `.srt` file and seamlessly saves it directly into the local hard drive folder, perfectly renamed to match the video.
 
 3. **The Bind:** The UI dispatches the `flux-bind-subtitle` event. The video launches with the subtitles already active.
+
+# Additional UX Scenarios for Flux Player
+
+These scenarios expand the UX_JOURNEYS.md document with playlist, queue, and subtitle binder workflows.
+
+---
+
+## Scenario 7: The Playlist Experience
+
+**Goal:** Allow users to organize their media into curated collections for seamless playback sessions.
+
+### Phase 1: Creating a Playlist (Batch Select Method)
+
+1. **The Entry:** User is browsing the Library in Grid View, looking at their MCU movies collection.
+
+2. **Batch Select Mode:** User right-clicks on "Iron Man" → Batch Select Mode activates. Checkboxes appear on all cards.
+
+3. **The Selection:** User clicks 6 movies:
+   - Iron Man ✓
+   - The Incredible Hulk ✓
+   - Iron Man 2 ✓
+   - Thor ✓
+   - Captain America ✓
+   - The Avengers ✓
+
+4. **The Creation:** User clicks **[Create Playlist]** button in the top action bar.
+
+5. **The Modal:** A glassmorphic modal slides in:
+   ```
+   Create New Playlist
+   ───────────────────
+   Name: [MCU Phase 1_________]
+   Type: ● Movies  ○ Music  ○ Mixed
+   Description: [Chronological MCU Phase 1 marathon]
+   
+   6 items will be added
+   
+   [Cancel]  [Create Playlist]
+   ```
+
+6. **The Confirmation:** User clicks **[Create Playlist]** → Batch Select Mode exits → Success toast: "MCU Phase 1 created with 6 items"
+
+7. **The Visibility:** Playlist appears in sidebar (as one of the 5 most recent) and in the Playlists Screen.
+
+---
+
+### Phase 2: Adding to Existing Playlist (Context Menu)
+
+1. **The Discovery:** User finds a new MCU movie they forgot: "Ant-Man."
+
+2. **The Action:** User clicks the **[⋮]** menu button on the "Ant-Man" card.
+
+3. **The Menu:** Context menu appears:
+   ```
+   Play Now
+   Add to Queue
+   ───────────────
+   Select Item
+   Add to Playlist ──→  [● MCU Phase 1]
+   Add to Favorite      [○ 90s Action  ]
+   Get Subtitles        [─────────────]
+   Details              [+ New Playlist]
+   ```
+
+4. **The Addition:** User clicks "MCU Phase 1" → Item instantly added → Toast: "Added to MCU Phase 1"
+
+---
+
+### Phase 3: Playing a Playlist
+
+1. **The Navigation:** User clicks "MCU Phase 1" in the sidebar.
+
+2. **The View:** Playlist Detail View opens:
+   ```
+   ← Back          MCU PHASE 1          [Edit]
+   
+   [▶ Play All]  [🔀 Shuffle Play]  [+ Add Items]
+   
+   1. Iron Man (2008)                   ━━●━━ 45:23
+   2. The Incredible Hulk (2008)        ━━━━━ 0:00
+   3. Iron Man 2 (2010)                 ━━━━━ 0:00
+   4. Thor (2011)                       ━━━━━ 0:00
+   5. Captain America (2011)            ━━━━━ 0:00
+   6. The Avengers (2012)               ━━━━━ 0:00
+   
+   Total: 12h 34m • 6 items • Created: Mar 24
+   ```
+
+3. **The Playback:** User clicks **[▶ Play All]**.
+
+4. **The Queue Population:** All 6 movies populate the queue in order.
+
+5. **The Experience:**
+   - Iron Man begins playing in Now Playing section
+   - Dynamic Island morphs to Playing state
+   - Playback Footer shows three-card queue preview (Iron Man center, Hulk right)
+   - Iron Man finishes → Hulk instantly begins (Netflix-style seamless transition)
+   - User can navigate to Library while watching → Video enters in-app mini player mode
+   - Playlist continues auto-advancing through all 6 movies
+
+---
+
+## Scenario 8: The Queue System
+
+**Goal:** Provide temporary, session-based "play next" functionality without creating permanent playlists.
+
+### Phase 1: Manual Queue Building
+
+1. **The Context:** User is watching "Blue Lock Episode 1" in Now Playing section.
+
+2. **The Addition:** User navigates to Library (video enters mini player) → Right-clicks "Episode 2" → **"Add to Queue"**
+
+3. **The Confirmation:** Toast appears: "Added to queue"
+
+4. **The Visual Update:** Playback Footer's three-card preview updates:
+   - Left: (empty, no previous)
+   - Center: Episode 1 (currently playing)
+   - Right: Episode 2 (next in queue)
+
+5. **The Expansion:** User clicks the three-card stack → Queue Panel expands:
+   ```
+   CURRENT QUEUE          [Clear All]
+   ───────────────────────────────────
+   Now Playing:
+   🎬 Blue Lock Ep 1       ━━●━━ 12:34
+   
+   Up Next (1 item):
+   1. 🎬 Blue Lock Ep 2    ━━━━━ 24:15
+   
+   [View Full Queue ──→]
+   ```
+
+6. **The Auto-Play:** Episode 1 finishes → Episode 2 instantly begins → User didn't have to click anything.
+
+---
+
+### Phase 2: Queue from Playlist
+
+1. **The Action:** User clicks "Anime Binge" playlist in sidebar → Clicks **[▶ Play All]**
+
+2. **The Population:** All 12 episodes populate the queue.
+
+3. **The Indicator:** Queue Panel shows:
+   ```
+   Up Next (11 items):
+   1. Episode 2
+   2. Episode 3
+   ...
+   
+   From Playlist: "Anime Binge"
+   ```
+
+4. **The Flexibility:** User can still manually add items:
+   - Right-clicks "Guardians of the Galaxy" → "Add to Queue"
+   - Movie appends to end of queue (after Episode 12)
+   - Queue now contains: 12 episodes + 1 movie
+
+---
+
+### Phase 3: Clearing the Queue
+
+1. **The Decision:** User decides they want to stop the auto-play marathon.
+
+2. **The Action:** User clicks **[Clear All]** in Queue Panel.
+
+3. **The Warning:**
+   ```
+   Clear Queue?
+   ────────────────────────
+   This will remove 11 items from
+   the playback queue.
+   
+   This action cannot be undone.
+   
+   [Cancel]  [Clear Queue]
+   ```
+
+4. **The Result:** User clicks **[Clear Queue]** → Queue empties → Currently playing media continues, but nothing plays after it finishes.
+
+---
+
+## Scenario 9: The Enhanced Subtitle Workflow
+
+**Goal:** Seamlessly bind subtitles to videos through fuzzy matching, manual selection, and online search.
+
+### Phase 1: Auto-Detection (Zero Friction)
+
+1. **The Scan:** User adds a folder containing:
+   ```
+   Blue.Lock.Movie.2024.1080p.mp4
+   Blue.Lock.Movie.2024.EN.srt
+   Blue.Lock.Movie.2024.ES.srt
+   ```
+
+2. **The Magic:** Flux's fuzzy matching instantly pairs the `.srt` files with the `.mp4` (95% match score).
+
+3. **The Result:** When user clicks the movie in Library, Detail Panel shows:
+   ```
+   Subtitle: Blue Lock Movie 2024 EN   [Change]
+   ```
+
+4. **Seamless Playback:** User clicks **[▶ Play Movie]** → Subtitles are already active, perfectly synced.
+
+---
+
+### Phase 2: Manual Binding (Subtitle Binder Modal)
+
+1. **The Problem:** User has a movie where auto-detection failed or chose the wrong subtitle.
+
+2. **The Action:** User clicks **[Change]** button in Detail Panel.
+
+3. **The Modal:** Subtitle Binder Modal opens:
+   ```
+   SUBTITLE BINDER                     [✕ Close]
+   ──────────────────────────────────────────────
+   Movie: Blue Lock The Movie - Episode Nagi
+   
+   LOCAL SUBTITLES (Auto-Detected)
+   ○ Blue Lock S1-S2--[EN].srt       [Match: 85%]
+   ● Blue Lock Episode Nagi [EN].srt [Match: 95%] ✓
+   ○ Blue.Lock.2024.1080p.srt        [Match: 70%]
+   
+   ───────────────────────────────────────────────
+   
+   SEARCH OPENSUBTITLES
+   [Search Online...────────]  [🔍 Search]
+   
+   [Cancel]  [Apply]
+   ```
+
+4. **The Selection:** User sees the second option is already selected (95% match) → Clicks **[Apply]**
+
+5. **The Binding:** Modal closes → Detail Panel updates: "Subtitle: Blue Lock Episode Nagi EN"
+
+---
+
+### Phase 3: Online Search (Missing Subtitles)
+
+1. **The Problem:** User's video has NO matching subtitles in the folder.
+
+2. **The Discovery:** Detail Panel shows: "Subtitle: None   [Change]"
+
+3. **The Search:** User clicks **[Change]** → Subtitle Binder Modal opens → User clicks **[🔍 Search]** in the OpenSubtitles section.
+
+4. **The Query:** Flux's Rust backend:
+   - Computes OSHash of the video file
+   - Queries OpenSubtitles API
+   - Returns exact matches for this file version
+
+5. **The Results:**
+   ```
+   Results (3 found):
+   ○ Blue Lock Movie [EN] (Official)   [⬇ Download]
+   ○ Blue Lock Movie [ES] (Fan Sub)    [⬇ Download]
+   ○ Blue Lock Movie [FR] (Official)   [⬇ Download]
+   ```
+
+6. **The Download:** User clicks **[⬇ Download]** on the English option.
+
+7. **The Magic:**
+   - Subtitle downloads to the same folder as the video
+   - Renamed to match: `Blue.Lock.Movie.2024.EN.srt`
+   - Automatically bound to the video
+   - Modal closes → Ready to play
+
+---
+
+### Phase 4: Context Menu Shortcut
+
+1. **The Shortcut:** User right-clicks a video card in Library → Clicks **"Get Subtitles"** in context menu.
+
+2. **The Direct Access:** Subtitle Binder Modal opens instantly (same as clicking [Change] in Detail Panel).
+
+3. **The Efficiency:** User can search and download subtitles without opening the Detail Panel first.
+
+---
+
+### Phase 5: Subtitle Sync Adjustment (In-Player)
+
+1. **The Problem:** Subtitle is bound but timing is off by 500ms.
+
+2. **The Discovery:** User starts playback → Notices subtitles appear too early.
+
+3. **The Fix:** User clicks **[⚙️ Settings]** gear in playback controls → Mini settings panel appears:
+   ```
+   Playback Settings
+   ─────────────────────────
+   Quality: ● 1080p
+   
+   Playback Speed: ─────●──── 1.0x
+   
+   Subtitle Sync:
+   [-500ms] [-100ms] [Reset]
+   [+100ms] [+500ms]
+   Current Offset: +0ms
+   ```
+
+4. **The Adjustment:** User clicks **[+500ms]** twice → Offset now +1000ms → Subtitles sync perfectly.
+
+5. **The Persistence:** Flux saves this offset to SQLite for THIS specific video → Next time user plays it, offset auto-applies.
+
+---
+
+These scenarios complete the core UX flows for playlists, queue management, and subtitle workflows in Flux Player.
