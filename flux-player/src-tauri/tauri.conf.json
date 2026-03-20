@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "flux-player",
+  "productName": "Flux",
   "version": "0.1.0",
   "identifier": "com.sunny.flux-player",
   "build": {
@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "Flux Player",
+        "title": "Flux",
         "width": 1280,
-        "height": 720,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
         "decorations": false,
         "transparent": true
       }

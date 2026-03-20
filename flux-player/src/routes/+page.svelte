@@ -11,7 +11,7 @@
 </script>
 
 <section class="hero">
-  <h1 class="heading">FLUX PLAYER</h1>
+  <h1 class="heading">FLUX</h1>
   <p class="subtitle">Premium Cinematic Experience</p>
 
   <form class="greet-box" onsubmit={greet}>

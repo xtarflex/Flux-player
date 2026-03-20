@@ -9,7 +9,7 @@
 
 <div class="titlebar" data-tauri-drag-region>
   <div class="app-info" data-tauri-drag-region>
-    <span class="app-name">FLUX PLAYER</span>
+    <span class="app-name">FLUX</span>
   </div>
 
   <div class="window-controls">
