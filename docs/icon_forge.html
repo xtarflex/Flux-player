@@ -213,13 +213,35 @@
       animation: wifi-slash-draw 1s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
+    /* -----------------------------------------
+       SQUOOSHY NAV & SIDEBAR ANIMATIONS 
+       ----------------------------------------- */
+    @keyframes nav-squoosh {
+      0% { transform: scale(1, 1); }
+      30% { transform: scale(1.2, 0.8); } /* Compress down, bulge wide */
+      50% { transform: scale(0.85, 1.15); } /* Snap tall, suck in */
+      70% { transform: scale(1.05, 0.95); } /* Micro bounce */
+      100% { transform: scale(1, 1); } /* Settle */
+    }
+
+    .nav-icon {
+      /* Ground the transform origin so they squash against the bottom instead of the center */
+      transform-origin: center 22px; 
+    }
+
+    .icon-card:hover .nav-icon {
+      animation: nav-squoosh 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* (Playback animations removed per user request for a cleaner, static hardware feel) */
+
   </style>
 </head>
 <body>
 
   <h1>Flux Player: Icon Forge</h1>
   <p style="color: var(--text-muted); margin-top: -20px; margin-bottom: 40px;">
-    Replace the <strong>?</strong> placeholders with curvy, custom-sectioned SVG paths. Use <code>fill="var(--primary)"</code> and <code>fill="var(--secondary)"</code> for the overlapping paths.
+    The complete visual dictionary for Flux Player components.
   </p>
 
   <!-- 1. BRAND & ISLAND -->
@@ -311,27 +333,23 @@
       <div class="icon-name">Close (X)</div>
     </div>
 
-    <!-- Maximize - Outer corners rounded smoothly, split diagonally by S-Curve -->
+    <!-- Maximize -->
     <div class="icon-card">
       <div class="icon-wrapper">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Top Left Cyan Half with outer rounded corners -->
-          <path class="win-max-cyan" d="M 5 16 V 8 A 3 3 0 0 1 8 5 H 16 A 3 3 0 0 1 19 8 V 9 C 14 9, 10 16, 5 16 Z" fill="var(--secondary)" />
-          <!-- Bottom Right Violet Half with outer rounded corners -->
-          <path class="win-max-violet" d="M 5 16 C 10 16, 14 9, 19 9 V 16 A 3 3 0 0 1 16 19 H 8 A 3 3 0 0 1 5 16 Z" fill="var(--primary)" />
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="8" width="12" height="12" rx="3" stroke="var(--primary)" />
+          <path d="M8 4H17C18.6569 4 20 5.34315 20 7V16" stroke="var(--secondary)" />
         </svg>
       </div>
       <div class="icon-name">Maximize</div>
     </div>
 
-    <!-- Minimize - Thick pill sliced vertically by S-Curve -->
+    <!-- Minimize -->
     <div class="icon-card">
       <div class="icon-wrapper">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Left Cyan Half -->
-          <path class="win-min-cyan" d="M 7 10 A 2 2 0 0 0 7 14 H 12.5 C 12.5 12, 11.5 10, 14 10 Z" fill="var(--secondary)" />
-          <!-- Right Violet Half -->
-          <path class="win-min-violet" d="M 14 10 C 11.5 10, 12.5 12, 12.5 14 H 17 A 2 2 0 0 0 17 10 Z" fill="var(--primary)" />
+          <path d="M 7 10 A 2 2 0 0 0 7 14 H 12.5 C 12.5 12, 11.5 10, 14 10 Z" fill="var(--secondary)" />
+          <path d="M 14 10 C 11.5 10, 12.5 12, 12.5 14 H 17 A 2 2 0 0 0 17 10 Z" fill="var(--primary)" />
         </svg>
       </div>
       <div class="icon-name">Minimize</div>
@@ -377,27 +395,183 @@
 
   </div>
 
-  <!-- 3. NAVIGATION & SIDEBAR -->
+  <!-- 3. NAVIGATION & SIDEBAR (REDESIGNED: CLEAN DUOTONE GEOMETRY) -->
   <h2>3. Navigation & Sidebar</h2>
   <div class="icon-grid">
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Home</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Library</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Settings Gear</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Add Folder</div></div>
+    
+    <!-- Home (Clean Duotone Line Art) -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+          <!-- House Base (Violet) -->
+          <path class="nav-stroke-primary" d="M4 10v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10" stroke="var(--primary)" />
+          <!-- Door (Violet) -->
+          <path class="nav-stroke-primary" d="M10 22V15a2 2 0 0 1 4 0v7" stroke="var(--primary)" />
+          <!-- Roof Arc (Cyan) -->
+          <path class="nav-stroke-secondary" d="M2 12l9-8a2 2 0 0 1 2.8 0l9 8" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Home</div>
+    </div>
+    
+    <!-- Library (Clean Layered Folder) -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+          <!-- Front Folder Body (Violet) -->
+          <rect class="nav-stroke-primary" x="3" y="8" width="18" height="13" rx="2" stroke="var(--primary)" />
+          <!-- Back Folder Tab (Cyan) -->
+          <path class="nav-stroke-secondary" d="M3 8V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2" stroke="var(--secondary)" />
+          <!-- Aesthetic Line Detail -->
+          <path class="nav-stroke-secondary" d="M8 13h8" stroke="var(--secondary)" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="icon-name">Library</div>
+    </div>
+    
+    <!-- Settings Gear (Solid Mechanical Cog with Cyan Core) -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+          <!-- Outer Gear (Violet) -->
+          <path class="nav-stroke-primary" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.6.8.9 1.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="var(--primary)" />
+          <!-- Inner Core (Cyan) -->
+          <circle class="nav-stroke-secondary" cx="12" cy="12" r="3.5" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Settings Gear</div>
+    </div>
+    
+    <!-- Add Folder (Library Folder + Cyan Plus) -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+          <!-- Front Folder Body (Violet) -->
+          <rect class="nav-stroke-primary" x="3" y="8" width="18" height="13" rx="2" stroke="var(--primary)" />
+          <!-- Back Folder Tab (Cyan) -->
+          <path class="nav-stroke-secondary" d="M3 8V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2" stroke="var(--secondary)" opacity="0.4" />
+          <!-- Plus Sign (Cyan) -->
+          <path class="nav-stroke-secondary" d="M12 11v6M9 14h6" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Add Folder</div>
+    </div>
   </div>
 
-  <!-- 4. PLAYBACK & CONTROLS -->
+  <!-- 4. PLAYBACK & CONTROLS (REDESIGNED: PURE OUTLINE LINE-ART) -->
   <h2>4. Playback Controls</h2>
   <div class="icon-grid">
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Play</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Pause</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Skip Forward</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Skip Backward</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Volume High</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Volume Muted</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Fullscreen</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Subtitles (CC)</div></div>
-    <div class="icon-card"><div class="icon-wrapper"><div class="placeholder">?</div></div><div class="icon-name">Stream Trailer</div></div>
+    
+    <!-- Play -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Cyan accent bar offset slightly left -->
+          <line x1="5" y1="6" x2="5" y2="18" stroke="var(--secondary)" />
+          <!-- Violet Play Triangle (Outline) -->
+          <polygon points="9,5 19,12 9,19" fill="none" stroke="var(--primary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Play</div>
+    </div>
+
+    <!-- Pause -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+          <line x1="9" y1="5" x2="9" y2="19" stroke="var(--secondary)" />
+          <line x1="15" y1="5" x2="15" y2="19" stroke="var(--primary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Pause</div>
+    </div>
+
+    <!-- Skip Forward -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="6,6 15,12 6,18" fill="none" stroke="var(--primary)" />
+          <line x1="18" y1="6" x2="18" y2="18" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Skip Forward</div>
+    </div>
+
+    <!-- Skip Backward -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" y1="6" x2="6" y2="18" stroke="var(--secondary)" />
+          <polygon points="18,6 9,12 18,18" fill="none" stroke="var(--primary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Skip Backward</div>
+    </div>
+
+    <!-- Volume High -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Speaker Body (Outline) -->
+          <polygon points="10,6 5,10 2,10 2,14 5,14 10,18" fill="none" stroke="var(--primary)" />
+          <path d="M14 9c1 1.5 1 3.5 0 5" stroke="var(--secondary)" />
+          <path d="M17 6c3 3 3 8 0 11" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Volume High</div>
+    </div>
+
+    <!-- Volume Muted -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="10,6 5,10 2,10 2,14 5,14 10,18" fill="none" stroke="var(--primary)" opacity="0.6" />
+          <line x1="15" y1="9" x2="21" y2="15" stroke="var(--secondary)" />
+          <line x1="21" y1="9" x2="15" y2="15" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Volume Muted</div>
+    </div>
+
+    <!-- Fullscreen -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 4h6v6" stroke="var(--secondary)" />
+          <path d="M10 20H4v-6" stroke="var(--secondary)" />
+          <path d="M20 14v6h-6" stroke="var(--primary)" />
+          <path d="M4 10V4h6" stroke="var(--primary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Fullscreen</div>
+    </div>
+
+    <!-- Subtitles (CC) -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="7" width="18" height="11" rx="2" fill="none" stroke="var(--primary)" />
+          <path d="M10.5 10.5 A 1.5 1.5 0 0 0 7.5 12 A 1.5 1.5 0 0 0 10.5 13.5" stroke="var(--secondary)" />
+          <path d="M16.5 10.5 A 1.5 1.5 0 0 0 13.5 12 A 1.5 1.5 0 0 0 16.5 13.5" stroke="var(--secondary)" />
+        </svg>
+      </div>
+      <div class="icon-name">Subtitles (CC)</div>
+    </div>
+
+    <!-- Stream Trailer -->
+    <div class="icon-card">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="12" rx="2" fill="none" stroke="var(--primary)" />
+          <line x1="8" y1="21" x2="16" y2="21" stroke="var(--primary)" />
+          <line x1="12" y1="17" x2="12" y2="21" stroke="var(--primary)" />
+          <!-- Play outline inside monitor -->
+          <polygon points="10,8 15,11 10,14" fill="none" stroke="var(--secondary)" stroke-width="1.5" />
+        </svg>
+      </div>
+      <div class="icon-name">Stream Trailer</div>
+    </div>
+
   </div>
 
   <!-- 5. UI ACTIONS -->

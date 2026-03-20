@@ -20,7 +20,7 @@ MCP is the bridge between the agent's brain and your system.
 
 ## 4. Agential Skills & Workflows
 Skills are "Expertise Packs" for specific tasks.
-- **`.agents/workflows/`**: Store `.md` files that describe "How to add a new UI component" or "How to handle a new media format." 
+- **`.agents/skills/`, `.agents/workflows/` **: Store `.md` files that describe "How to add a new UI component" or "How to handle a new media format." CHECK: `C:\Users\sunny\.agents\skills` to find a suite of skills for Antigravity.
 - When an agent sees a workflow, they follow it perfectly, ensuring consistency with your coding style.
 
 ## 5. Summary of Best Practices

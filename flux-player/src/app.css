@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Syncopate:wght@700&display=swap');
+
+:root {
+  --bg-base: #0a0a0c;
+  --bg-surface: #1a1a1f;
+  --primary: #8a2be2; /* Electric Violet */
+  --secondary: #00ffff; /* Cyber Cyan */
+  --text-main: #ffffff;
+  --text-muted: #888890;
+  --border: rgba(255, 255, 255, 0.1);
+  --font-heading: 'Syncopate', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+}
+
+body {
+  background-color: transparent; /* Allows Tauri window transparency */
+  color: var(--text-main);
+  font-family: var(--font-body);
+  margin: 0;
+  overflow: hidden; /* Desktop app feel */
+  height: 100vh;
+  user-select: none;
+}
+
+.app-container {
+  background-color: var(--bg-base);
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "titlebar titlebar"
+    "sidebar main"
+    "footer footer";
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+h1, h2, h3, .heading {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Squircle Mask for Avatars */
+.squircle {
+  clip-path: path('M 0,16 C 0,0 0,0 16,0 C 32,0 32,0 32,16 C 32,32 32,32 16,32 C 0,32 0,32 0,16 Z');
+}
+
+/* Glassmorphism */
+.glass {
+  backdrop-filter: blur(10px);
+  background: rgba(10, 10, 12, 0.7);
+}
+
+/* Animations */
+@keyframes ken-burns {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+.poster-animate {
+  animation: ken-burns 1.7s cubic-bezier(0.23, 1, 0.320, 1) forwards;
+}
