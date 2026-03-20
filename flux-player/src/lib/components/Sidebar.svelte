@@ -1,3 +1,4 @@
+<script lang="ts">
   import { fade } from 'svelte/transition';
   let isCollapsed = $state(false);
   
