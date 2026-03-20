@@ -8,7 +8,9 @@
 
 [2026-03-20 13:45] - ACTION: Regenerated 256x256 platform icons from updated `flux.png` asset. - RATIONALE: Refreshing branding across all OS environments (Windows/macOS/Mobile). - STATUS: COMPLETE.
 
-[2026-03-20 14:15] - ACTION: Sized up Shell UI: Titlebar (44px), Sidebar Logo (64px), and Bold 1.3rem Branding. Added auto-collapse @1000px. - RATIONALE: Meeting user requirement for a bolder, more prominent, and premium interface. - STATUS: COMPLETE.
+[2026-03-20 14:15] - **ACTION**: Aligned TMDB footer credits side-by-side and implemented pure CSS transitions for expansion/collapse (Opacity + Max-Width).
+- **ACTION**: Implemented Responsive Auto-Collapse for windows under 1000px.
+ - RATIONALE: Meeting user requirement for a bolder, more prominent, and premium interface. - STATUS: COMPLETE.
 
 [2026-03-20 19:45] - ACTION: Forensic Titlebar Refinement: Relocated Profile/PC-Name to Left, implemented `get_computer_name` Rust command. - RATIONALE: Aligning with "Forensic Blueprint" for a professional device-centric identity. - STATUS: COMPLETE.
 

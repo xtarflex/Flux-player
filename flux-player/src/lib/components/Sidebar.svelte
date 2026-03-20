@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
   let isCollapsed = $state(false);
   
   const navItems = [
@@ -54,18 +53,14 @@
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z" />
         <path d="M12 11v6m-3-3h6" stroke-width="2" />
       </svg>
-      {#if !isCollapsed}
-        <span transition:fade={{ duration: 200 }}>Add Folder</span>
-      {/if}
+      <span class="btn-text">Add Folder</span>
     </button>
     
     <div class="tmdb-credit" class:collapsed={isCollapsed}>
       <img src="/tmdb.svg" alt="TMDB" class="tmdb-logo" />
-      {#if !isCollapsed}
-        <p class="credit-text" transition:fade={{ duration: 200 }}>
-          This product uses the TMDB API but is not endorsed or certified by TMDB.
-        </p>
-      {/if}
+      <p class="credit-text">
+        This product uses the TMDB API but is not endorsed or certified by TMDB.
+      </p>
     </div>
   </div>
 </aside>
@@ -257,11 +252,26 @@
   }
 
   .add-folder-btn.collapsed {
-    padding: 16px 0;
-    width: 56px; /* Matches collapsed width constraint */
+    padding: 16px; /* Keep uniform padding for circle-ish look */
+    width: 56px;
+    height: 56px;
     margin: 0 auto;
     border-style: solid;
     gap: 0;
+  }
+
+  .btn-text {
+    white-space: nowrap;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    max-width: 200px;
+  }
+
+  .add-folder-btn.collapsed .btn-text {
+    opacity: 0;
+    max-width: 0;
+    margin: 0;
   }
 
   .add-icon {
@@ -292,7 +302,7 @@
 
   .tmdb-credit.collapsed .tmdb-logo {
     align-self: center;
-    height: 28px; /* Sized up for collapsed state */
+    height: 32px; /* Sized up */
     margin: 0 auto;
   }
 
@@ -302,6 +312,16 @@
     color: var(--text-muted);
     margin: 0;
     text-align: left;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    max-width: 400px;
+  }
+
+  .tmdb-credit.collapsed .credit-text {
+    opacity: 0;
+    max-width: 0;
+    margin: 0;
   }
 
   /* Transitions for Collapsed State */
