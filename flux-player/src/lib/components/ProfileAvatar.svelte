@@ -1,8 +1,8 @@
 <script lang="ts">
-  let { src = "", alt = "User profile" } = $props();
+  let { src = "", alt = "User profile", size = "medium" } = $props();
 </script>
 
-<div class="avatar-container squircle">
+<div class="avatar-container squircle" class:small={size === 'small'}>
   <img src={src || "/flux.png"} {alt} class="avatar-img" />
 </div>
 
@@ -17,6 +17,11 @@
     overflow: hidden;
     border: 1px solid var(--border-light);
     transition: all 0.2s ease;
+  }
+
+  .avatar-container.small {
+    width: 24px;
+    height: 24px;
   }
 
   /* The .squircle class is defined in app.css using a path clip-mask */

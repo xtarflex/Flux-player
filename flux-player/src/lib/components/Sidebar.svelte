@@ -1,4 +1,4 @@
-<script lang="ts">
+  import { fade } from 'svelte/transition';
   let isCollapsed = $state(false);
   
   const navItems = [
@@ -54,14 +54,14 @@
         <path d="M12 11v6m-3-3h6" stroke-width="2" />
       </svg>
       {#if !isCollapsed}
-        <span>Add Folder</span>
+        <span transition:fade={{ duration: 200 }}>Add Folder</span>
       {/if}
     </button>
     
     <div class="tmdb-credit" class:collapsed={isCollapsed}>
       <img src="/tmdb.svg" alt="TMDB" class="tmdb-logo" />
       {#if !isCollapsed}
-        <p class="credit-text">
+        <p class="credit-text" transition:fade={{ duration: 200 }}>
           This product uses the TMDB API but is not endorsed or certified by TMDB.
         </p>
       {/if}
@@ -243,7 +243,7 @@
     padding: 16px;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 700;
     font-family: var(--font-body);
     font-size: 0.9rem;
@@ -256,8 +256,11 @@
   }
 
   .add-folder-btn.collapsed {
-    padding: 14px 0;
+    padding: 16px 0;
+    width: 56px; /* Matches collapsed width constraint */
+    margin: 0 auto;
     border-style: solid;
+    gap: 0;
   }
 
   .add-icon {
@@ -271,7 +274,7 @@
     align-items: center; /* Center vertically */
     gap: 12px;
     opacity: 0.6;
-    transition: opacity 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .tmdb-credit:hover {
@@ -283,6 +286,7 @@
     width: auto;
     object-fit: contain;
     flex-shrink: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .tmdb-credit.collapsed .tmdb-logo {

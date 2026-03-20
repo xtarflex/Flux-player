@@ -41,7 +41,6 @@
     font-size: 3rem;
     margin-bottom: 0.5rem;
     color: var(--secondary);
-    /* No glow as per aesthetic rules */
   }
 
   .logo-container {

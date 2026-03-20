@@ -1,9 +1,20 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import ProfileAvatar from './ProfileAvatar.svelte';
   const appWindow = getCurrentWindow();
 
-  let isOnline = $state(true); // This will be connected to a store later
+  let isOnline = $state(true);
+  let pcName = $state("FLUX-DEVICE");
+
+  onMount(async () => {
+    try {
+      pcName = await invoke('get_computer_name');
+    } catch (e) {
+      console.error("Failed to fetch computer name:", e);
+    }
+  });
 
   const minimize = () => appWindow.minimize();
   const toggleMaximize = () => appWindow.toggleMaximize();
@@ -13,7 +24,18 @@
 
 <div class="titlebar" data-tauri-drag-region>
   <div class="left-section" data-tauri-drag-region>
-    <div class="status-indicators">
+    <div class="user-profile">
+      <ProfileAvatar size="small" />
+      <span class="pc-name">{pcName}</span>
+    </div>
+  </div>
+
+  <div class="center-section" data-tauri-drag-region>
+    <span class="app-name">FLUX</span>
+  </div>
+
+  <div class="right-section">
+    <div class="action-group">
       <button class="refresh-btn" onclick={refresh} title="Global Refresh">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6m12-4a9 9 0 0 1-15 6.7L3 16" stroke-linecap="round" stroke-linejoin="round" />
@@ -28,41 +50,32 @@
           <div class="bar bar-4"></div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="center-section" data-tauri-drag-region>
-    <span class="app-name">FLUX</span>
-  </div>
-
-  <div class="right-section">
-    <div class="user-actions">
       <button class="settings-btn" title="Settings Hub">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
       </button>
-      <ProfileAvatar />
     </div>
 
     <div class="window-controls">
       <button class="control-btn minimize" onclick={minimize} aria-label="Minimize">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
           <path d="M5 12H13" stroke="var(--secondary)" />
           <path d="M11 12H19" stroke="var(--primary)" opacity="0.9"/>
         </svg>
       </button>
 
       <button class="control-btn maximize" onclick={toggleMaximize} aria-label="Maximize">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect class="win-max-violet" x="4" y="8" width="12" height="12" rx="3" stroke="var(--primary)" />
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect class="win-max-violet" x="4" y="8" width="12" height="12" rx="2.5" stroke="var(--primary)" />
           <path class="win-max-cyan" d="M8 4H17C18.6569 4 20 5.34315 20 7V16" stroke="var(--secondary)" />
         </svg>
       </button>
 
       <button class="control-btn close" onclick={close} aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path class="win-close-cyan" d="M7 7 L 10.5 10.5 M 13.5 13.5 L 17 17" stroke="var(--secondary)" />
           <path class="win-close-violet" d="M17 7 L 7 17" stroke="var(--primary)" />
         </svg>
@@ -79,7 +92,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     user-select: none;
     z-index: 10000;
@@ -88,34 +101,56 @@
   .left-section, .center-section, .right-section {
     display: flex;
     align-items: center;
+    height: 100%;
   }
 
-  .left-section { flex: 1; }
-  .center-section { 
+  .left-section { 
     flex: 1; 
+    gap: 12px;
+  }
+  .center-section { 
+    flex: 0; 
     justify-content: center;
+    min-width: 100px;
   }
   .right-section { 
     flex: 1; 
     justify-content: flex-end;
-    gap: 16px;
+    gap: 20px;
   }
 
-  /* Status Indicators */
-  .status-indicators {
+  /* User Profile at Left */
+  .user-profile {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
   }
 
-  .refresh-btn {
+  .pc-name {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* Action Group (Refresh, Connectivity, Settings) */
+  .action-group {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding-right: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .refresh-btn, .settings-btn {
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 4px;
+    padding: 6px;
     display: flex;
-    transition: color 0.2s, transform 0.3s;
+    transition: all 0.2s ease;
   }
 
   .refresh-btn:hover {
@@ -123,40 +158,40 @@
     transform: rotate(180deg);
   }
 
-  .refresh-btn svg { width: 18px; height: 18px; }
-
-  /* Signal Bar Connectivity Indicator */
-  .connectivity-wrapper {
-    display: flex;
-    align-items: center;
-    padding: 0 4px;
+  .settings-btn:hover {
+    color: var(--primary);
+    transform: rotate(90deg);
   }
 
+  .refresh-btn svg { width: 16px; height: 16px; }
+  .settings-btn svg { width: 18px; height: 18px; }
+
+  /* Signal Bar Connectivity Indicator */
   .signal-bars {
     display: flex;
     align-items: flex-end;
-    gap: 3px;
-    height: 16px;
+    gap: 2px;
+    height: 14px;
   }
 
   .bar {
-    width: 3px;
+    width: 2.5px;
     background: var(--text-muted);
-    border-radius: 1.5px;
+    border-radius: 1px;
     transition: all 0.3s ease;
   }
 
-  .bar-1 { height: 6px; }
-  .bar-2 { height: 9px; }
-  .bar-3 { height: 12px; }
-  .bar-4 { height: 16px; }
+  .bar-1 { height: 4px; }
+  .bar-2 { height: 7px; }
+  .bar-3 { height: 10px; }
+  .bar-4 { height: 14px; }
 
   .connectivity-wrapper:not(.offline) .bar {
-    background: var(--secondary); /* Cyan for online */
+    background: var(--secondary);
   }
 
   .connectivity-wrapper.offline .bar {
-    background: #ff0000; /* Sharp Red for offline */
+    background: #ff0000;
   }
 
   /* App Branding */
@@ -164,52 +199,28 @@
     font-family: var(--font-heading);
     font-size: 0.75rem;
     color: var(--text-muted);
-    letter-spacing: 0.25em;
+    letter-spacing: 0.3em;
     font-weight: 700;
+    opacity: 0.8;
   }
-
-  /* User Actions */
-  .user-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-right: 12px;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .settings-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    transition: color 0.2s, transform 0.5s;
-  }
-
-  .settings-btn:hover {
-    color: var(--primary);
-    transform: rotate(90deg);
-  }
-
-  .settings-btn svg { width: 16px; height: 16px; }
 
   /* Window Controls */
   .window-controls {
     display: flex;
-    gap: 4px;
+    gap: 2px;
+    margin-right: -8px; /* Offset to align with edge better */
   }
 
   .control-btn {
     background: none;
     border: none;
-    width: 36px;
+    width: 44px;
     height: var(--titlebar-height);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
   }
 
   .control-btn:hover {
@@ -225,8 +236,8 @@
   }
 
   .control-btn svg {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
   }
 
   /* maximize/close animations */

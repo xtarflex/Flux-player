@@ -1,18 +1,15 @@
-# DEV.log - Flux Player (Phase 2)
+# FLUX PLAYER - DEVELOPMENT LOG
 
-## [2026-03-20] - Milestone 1.1: Shell & Core UI Polish
-- **ACTION**: Refactored `DynamicIsland.svelte` for smooth transitions using absolute layering (Suggestion 1).
-- **ACTION**: Implemented `ProfileAvatar.svelte` with Squircle Mask (Suggestion 4).
-- **ACTION**: Created `Sidebar.svelte` with regular/collapsed states and integrated it into `+layout.svelte`.
-- **ACTION**: Achieved Visual Parity with provided assets (flux.png, tmdb.svg).
-- **ACTION**: Refined `Sidebar.svelte` with violet pill active state and high-quality icons.
-- **ACTION**: Updated `ProfileAvatar.svelte` to use the 3D `flux.png` as a default.
-- **ACTION**: Generated Tauri platform icons using `npm run tauri icon ..\flux.png`.
-- **ACTION**: Enforced "no-glow" rule across all CSS/Svelte files, removing `drop-shadow` and `text-shadow` in favor of crisp 1px borders.
-- **ACTION**: Completed application shell polish. Relocated `ProfileAvatar` to Titlebar (Top Right).
-- **ACTION**: Refined Sidebar Header (Larger Logo/Text) and restyled Menu Toggle.
-- **ACTION**: Aligned TMDB footer credits side-by-side and refined collapsed sizing (28px).
-- **ACTION**: Implemented Responsive Auto-Collapse for windows under 1000px.
-- **ACTION**: Synchronized versioning to V0.1.0.
-- **RATIONALE**: Finalizing visual parity and usability for Milestone 1.1.
-- **STATUS**: Application Shell & Branding fully complete.
+[2026-03-20 10:30] - ACTION: Initialized Milestone 1.1 (App Shell & Branding). Refined `app.css` and basic layout grid. - RATIONALE: Establishing the foundational design system based on Master Blueprints. - STATUS: COMPLETE.
+
+[2026-03-20 11:45] - ACTION: Implemented `DynamicIsland.svelte` with absolute layering and spring-loaded transitions. - RATIONALE: Enabling smooth state changes (Idle ↔ Status) without layout flickering. - STATUS: COMPLETE.
+
+[2026-03-20 12:50] - ACTION: Refined Sidebar aesthetics (Cyan-on-Violet pill, 48px Logo) and synchronizing project versioning to V0.1.0. - RATIONALE: Achieving visual parity with high-fidelity mockups while sticking to the "no-glow" rule. - STATUS: COMPLETE.
+
+[2026-03-20 13:45] - ACTION: Regenerated 256x256 platform icons from updated `flux.png` asset. - RATIONALE: Refreshing branding across all OS environments (Windows/macOS/Mobile). - STATUS: COMPLETE.
+
+[2026-03-20 14:15] - ACTION: Sized up Shell UI: Titlebar (44px), Sidebar Logo (64px), and Bold 1.3rem Branding. Added auto-collapse @1000px. - RATIONALE: Meeting user requirement for a bolder, more prominent, and premium interface. - STATUS: COMPLETE.
+
+[2026-03-20 19:45] - ACTION: Forensic Titlebar Refinement: Relocated Profile/PC-Name to Left, implemented `get_computer_name` Rust command. - RATIONALE: Aligning with "Forensic Blueprint" for a professional device-centric identity. - STATUS: COMPLETE.
+
+[2026-03-20 19:55] - ACTION: Finalized Sidebar Footer (Dashed Add Folder, TMDB side-by-side) and Navigation Silhouette Icons. - RATIONALE: Ensuring 100% parity with "Detail Panel" mockup and UX Journey specs. - STATUS: COMPLETE.
