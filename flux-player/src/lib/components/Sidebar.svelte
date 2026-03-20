@@ -103,8 +103,8 @@
   }
 
   .brand-logo {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
   }
 
@@ -115,17 +115,17 @@
 
   .brand-name {
     font-family: var(--font-heading);
-    font-size: 1.2rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
     color: var(--text-main);
     line-height: 1;
     text-transform: uppercase;
   }
 
   .version {
-    font-size: 0.7rem;
-    color: var(--text-muted);
+    font-size: 0.75rem;
+    color: var(--primary);
     font-weight: 500;
     margin-top: 4px;
   }
@@ -151,8 +151,8 @@
   }
 
   .menu-toggle svg {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
   }
 
   /* Navigation Styles */
@@ -241,7 +241,7 @@
     justify-content: center;
     gap: 12px;
     padding: 16px;
-    border-radius: 14px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 700;
@@ -279,7 +279,7 @@
   }
 
   .tmdb-logo {
-    height: 36px; /* Larger logo */
+    height: 56px; /* Larger logo */
     width: auto;
     object-fit: contain;
     flex-shrink: 0;
@@ -287,12 +287,13 @@
 
   .tmdb-credit.collapsed .tmdb-logo {
     align-self: center;
-    height: 16px;
+    height: 28px; /* Sized up for collapsed state */
+    margin: 0 auto;
   }
 
   .credit-text {
-    font-size: 0.65rem;
-    line-height: 1.3;
+    font-size: 0.75rem;
+    line-height: 1.4;
     color: var(--text-muted);
     margin: 0;
     text-align: left;
