@@ -3,6 +3,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import ProfileAvatar from './ProfileAvatar.svelte';
+  
   const appWindow = getCurrentWindow();
 
   let isOnline = $state(true);
@@ -11,27 +12,40 @@
   onMount(async () => {
     try {
       pcName = await invoke('get_computer_name');
+      console.log("Flux Titlebar: Initialized with window:", appWindow.label);
     } catch (e) {
-      console.error("Failed to fetch computer name:", e);
+      console.error("Flux Titlebar: Failed to fetch computer name:", e);
     }
   });
 
-  const minimize = () => appWindow.minimize();
-  const toggleMaximize = () => appWindow.toggleMaximize();
-  const close = () => appWindow.close();
+  const minimize = async () => {
+    console.log("Flux Titlebar: Minimizing window");
+    await appWindow.minimize();
+  };
+  
+  const toggleMaximize = async () => {
+    console.log("Flux Titlebar: Toggling maximize");
+    await appWindow.toggleMaximize();
+  };
+  
+  const close = async () => {
+    console.log("Flux Titlebar: Closing window");
+    await appWindow.close();
+  };
+  
   const refresh = () => window.location.reload();
 </script>
 
 <div class="titlebar" data-tauri-drag-region>
   <div class="left-section" data-tauri-drag-region>
-    <div class="user-profile">
+    <div class="user-profile" data-tauri-drag-region>
       <ProfileAvatar size="small" />
-      <span class="pc-name">{pcName}</span>
+      <span class="pc-name" data-tauri-drag-region>{pcName}</span>
     </div>
   </div>
 
   <div class="center-section" data-tauri-drag-region>
-    <span class="app-name">FLUX</span>
+    <span class="app-name" data-tauri-drag-region>FLUX</span>
   </div>
 
   <div class="right-section">

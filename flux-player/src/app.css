@@ -11,9 +11,11 @@
   --bg-surface: #1a1a1f;
   --primary: #8a2be2;      /* Electric Violet */
   --secondary: #00ffff;    /* Cyber Cyan */
+  --tertiary: #b07bf0; /* Soft Violet for 3-path icons */
   --text-main: #ffffff;
   --text-muted: #888890;
   --border-light: rgba(255, 255, 255, 0.1);
+  
 
   /* Typography */
   --font-heading: 'Syncopate', sans-serif;
@@ -65,7 +67,12 @@ h1, h2, h3, h4, h5, h6, .heading {
 
 /* Squircle Mask for Avatars */
 .squircle {
-  clip-path: path('M 0,16 C 0,0 0,0 16,0 C 32,0 32,0 32,16 C 32,32 32,32 16,32 C 0,32 0,32 0,16 Z');
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M 0,50 C 0,0 0,0 50,0 C 100,0 100,0 100,50 C 100,100 100,100 50,100 C 0,100 0,100 0,50 Z' /%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M 0,50 C 0,0 0,0 50,0 C 100,0 100,0 100,50 C 100,100 100,100 50,100 C 0,100 0,100 0,50 Z' /%3E%3C/svg%3E");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
 }
 
 /* Glassmorphism */
