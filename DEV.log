@@ -1,0 +1,17 @@
+# DEV.log - Flux Player Implementation
+
+## [2026-03-19] - Project Reorganization & Git Initialized
+- **ACTION**: Moved all flat markdown files into `docs/` and AI instructions into `.agents/`.
+- **RATIONALE**: Followed `DIRECTORY_STRUCTURE.md` for strict separation of "Human Blueprints" and "AI Workflows."
+- **GIT**: Initialized repository and pushed to `xtarflex/Flux-player`.
+
+## [2026-03-20] - Phase 2 Baseline Implementation
+- **ACTION**: Initialized Tauri 2.0 + Svelte + TypeScript project in `flux-player/`.
+- **RATIONALE**: SvelteKit static adapter chosen for reliable Tauri integration.
+- **WINDOW**: Configured `decorations: false` and `transparent: true` in `tauri.conf.json`.
+- **UI**: Implemented `Titlebar.svelte` and `DynamicIsland.svelte` (Target 1: Idle/Morphing).
+- **FIX**: Resolved `create-tauri-app` terminal IO errors by manually verifying the scaffolded `package.json` and running `npm install` post-crash.
+- **CLEANUP**: Removed root-level `src/` and `src-tauri/` placeholders to avoid "Double-Source" confusion with `flux-player/`.
+
+---
+*End of initialization log. Ready for Discovery Hub (Target 2).*
