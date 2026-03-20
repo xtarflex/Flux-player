@@ -11,6 +11,9 @@
 </script>
 
 <section class="hero">
+  <div class="logo-container">
+    <img src="/flux.png" alt="Flux 3D Logo" class="hero-logo" />
+  </div>
   <h1 class="heading">FLUX</h1>
   <p class="subtitle">Premium Cinematic Experience</p>
 
@@ -38,7 +41,24 @@
     font-size: 3rem;
     margin-bottom: 0.5rem;
     color: var(--secondary);
-    text-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    /* No glow as per aesthetic rules */
+  }
+
+  .logo-container {
+    margin-bottom: 2rem;
+    perspective: 1000px;
+  }
+
+  .hero-logo {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotateY(0); }
+    50% { transform: translateY(-20px) rotateY(10deg); }
   }
 
   .subtitle {

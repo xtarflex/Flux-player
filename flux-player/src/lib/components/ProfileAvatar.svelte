@@ -16,12 +16,14 @@
     justify-content: center;
     overflow: hidden;
     border: 1px solid var(--border-light);
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
   }
 
+  /* The .squircle class is defined in app.css using a path clip-mask */
+  
   .avatar-container:hover {
     transform: scale(1.1);
-    border-color: var(--primary);
+    border-color: var(--secondary);
   }
 
   .avatar-img {
@@ -29,12 +31,4 @@
     height: 100%;
     object-fit: cover;
   }
-
-  .avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* The .squircle class is defined in app.css */
 </style>

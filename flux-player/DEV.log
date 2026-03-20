@@ -7,5 +7,12 @@
 - **ACTION**: Achieved Visual Parity with provided assets (flux.png, tmdb.svg).
 - **ACTION**: Refined `Sidebar.svelte` with violet pill active state and high-quality icons.
 - **ACTION**: Updated `ProfileAvatar.svelte` to use the 3D `flux.png` as a default.
-- **RATIONALE**: Ensuring the UI feels premium and matches the intended brand DNA before moving to Target 2.
-- **STATUS**: Milestone 1.1 fully verified and polished.
+- **ACTION**: Generated Tauri platform icons using `npm run tauri icon ..\flux.png`.
+- **ACTION**: Enforced "no-glow" rule across all CSS/Svelte files, removing `drop-shadow` and `text-shadow` in favor of crisp 1px borders.
+- **ACTION**: Completed application shell polish. Relocated `ProfileAvatar` to Titlebar (Top Right).
+- **ACTION**: Refined Sidebar Header (Larger Logo/Text) and restyled Menu Toggle.
+- **ACTION**: Aligned TMDB footer credits side-by-side for a cleaner look.
+- **ACTION**: Implemented Responsive Auto-Collapse for windows under 1000px.
+- **ACTION**: Synchronized versioning to V0.1.0.
+- **RATIONALE**: Finalizing visual parity and usability for Milestone 1.1.
+- **STATUS**: Application Shell & Branding fully complete.
