@@ -236,7 +236,8 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 16px;
+    padding: 0 16px; /* Use vertical height instead of padding for stability */
+    height: 56px; /* Fixed height to prevent vertical jumping */
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -244,6 +245,7 @@
     font-family: var(--font-body);
     font-size: 0.9rem;
     letter-spacing: 0.02em;
+    width: 100%;
   }
 
   .add-folder-btn:hover {
@@ -252,9 +254,9 @@
   }
 
   .add-folder-btn.collapsed {
-    padding: 16px; /* Keep uniform padding for circle-ish look */
+    padding: 0;
     width: 56px;
-    height: 56px;
+    height: 56px; /* Same height as uncollapsed */
     margin: 0 auto;
     border-style: solid;
     gap: 0;
@@ -281,11 +283,13 @@
 
   .tmdb-credit {
     display: flex;
-    flex-direction: row; /* Side-by-side */
-    align-items: center; /* Center vertically */
+    flex-direction: row;
+    align-items: center;
     gap: 12px;
+    height: 56px; /* Match logo height to prevent jumping */
     opacity: 0.6;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
   }
 
   .tmdb-credit:hover {
@@ -302,7 +306,7 @@
 
   .tmdb-credit.collapsed .tmdb-logo {
     align-self: center;
-    height: 32px; /* Sized up */
+    height: 32px;
     margin: 0 auto;
   }
 
