@@ -1,0 +1,11 @@
+# DEV.log - Flux Player (Phase 2)
+
+## [2026-03-20] - Milestone 1.1: Shell & Core UI Polish
+- **ACTION**: Refactored `DynamicIsland.svelte` for smooth transitions using absolute layering (Suggestion 1).
+- **ACTION**: Implemented `ProfileAvatar.svelte` with Squircle Mask (Suggestion 4).
+- **ACTION**: Created `Sidebar.svelte` with regular/collapsed states and integrated it into `+layout.svelte`.
+- **ACTION**: Achieved Visual Parity with provided assets (flux.png, tmdb.svg).
+- **ACTION**: Refined `Sidebar.svelte` with violet pill active state and high-quality icons.
+- **ACTION**: Updated `ProfileAvatar.svelte` to use the 3D `flux.png` as a default.
+- **RATIONALE**: Ensuring the UI feels premium and matches the intended brand DNA before moving to Target 2.
+- **STATUS**: Milestone 1.1 fully verified and polished.
