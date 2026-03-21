@@ -15,6 +15,17 @@
   --text-main: #ffffff;
   --text-muted: #888890;
   --border-light: rgba(255, 255, 255, 0.1);
+
+  /* Flux Design Tokens: Glass & Depth */
+  --glass-bg-low: rgba(255, 255, 255, 0.02);
+  --glass-bg-mid: rgba(255, 255, 255, 0.05);
+  --glass-bg-high: rgba(255, 255, 255, 0.1);
+  
+  --glass-border-low: rgba(255, 255, 255, 0.05);
+  --glass-border-mid: rgba(255, 255, 255, 0.08);
+  --glass-border-high: rgba(255, 255, 255, 0.15);
+
+  --island-adaptive-tint: rgba(255, 255, 255, 0.1); /* Default fallback */
   
 
   /* Typography */
@@ -26,6 +37,8 @@
   --sidebar-collapsed-width: 90px;
   --titlebar-height: 44px;
   --footer-height: 90px;
+
+
 }
 
 *, *::before, *::after {

@@ -1,7 +1,7 @@
 # Flux Master Reconstruction Guide
 
 > [!IMPORTANT]
-> This guide contains the "DNA" of Flux. Use this to restore the app after reverting to commit `8218db7`.
+> This guide contains the "DNA" of Flux.
 
 ## 1. Brand & Aesthetics
 - **Core Palette**:
@@ -25,9 +25,7 @@
   - Stiffness: `0.15`
   - Damping: `0.35`
 - **Morphing Paths (F-L-U-X)**:
-  - F: `M54.25 131V84.125V37.25H114.25V58.8125H79V73.3125H111.75V94.875H79V131H54.25Z`
-  - L: `M116 131H84.125H52.25V84.125V37.25H77V73.3438V109.438H96.5H116V131Z`
-  - U: `M126.25 36.25V61.9688V87.6875...` (extracted from `DynamicIsland.svelte`)
+
 - **State Dimensions**:
   - Idle: `56x56` (Radius 28)
   - Hover: `220x60` (Radius 30)
