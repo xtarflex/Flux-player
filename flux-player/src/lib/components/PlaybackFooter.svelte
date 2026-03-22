@@ -1,0 +1,102 @@
+<script lang="ts">
+  import Scrubber from './footer/Scrubber.svelte';
+  import MediaInfo from './footer/MediaInfo.svelte';
+  import PlaybackControls from './footer/PlaybackControls.svelte';
+  import QueueStack from './footer/QueueStack.svelte';
+  import RightActions from './footer/RightActions.svelte';
+  // Playback State
+  let volume = $state(0.7);
+  let progress = $state(0.35);
+  let isPlaying = $state(false);
+  
+  // Media Info
+  let currentMedia = $state<{
+    type: 'video' | 'audio' | null;
+    title: string;
+    duration: string;
+    currentTime: string;
+    poster?: string;
+  }>({
+    type: 'audio',
+    title: '',
+    duration: '',
+    currentTime: ''
+  });
+  
+  // Control States
+  let isLiked = $state(false);
+  let shuffleState = $state(false);
+  let repeatMode = $state(0); // 0: off, 1: all, 2: one
+  let isMuted = $state(false);
+  let playbackSpeed = $state(1);
+  let isPiPActive = $state(false);
+  let isFullscreen = $state(false);
+
+  // Queue management
+  type QueueItem = { title: string; poster?: string };
+  let queueHistory = $state<QueueItem[]>([]);
+  let queue = $state<QueueItem[]>([]);
+  let hasQueue = $derived(queue.length > 0 || queueHistory.length > 0);
+
+  // Computed: Media-aware control visibility
+  let hasMedia = $derived(currentMedia.type !== null);
+  let isVideo = $derived(currentMedia.type === 'video');
+  let isAudio = $derived(currentMedia.type === 'audio');
+  
+  // Show/hide controls based on media type
+  let showPiP = $derived(hasMedia && isVideo);
+  let showSubtitles = $derived(hasMedia && isVideo);
+  
+  // Enable/disable states
+  let controlsEnabled = $derived(hasMedia);
+</script>
+
+<div 
+  class="playback-footer" 
+  role="contentinfo"
+>
+  <Scrubber bind:progress />
+
+  <div class="footer-content">
+    <MediaInfo {currentMedia} {hasMedia} bind:isLiked />
+    <PlaybackControls {controlsEnabled} bind:shuffleState bind:repeatMode />
+    <QueueStack {hasMedia} {queueHistory} {queue} {currentMedia} />
+    <RightActions 
+      {controlsEnabled} 
+      bind:playbackSpeed 
+      {showSubtitles} 
+      {showPiP} 
+      bind:isPiPActive 
+      bind:isFullscreen 
+      bind:volume 
+      bind:isMuted 
+    />
+  </div>
+</div>
+
+<style>
+  .playback-footer {
+    grid-area: footer;
+    height: var(--footer-height);
+    width: 100%;
+    background: rgba(26, 26, 31, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-light);
+    z-index: 9997;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 16px;
+    font-family: var(--font-body);
+  }
+
+  .footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-top: 4px;
+  }
+</style>
