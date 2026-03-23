@@ -3,6 +3,7 @@
   import Titlebar from '$lib/components/Titlebar.svelte';
   import DynamicIsland from '$lib/components/DynamicIsland.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
+  import PlaybackFooter from '$lib/components/PlaybackFooter.svelte';
   let { children } = $props();
 </script>
 
@@ -13,6 +14,7 @@
   <main class="main-content">
     {@render children()}
   </main>
+  <PlaybackFooter />
 </div>
 
 <style>

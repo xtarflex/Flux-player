@@ -2,15 +2,22 @@
   let { 
     controlsEnabled, 
     shuffleState = $bindable(false), 
-    repeatMode = $bindable(0)
+    repeatMode = $bindable(0),
+    isPlaying = $bindable(false)
   } = $props<{
     controlsEnabled: boolean;
     shuffleState?: boolean;
     repeatMode?: number;
+    isPlaying?: boolean;
   }>();
 
   function toggleRepeat() {
     repeatMode = (repeatMode + 1) % 3;
+  }
+
+  function togglePlay() {
+    if (!controlsEnabled) return;
+    isPlaying = !isPlaying;
   }
 </script>
 
@@ -44,10 +51,15 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn play-btn" aria-label="Play" disabled={!controlsEnabled}>
+      <button class="pill-btn play-btn" aria-label={isPlaying ? 'Pause' : 'Play'} disabled={!controlsEnabled} onclick={togglePlay}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="6" x2="5" y2="18" />
-          <path d="M10,7.5 V16.5 C10,18 11.5,19 12.5,18.2 L19,13.7 C20.2,12.9 20.2,11.1 19,10.3 L12.5,5.8 C11.5,5 10,6 10,7.5Z" />
+          {#if isPlaying}
+            <rect x="6" y="4" width="4" height="16" />
+            <rect x="14" y="4" width="4" height="16" />
+          {:else}
+            <line x1="5" y1="6" x2="5" y2="18" />
+            <path d="M10,7.5 V16.5 C10,18 11.5,19 12.5,18.2 L19,13.7 C20.2,12.9 20.2,11.1 19,10.3 L12.5,5.8 C11.5,5 10,6 10,7.5Z" />
+          {/if}
         </svg>
       </button>
       <div class="separator"></div>

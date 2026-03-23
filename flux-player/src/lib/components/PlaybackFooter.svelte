@@ -17,7 +17,7 @@
     currentTime: string;
     poster?: string;
   }>({
-    type: 'audio',
+    type: 'audio', 
     title: '',
     duration: '',
     currentTime: ''
@@ -49,7 +49,58 @@
   
   // Enable/disable states
   let controlsEnabled = $derived(hasMedia);
+
+  // Keyboard Shortcuts
+  function handleKeydown(e: KeyboardEvent) {
+    if (!controlsEnabled) return;
+
+    // Ignore if user is typing in an input or textarea
+    const activeEl = document.activeElement as HTMLElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
+      return;
+    }
+
+    switch (e.key) {
+      case ' ':
+      case 'k':
+        e.preventDefault();
+        isPlaying = !isPlaying;
+        break;
+      case 'm':
+      case 'M':
+        e.preventDefault();
+        isMuted = !isMuted;
+        break;
+      case 'f':
+      case 'F':
+        if (isVideo) {
+          e.preventDefault();
+          isFullscreen = !isFullscreen;
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        volume = Math.min(1, volume + 0.1);
+        if (volume > 0) isMuted = false;
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        volume = Math.max(0, volume - 0.1);
+        if (volume === 0) isMuted = true;
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        progress = Math.min(1, progress + 0.05);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        progress = Math.max(0, progress - 0.05);
+        break;
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div 
   class="playback-footer" 
@@ -58,14 +109,15 @@
   <Scrubber bind:progress />
 
   <div class="footer-content">
-    <MediaInfo {currentMedia} {hasMedia} bind:isLiked />
-    <PlaybackControls {controlsEnabled} bind:shuffleState bind:repeatMode />
+    <MediaInfo {currentMedia} {hasMedia} bind:isLiked={isLiked} />
+    <PlaybackControls {controlsEnabled} bind:shuffleState bind:repeatMode bind:isPlaying />
     <QueueStack {hasMedia} {queueHistory} {queue} {currentMedia} />
     <RightActions 
       {controlsEnabled} 
       bind:playbackSpeed 
       {showSubtitles} 
       {showPiP} 
+      showVisualizer={isAudio}
       bind:isPiPActive 
       bind:isFullscreen 
       bind:volume 

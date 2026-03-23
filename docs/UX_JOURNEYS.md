@@ -78,17 +78,17 @@ This document outlines the step-by-step user experience (UX) flows for key inter
 
 ### Phase 1: The Unified Search Experience
 
-1. **Context-Aware Input:** Both the Library and Home screen feature a sleek, expanding glassmorphic search bar in their respective header areas.
+1. **Context-Aware Input:** Both the Library and Discovery screen feature a sleek, expanding glassmorphic search bar in their respective header areas.
 
 2. **Library Search (Local):** Typing in the Library triggers an instant, millisecond filter (0ms) of the local SQLite database.
 
-3. **Home Search (Online):** Typing in the Home screen triggers a debounce function (500ms) that pings the TMDB Search API.
+3. **Discovery  Search (Online):** Typing in the Discovery screen triggers a debounce function (500ms) that pings the TMDB Search API.
 
 ### Phase 2: The Off-Canvas Detail Drawer
 
-1. **The Click:** The user clicks a movie poster from the Home Screen's "Trending Now" row or their TMDB Search Results.
+1. **The Click:** The user clicks a movie poster from the Discovery  Screen's "Trending Now" row or their TMDB Search Results.
 
-2. **The Overlay:** The Home Screen dims with a dark glassmorphism overlay (`backdrop-filter: blur(5px)`).
+2. **The Overlay:** The Discovery screen dims with a dark glassmorphism overlay (`backdrop-filter: blur(5px)`).
 
 3. **The Slide-In:** The `<DetailPanel />` slides in smoothly from the right edge of the screen.
 

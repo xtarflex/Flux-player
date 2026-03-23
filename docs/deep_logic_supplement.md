@@ -24,7 +24,7 @@ These are the "hidden" technical details found during deep logic scans. We MUST 
 
 ## 4. Offline Resilience & State Memory
 
-- **Offline Image Asset Caching**: When TMDB returns metadata, the payload includes both a `poster_path` (vertical) and a `backdrop_path` (horizontal 16:9). The Rust backend MUST intercept both URLs, download the binary image blobs into `%APPDATA%/flux-player/cache/images/posters/` and `/backdrops/` respectively, and return the local `asset://` paths to the Svelte frontend. This guarantees the Home Screen and Detail Panel backgrounds remain visually stunning when fully offline.
+- **Offline Image Asset Caching**: When TMDB returns metadata, the payload includes both a `poster_path` (vertical) and a `backdrop_path` (horizontal 16:9). The Rust backend MUST intercept both URLs, download the binary image blobs into `%APPDATA%/flux-player/cache/images/posters/` and `/backdrops/` respectively, and return the local `asset://` paths to the Svelte frontend. This guarantees the Discovery screen and Detail Panel backgrounds remain visually stunning when fully offline.
 
 * **Playback Resume Memory**: During playback, `PlayerEngine.svelte` fires a debounced update to the SQLite database every 10 seconds, logging the `currentTime`. When returning to that file, the Detail Panel reads this value and conditionally displays a "Resume from \[MM:SS\]" button next to the "Play from Beginning" button.
 

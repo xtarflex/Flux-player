@@ -152,8 +152,8 @@ This roadmap breaks down Flux Player development into **3 major phases** with cl
 | Integrate yt-dlp sidecar | 🟡 Medium | `workflow_reconstruct.md` (Target 4) |
 | Implement clipboard intercept | 🟡 Medium | `UX_JOURNEYS.md` (Scenario 4) |
 | Create trailer lightbox | 🟡 Medium | `UX_JOURNEYS.md` (Scenario 3) |
-| Build TMDB online search (Home) | 🟡 Medium | `UX_JOURNEYS.md` (Scenario 3) |
-| Add off-canvas Detail Drawer (Home) | 🟡 Medium | `forensic_blueprint.md` (Section 5) |
+| Build TMDB online search (Discovery ) | 🟡 Medium | `UX_JOURNEYS.md` (Scenario 3) |
+| Add off-canvas Detail Drawer (Discovery ) | 🟡 Medium | `forensic_blueprint.md` (Section 5) |
 
 ### Milestone 2.5: API Delegation System
 **Duration:** 1 week | **Complexity:** 🟡 Medium
@@ -175,7 +175,7 @@ This roadmap breaks down Flux Player development into **3 major phases** with cl
 | Create cache directory structure | 🟢 Low | `deep_logic_supplement.md` (Section 4) |
 | Add fallback logic (Flux logo) | 🟢 Low | `PROJECT_CHARTER.md` (Section 4) |
 
-### Milestone 2.7: Home Screen & Discovery
+### Milestone 2.7: Discovery screen & Discovery
 **Duration:** 2 weeks | **Complexity:** 🟡 Medium
 
 | Task | Complexity | Reference Document |

@@ -24,7 +24,7 @@ Flux Player is a blazing-fast, cross-platform desktop media player built using T
 
 * **The Dynamic Island (Floating HUD):** Positioned at the top-center, floating below the titlebar. Morphs between Idle, Hover, Drop, and Playing states. Features an adaptively tinted border during playback, and a solid red border when offline (strictly no outer glow).
 
-* **The Home Screen (Dashboard):** A Netflix-style cinematic landing page.
+* **The Discovery screen (Dashboard):** A Netflix-style cinematic landing page.
 
   * **Online Search:** A glassmorphic search bar that queries the TMDB API (500ms debounce) to discover movies/shows not currently downloaded.
 
@@ -38,7 +38,7 @@ Flux Player is a blazing-fast, cross-platform desktop media player built using T
 
 * **The Detail Panel (Context-Aware Split View):**
 
-  * Acts as a docked panel in the Library, and an "Off-Canvas Drawer" on the Home screen.
+  * Acts as a docked panel in the Library, and an "Off-Canvas Drawer" on the Discovery  screen.
 
   * *Streaming Intelligence:* Dynamically morphs to offer "Stream Online" when media is not stored locally.
 
@@ -52,7 +52,7 @@ Flux Player is a blazing-fast, cross-platform desktop media player built using T
 
 ### Version 1 (V1): The MVP (Minimum Viable Player)
 
-* **UI/UX Skeleton:** Frameless titlebar, floating Dynamic Island, Home Screen greeting, and CSS Grid layout.
+* **UI/UX Skeleton:** Frameless titlebar, floating Dynamic Island, Discovery screen greeting, and CSS Grid layout.
 
 * **Search & Filters:** Instant local search bar for the Library. Primary filters and A-Z sorting.
 
@@ -62,7 +62,7 @@ Flux Player is a blazing-fast, cross-platform desktop media player built using T
 
 ### Version 2 (V2): The Power User
 
-* **Cinematic Home & Discovery:** TMDB online search bar, Trending rows, and the Off-Canvas Detail Drawer.
+* **Cinematic Discovery  & Discovery:** TMDB online search bar, Trending rows, and the Off-Canvas Detail Drawer.
 
 * **Offline Image Caching:** Rust backend seamlessly downloads and serves TMDB poster/backdrop assets locally.
 
@@ -104,8 +104,8 @@ This updates Section 5 (Execution Map) to reflect newly documented features.
 
 ### 🟡 IN PROGRESS (Documented, Not Yet Implemented)
 
-* Context-Aware Search Bars (Home vs. Library)
-* User Identity UI (Titlebar Avatar, Home Greeting, Avatar Uploader)
+* Context-Aware Search Bars (Discovery  vs. Library)
+* User Identity UI (Titlebar Avatar, Discovery  Greeting, Avatar Uploader)
 * Offline Image Caching & Fallback UI logic
 * Scraper Cascade & Auto-Fetch Subtitle engine
 * API Key Delegation Flow (150-call rotation pool and Setup UI)
@@ -118,8 +118,8 @@ This updates Section 5 (Execution Map) to reflect newly documented features.
 
 ### 🔴 NOT YET ACCOMPLISHED
 
-* Home Screen Curated Rows (TMDB Trending, Upcoming, Recently Released)
-* Off-Canvas Detail Drawer (Home screen only)
+* Discovery screen Curated Rows (TMDB Trending, Upcoming, Recently Released)
+* Off-Canvas Detail Drawer (Discovery screen only)
 * Trailer Lightbox & yt-dlp clipboard intercept
 * FFmpeg Format Breaker (`.mkv` and `.avi` transcoding)
 * Advanced Library Brain (watch stats, user insights)
@@ -193,8 +193,8 @@ Based on our comprehensive documentation, the next implementation targets are:
 
 **Target 1: UI Skeleton Completion**
 - Frameless titlebar with profile icon
-- Context-aware search bars (Library 0ms, Home 500ms)
-- Home screen basic layout
+- Context-aware search bars (Library 0ms, Discovery  500ms)
+- Discovery screen basic layout
 
 **Target 2: Settings Hub**
 - Profile tab (OS username extraction, avatar uploader)
@@ -240,9 +240,9 @@ All documentation is now synchronized and reflects the complete architectural vi
 
 **🔴 NOT ACCOMPLISHED**
 
-* Context-Aware Search Bars (Home vs. Library).
+* Context-Aware Search Bars (Discovery  vs. Library).
 
-* User Identity UI (Titlebar Avatar, Home Greeting, Avatar Uploader).
+* User Identity UI (Titlebar Avatar, Discovery  Greeting, Avatar Uploader).
 
 * Offline Image Caching & Fallback UI logic.
 
@@ -258,6 +258,6 @@ All documentation is now synchronized and reflects the complete architectural vi
 
 **🟡 NEXT TO BE ACCOMPLISHED**
 
-* **Target 1:** Construct V1 UI Skeleton (Frameless titlebar with profile icon, Search Bars, Home/Grid layout).
+* **Target 1:** Construct V1 UI Skeleton (Frameless titlebar with profile icon, Search Bars, Discovery /Grid layout).
 
 * **Target 2:** Build the **Settings Hub** (Profile tab + Base Folders + API Setup).

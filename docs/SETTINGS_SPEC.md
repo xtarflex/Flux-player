@@ -12,7 +12,7 @@ The Settings Hub is organized into five primary functional vertical tabs to main
 
   * *Default:* The current Windows OS username (extracted via Tauri OS API).
 
-  * *Customization:* Fully editable text field. Used for dynamic UI greetings on the Home Screen.
+  * *Customization:* Fully editable text field. Used for dynamic UI greetings on the Discovery  Screen.
 
 * **Profile Avatar:**
 

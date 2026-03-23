@@ -7,7 +7,7 @@ When instructed to begin building, follow this sequential execution map. Refer t
 2. **Global Titlebar:** Build the custom drag-region titlebar. Include the Squircle Profile Avatar in the top right.
 3. **Dynamic Island Foundation:** Build the `<DynamicIsland />` component. Implement the Idle state with the morphing F-L-U-X SVG paths (Remember: Crisp border, NO glow).
 4. **Macro Layout:** Set up the CSS Grid (Sidebar, Main Content Area, Footer Playback Bar).
-5. **Context Search:** Add the instant 0ms local search bar for the Library, and the 500ms debounced search bar for the Home screen.
+5. **Context Search:** Add the instant 0ms local search bar for the Library, and the 500ms debounced search bar for the Discovery  screen.
 
 ## Target 2: The Settings Hub & API Delegation
 1. **Settings Layout:** Build the Hub with vertical tabs (Identity, Storage, Playback, Appearance, Network).
@@ -21,7 +21,7 @@ When instructed to begin building, follow this sequential execution map. Refer t
 1. **Local SQLite Engine:** Setup the SQLite schema for tracking files, watch time, and `currentTime` resume states.
 2. **Offline Image Sync:** Implement the Rust command to intercept TMDB image URLs, download the `.jpg` blobs to `%APPDATA%`, and serve them locally.
 3. **The Detail Panel:**
-   * Build the Off-Canvas Drawer logic for the Home screen (sliding from the right over a blurred backdrop).
+   * Build the Off-Canvas Drawer logic for the Discovery screen (sliding from the right over a blurred backdrop).
    * Include the Trailer Lightbox logic.
    * Include the "Resume from [MM:SS]" conditional button.
 

@@ -33,9 +33,9 @@
   --font-body: 'Outfit', system-ui, -apple-system, sans-serif;
 
   /* Layout Variables */
-  --sidebar-width: 280px;
-  --sidebar-collapsed-width: 90px;
-  --titlebar-height: 44px;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 80px;
+  --titlebar-height: 30px;
   --footer-height: 90px;
 
 

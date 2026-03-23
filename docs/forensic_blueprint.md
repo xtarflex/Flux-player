@@ -36,11 +36,11 @@ This document explains the technical "sleight of hand" and magic behind Flux Pla
 *   **The Execution:** Search is performed frontend-side by applying reactive CSS classes (e.g., `hidden` or `opacity-0 scale-95`) to grid items that don't match the query.
 *   **The Result:** The GPU handles the filtering via transitions, resulting in literal 0ms perceived latency.
 
-## 5. The Off-Canvas Detail Drawer (Home Screen)
+## 5. The Off-Canvas Detail Drawer (Discovery  Screen)
 
-**Goal:** Show media details without breaking the horizontal scroll position of the Home Screen.
+**Goal:** Show media details without breaking the horizontal scroll position of the Discovery  Screen.
 
-*   **The Problem:** Pushing rows in the Home Screen forces expensive layout recalculations.
+*   **The Problem:** Pushing rows in the Discovery screen forces expensive layout recalculations.
 *   **The Magic:** The Detail Panel uses `position: fixed; right: -100%;` and slides in over the UI. 
 *   **Glassmorphism:** A full-screen backdrop with `backdrop-filter: blur(5px)` and `rgba(10, 10, 12, 0.7)` dims the background rows while preserving their scroll state.
 

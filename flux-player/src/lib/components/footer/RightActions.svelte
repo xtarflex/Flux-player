@@ -3,7 +3,8 @@
     controlsEnabled, 
     playbackSpeed = $bindable(1), 
     showSubtitles, 
-    showPiP, 
+    showPiP,
+    showVisualizer = false, 
     isPiPActive = $bindable(false), 
     isFullscreen = $bindable(false), 
     volume = $bindable(0.7), 
@@ -13,6 +14,7 @@
     playbackSpeed?: number;
     showSubtitles: boolean;
     showPiP: boolean;
+    showVisualizer?: boolean;
     isPiPActive?: boolean;
     isFullscreen?: boolean;
     volume?: number;
@@ -39,6 +41,37 @@
   function toggleMute() {
     if (!controlsEnabled) return;
     isMuted = !isMuted;
+  }
+  let isDraggingVolume = $state(false);
+
+  function calculateVolume(e: PointerEvent, element: HTMLElement) {
+    const rect = element.getBoundingClientRect();
+    let newVolume = (e.clientX - rect.left) / rect.width;
+    newVolume = Math.max(0, Math.min(1, newVolume));
+    volume = newVolume;
+    
+    if (volume === 0) {
+      isMuted = true;
+    } else {
+      isMuted = false;
+    }
+  }
+
+  function onPointerDown(e: PointerEvent) {
+    if (!controlsEnabled) return;
+    isDraggingVolume = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    calculateVolume(e, e.currentTarget as HTMLElement);
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    if (!isDraggingVolume) return;
+    calculateVolume(e, e.currentTarget as HTMLElement);
+  }
+
+  function onPointerUp(e: PointerEvent) {
+    isDraggingVolume = false;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
 </script>
 
@@ -85,6 +118,20 @@
     </button>
   {/if}
 
+  <!-- Visualizer (Audio Only) -->
+  {#if showVisualizer}
+    <button 
+      class="icon-btn-large visualizer-btn" 
+      aria-label="Visualizer"
+      disabled={!controlsEnabled}
+      onclick={() => console.log('Open Visualizer Options')}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v20M17 5v14M7 8v8M22 10v4M2 11v2" stroke="currentColor" />
+      </svg>
+    </button>
+  {/if}
+
   <!-- Fullscreen -->
   <button 
     class="icon-btn-large fullscreen-btn" 
@@ -113,20 +160,28 @@
     {/if}
   </button>
 
-  <!-- Volume Bars -->
+  <!-- Volume Bars with Sliding Logic -->
   <div class="volume-container">
-    <button 
+    <div 
       class="volume-bars-wrapper"
       class:disabled={!controlsEnabled}
-      disabled={!controlsEnabled}
-      onclick={toggleMute}
-      aria-label={isMuted ? 'Unmute' : 'Mute'}
+      onpointerdown={onPointerDown}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onpointercancel={onPointerUp}
+      ondblclick={toggleMute}
+      aria-label="Volume Slider"
+      role="slider"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={Math.round(volume * 100)}
+      tabindex="0"
     >
       <div class="volume-bars">
         {#each Array(5) as _, i}
           <div 
             class="volume-bar" 
-            class:active={!isMuted && volume >= (i + 1) / 5}
+            class:active={!isMuted && volume >= (i + 1) / 5.5}
             class:muted={isMuted}
             style="height: {10 + i * 5}px"
             data-level={i + 1}
@@ -136,7 +191,7 @@
           <div class="mute-x">×</div>
         {/if}
       </div>
-    </button>
+    </div>
   </div>
 </div>
 
