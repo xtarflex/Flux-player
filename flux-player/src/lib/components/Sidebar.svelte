@@ -32,7 +32,7 @@
       <button 
         class="nav-item" 
         class:active={activeTab === item.id}
-        onclick={() => activeTab = item.id}
+        onclick={() => { activeTab = item.id; if (item.id === "settings") window.location.href = "/settings"; else window.location.href = "/"; }}
         title={isCollapsed ? item.label : ''}
       >
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
