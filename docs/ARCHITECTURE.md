@@ -20,7 +20,7 @@ graph TD
 ## 3. Component Hierarchy
 - `+layout.svelte`: Global container, imports `app.css`.
 - `Titlebar.svelte`: Frameless drag region and window controls.
-- `DynamicIsland.svelte`: Central UX hub (Navigation, Search, Status).
+- `DynamicIsland.svelte`: Central UX hub (Status).
 - `DiscoveryHub`: (Upcoming) Grid-based media library.
 - `DetailPanel`: (Upcoming) Glassmorphism side-drawer for media info.
 

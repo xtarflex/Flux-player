@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { page } from '$app/stores';
+
   let isCollapsed = $state(false);
   
   const navItems = [
@@ -8,8 +10,6 @@
     { id: 'playlists', label: 'Playlists', icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
     { id: 'settings', label: 'Settings', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' }
   ];
-
-  let activeTab = $state('discovery');
 </script>
 
 <aside class="sidebar" class:collapsed={isCollapsed}>
@@ -30,10 +30,10 @@
 
   <div class="nav-section">
     {#each navItems as item}
-      <button 
+      <a 
+        href="/{item.id}"
         class="nav-item" 
-        class:active={activeTab === item.id}
-        onclick={() => activeTab = item.id}
+        class:active={$page.url.pathname.startsWith('/' + item.id)}
         title={isCollapsed ? item.label : ''}
       >
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -42,7 +42,7 @@
         {#if !isCollapsed}
           <span class="nav-label">{item.label}</span>
         {/if}
-      </button>
+      </a>
     {/each}
   </div>
 
@@ -176,6 +176,7 @@
     overflow: hidden;
     font-family: var(--font-body);
     font-weight: 500;
+    text-decoration: none;
   }
 
   .nav-item:hover {
