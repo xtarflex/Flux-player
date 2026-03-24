@@ -174,6 +174,7 @@ This roadmap breaks down Flux Player development into **3 major phases** with cl
 | Build local asset serving | 🟡 Medium | `deep_logic_supplement.md` (Section 4) |
 | Create cache directory structure | 🟢 Low | `deep_logic_supplement.md` (Section 4) |
 | Add fallback logic (Flux logo) | 🟢 Low | `PROJECT_CHARTER.md` (Section 4) |
+| Implement Audio Album Art Caching & Deduplication | 🟡 Medium | `deep_logic_supplement.md` (Section 7) |
 
 ### Milestone 2.7: Discovery screen & Discovery
 **Duration:** 2 weeks | **Complexity:** 🟡 Medium

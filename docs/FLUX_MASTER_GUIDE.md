@@ -136,8 +136,8 @@ These additions provide visual specifications for the playback footer and detail
 ## 7. Detail Panel Layout (Library)
 
 ### Panel Dimensions
-- **Width:** 35% of viewport (min 400px, max 600px)
-- **Height:** 100% of content area (minus titlebar/footer)
+- **Width:** 450px (scales to 100% and stacks on top on mobile/tablet)
+- **Height:** 100% of content area (underneath library header, above footer)
 - **Background:** `#1a1a1f`
 - **Border-left:** 1px solid `rgba(138, 43, 226, 0.2)`
 

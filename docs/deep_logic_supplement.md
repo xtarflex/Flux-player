@@ -351,3 +351,183 @@ fn handle_fs_event(event: DebouncedEvent) {
 ---
 
 These additions complete the deep technical logic for playlists, queue management, and enhanced subtitle workflows.
+
+---
+
+## Section 7 (NEW): Complete Audio Album Art Caching Flow
+
+### **First Scan (Extraction + Cache)**
+
+```rust
+// src-tauri/src/audio_scanner.rs
+
+pub async fn scan_audio_file(path: &Path) -> AudioMetadata {
+    let mut metadata = extract_basic_metadata(path); // title, artist, album, duration
+    
+    // 1. Try to extract embedded album art
+    match extract_album_art(path) {
+        Ok(image_bytes) => {
+            // 2. Generate unique hash for this album
+            let cache_key = generate_cache_key(&metadata.artist, &metadata.album);
+            
+            // 3. Save to disk cache ONCE
+            let cache_path = format!(
+                "{}/flux-player/cache/images/album-art/{}.jpg",
+                get_appdata_dir(),
+                cache_key
+            );
+            
+            fs::write(&cache_path, image_bytes)?;
+            
+            // 4. Store the LOCAL asset:// path in SQLite (NOT the binary data)
+            metadata.album_art_path = Some(format!("asset://localhost/{}", cache_path));
+        }
+        Err(_) => {
+            // 5. Try online fallback (MusicBrainz)
+            if let Ok(online_art) = fetch_album_art_online(&metadata).await {
+                let cache_key = generate_cache_key(&metadata.artist, &metadata.album);
+                let cache_path = format!("{}/album-art/{}.jpg", cache_dir, cache_key);
+                fs::write(&cache_path, online_art)?;
+                metadata.album_art_path = Some(format!("asset://localhost/{}", cache_path));
+            } else {
+                // 6. No art found - will use Flux logo fallback in UI
+                metadata.album_art_path = None;
+            }
+        }
+    }
+    
+    metadata
+}
+```
+
+---
+
+### **SQLite Schema (Stores Path, Not Binary)**
+
+```sql
+CREATE TABLE media (
+    path TEXT PRIMARY KEY,
+    title TEXT,
+    artist TEXT,
+    album TEXT,
+    duration INTEGER,
+    album_art_path TEXT,  -- Stores "asset://localhost/C:/Users/.../album-art/abc123.jpg"
+    -- NOT storing binary image data in SQLite
+    ...
+);
+```
+
+---
+
+### **Every Subsequent Access (Zero Extraction)**
+
+```svelte
+<!-- AudioCard.svelte -->
+<script>
+  // media.album_art_path comes directly from SQLite
+  // NO lofty calls, NO API calls, just a cached file path
+  
+  let posterSrc = $derived(
+    media.album_art_path ||       // "asset://localhost/..." (cached)
+    '/flux2d.png'     // Flux logo if no art exists
+  );
+</script>
+
+<img src={posterSrc} alt={media.title} class="album-cover" />
+```
+
+---
+
+### **Why This Is Efficient**
+
+| Operation | First Scan | Library Refresh | UI Render (Grid) | UI Render (Detail Panel) |
+|-----------|-----------|----------------|-----------------|-------------------------|
+| **lofty extraction** | ✅ Once | ❌ No | ❌ No | ❌ No |
+| **MusicBrainz API** | ✅ If needed | ❌ No | ❌ No | ❌ No |
+| **File I/O (read cache)** | ✅ Write once | ❌ No | ✅ Read cached file | ✅ Read cached file |
+| **SQLite read** | ✅ Insert path | ✅ Read path | ✅ Read path | ✅ Read path |
+
+---
+
+### **Cache Key Generation (Deduplication)**
+
+Multiple songs from the same album should share ONE cached image:
+
+```rust
+use sha2::{Sha256, Digest};
+
+fn generate_cache_key(artist: &str, album: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(artist.to_lowercase().as_bytes());
+    hasher.update(album.to_lowercase().as_bytes());
+    format!("{:x}", hasher.finalize())[..16].to_string() // First 16 hex chars
+}
+```
+
+**Example:**
+```
+Artist: "Kendrick Lamar"
+Album: "DAMN."
+Cache Key: "a3f7c9e2b1d4f6a8"
+Cache Path: "%APPDATA%/flux-player/cache/images/album-art/a3f7c9e2b1d4f6a8.jpg"
+```
+
+All 14 tracks from "DAMN." will reference the **same cached file**.
+
+---
+
+### **Manual Refresh Behavior**
+
+When the user clicks the **"Refresh Metadata"** button in the Detail Panel:
+
+```rust
+pub async fn refresh_audio_metadata(path: &Path) -> Result<(), Error> {
+    // 1. Re-extract metadata (in case tags were updated)
+    let new_metadata = extract_basic_metadata(path);
+    
+    // 2. Check if album art cache still exists
+    let cache_key = generate_cache_key(&new_metadata.artist, &new_metadata.album);
+    let cache_path = format!("{}/album-art/{}.jpg", cache_dir, cache_key);
+    
+    if !Path::new(&cache_path).exists() {
+        // Cache was deleted or album changed → re-extract
+        if let Ok(art) = extract_album_art(path) {
+            fs::write(&cache_path, art)?;
+        }
+    }
+    
+    // 3. Update SQLite with new metadata + existing cache path
+    update_media_in_db(path, new_metadata)?;
+    
+    Ok(())
+}
+```
+
+---
+
+### **Global Refresh (Titlebar Button)**
+
+The **Global Refresh** button should:
+1. ✅ Re-scan all Base Folders for new/removed files
+2. ✅ Update SQLite with any metadata changes
+3. ❌ **NOT** re-extract album art from files that already have cached images
+4. ✅ Only extract art for **newly added** files
+
+```rust
+pub async fn global_refresh() {
+    for folder in get_base_folders() {
+        for file in scan_directory(folder) {
+            if !file_exists_in_db(&file.path) {
+                // New file → full scan including art extraction
+                let metadata = scan_audio_file(&file.path).await;
+                insert_into_db(metadata);
+            } else {
+                // Existing file → only update lightweight metadata (duration, tags)
+                let basic_meta = extract_basic_metadata(&file.path);
+                update_db(file.path, basic_meta);
+                // Album art cache remains untouched
+            }
+        }
+    }
+}
+```

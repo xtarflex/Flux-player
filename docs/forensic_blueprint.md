@@ -636,4 +636,16 @@ This allows subtitles to be bound dynamically WITHOUT reloading the video player
 
 ---
 
-These implementations complete the technical foundations for Flux's playlist, queue, volume control, and subtitle systems.
+## 18. Audio Album Art Caching (Deduplication & Hashing)
+
+**Goal:** Efficiently manage album art by caching once per album, rather than once per file.
+
+*   **Deduplication Strategy:** Instead of naming cache files by a random UUID or the song title, Flux uses a deterministic hash based on `lowercase(artist + album)`.
+*   **Hash Algorithm:** SHA-256 is used via the `sha2` crate. We truncate the resulting hex string to the first 16 characters for filename brevity.
+*   **The Cache Path:** `%APPDATA%/flux-player/cache/images/album-art/[HASH].jpg`.
+*   **Asset Serving:** The frontend receives an `asset://localhost/` path pointing to this cache. This bypasses the need for the browser to re-request or the backend to re-extract the same image across multiple tracks in the same album.
+*   **Fallback Sequence:** Embedded Art → Local Cache (Check) → Online Discovery (MusicBrainz) → Flux Logo (UI Fallback).
+
+---
+
+These implementations complete the technical foundations for Flux's playlist, queue, volume control, subtitle, and audio caching systems.
