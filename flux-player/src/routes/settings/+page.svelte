@@ -56,30 +56,32 @@
     display: flex;
     height: 100%;
     color: var(--text-main);
+    background: transparent;
   }
 
   .settings-sidebar {
     width: 280px;
-    padding: 2rem;
-    border-right: 1px solid var(--border);
+    padding: 2.5rem 2rem;
+    border-right: 1px solid var(--glass-border-low);
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 2.5rem;
+    background: rgba(0, 0, 0, 0.2);
   }
 
   .settings-title {
-    font-family: 'Syncopate', sans-serif;
-    font-weight: bold;
-    letter-spacing: 0.05em;
-    font-size: 1.5rem;
-    color: var(--primary);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    font-size: 1.25rem;
+    color: var(--secondary);
     margin: 0;
   }
 
   .settings-nav {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   .nav-item {
@@ -87,29 +89,34 @@
     border: none;
     color: var(--text-muted);
     text-align: left;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-    font-size: 1rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    border: 1px solid transparent;
   }
 
   .nav-item:hover {
     color: var(--text-main);
-    background: var(--bg-surface);
+    background: var(--glass-bg-low);
+    border-color: var(--glass-border-low);
   }
 
   .nav-item.active {
-    color: var(--text-main);
-    background: var(--bg-surface);
-    font-weight: 600;
-    border-left: 3px solid var(--primary);
+    color: var(--secondary);
+    background: var(--glass-bg-mid);
+    font-weight: 700;
+    border: 1px solid var(--glass-border-mid);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
 
   .settings-content {
     flex: 1;
     padding: 3rem;
     overflow-y: auto;
+    background: var(--bg-base);
   }
 </style>

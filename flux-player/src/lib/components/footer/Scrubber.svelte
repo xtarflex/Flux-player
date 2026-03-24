@@ -1,8 +1,15 @@
 <script lang="ts">
-  let { progress = $bindable(0) } = $props<{ progress?: number }>();
+  let { 
+    progress = $bindable(0),
+    disabled = false
+  } = $props<{ 
+    progress?: number,
+    disabled?: boolean
+  }>();
   let isDragging = $state(false);
 
   function calculateProgress(e: PointerEvent, element: HTMLElement) {
+    if (disabled) return;
     const rect = element.getBoundingClientRect();
     let newProgress = (e.clientX - rect.left) / rect.width;
     newProgress = Math.max(0, Math.min(1, newProgress));
@@ -10,13 +17,14 @@
   }
 
   function onPointerDown(e: PointerEvent) {
+    if (disabled) return;
     isDragging = true;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     calculateProgress(e, e.currentTarget as HTMLElement);
   }
 
   function onPointerMove(e: PointerEvent) {
-    if (!isDragging) return;
+    if (!isDragging || disabled) return;
     calculateProgress(e, e.currentTarget as HTMLElement);
   }
 
@@ -28,6 +36,7 @@
 
 <div 
   class="scrubber-container"
+  class:disabled
   onpointerdown={onPointerDown}
   onpointermove={onPointerMove}
   onpointerup={onPointerUp}
@@ -36,11 +45,13 @@
   aria-valuemin="0"
   aria-valuemax="100"
   aria-valuenow={Math.round(progress * 100)}
-  tabindex="0"
+  tabindex={disabled ? -1 : 0}
 >
   <div class="scrubber-track">
-    <div class="scrubber-fill" style="width: {progress * 100}%"></div>
-    <div class="scrubber-thumb" style="left: {progress * 100}%"></div>
+    {#if !disabled}
+      <div class="scrubber-fill" style="width: {progress * 100}%"></div>
+      <div class="scrubber-thumb" style="left: {progress * 100}%"></div>
+    {/if}
   </div>
 </div>
 
@@ -57,6 +68,16 @@
 
   .scrubber-container:hover {
     height: 8px;
+  }
+
+  .scrubber-container.disabled {
+    cursor: not-allowed;
+    height: 6px; 
+    opacity: 0.3;
+  }
+
+  .scrubber-container.disabled:hover {
+    height: 6px;
   }
 
   .scrubber-track {

@@ -106,12 +106,14 @@
   .titlebar {
     grid-area: titlebar;
     height: var(--titlebar-height);
-    background: var(--bg-base);
+    background: var(--glass-bg-low);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--glass-border-low);
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     user-select: none;
     z-index: 10000;
   }

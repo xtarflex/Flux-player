@@ -69,7 +69,9 @@
 <style>
   .sidebar {
     grid-area: sidebar;
-    background: var(--bg-base);
+    background: var(--glass-bg-low);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border-right: 1px solid var(--glass-border-low);
     display: flex;
     flex-direction: column;

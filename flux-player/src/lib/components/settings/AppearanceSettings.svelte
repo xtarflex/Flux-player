@@ -2,7 +2,7 @@
   let uiTheme = $state('Cyber Dark');
 
   const themes = [
-    { name: 'Cyber Dark', description: 'Deep blacks with Electric Violet accents.', icon: '🌙' },
+    { name: 'Cyber Dark', description: 'Deep blacks with Cyan accents.', icon: '🌙' },
     { name: 'Neon High Contrast', description: 'Brighter edges for maximum legibility.', icon: '⚡' },
     { name: 'Adaptive Tint', description: 'Dynamically shifts colors based on playing media.', icon: '🎨' }
   ];
@@ -31,23 +31,6 @@
       {/each}
     </div>
   </div>
-
-  <div class="card immutable-info">
-    <h3>Core Identity Elements</h3>
-    <p class="description">Certain elements are locked to maintain the premium Flux aesthetic.</p>
-
-    <ul class="locked-list">
-      <li>
-        <strong>Typography:</strong> Syncopate (Headings) & Outfit (Body) are core to the brand.
-      </li>
-      <li>
-        <strong>Macro Layout:</strong> The CSS Grid is highly optimized for performance.
-      </li>
-      <li>
-        <strong>Animation Timing:</strong> Physics are tuned for a consistent "zero-gravity" feel.
-      </li>
-    </ul>
-  </div>
 </div>
 
 <style>
@@ -59,10 +42,10 @@
   }
 
   h2 {
-    color: var(--primary);
+    color: var(--secondary);
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--glass-border-low);
     padding-bottom: 1rem;
   }
 
@@ -73,10 +56,10 @@
   }
 
   .card {
-    background: var(--bg-surface);
+    background: var(--glass-bg-mid);
     padding: 2rem;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-low);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -102,21 +85,20 @@
     gap: 1rem;
     padding: 1.5rem;
     border-radius: 12px;
-    background: var(--bg-base);
-    border: 2px solid var(--border-light);
+    background: var(--glass-bg-low);
+    border: 2px solid var(--glass-border-mid);
     cursor: pointer;
     position: relative;
     transition: all 0.2s ease;
   }
 
   .theme-card:hover {
-    border-color: rgba(138, 43, 226, 0.5); /* Semi-transparent primary */
-    transform: translateY(-2px);
+    border-color: var(--secondary-muted);
   }
 
   .theme-card.active {
-    border-color: var(--primary);
-    background: rgba(138, 43, 226, 0.05);
+    border-color: var(--secondary);
+    background: rgba(0, 255, 255, 0.05);
   }
 
   .theme-card input[type="radio"] {
@@ -151,31 +133,13 @@
     right: 1rem;
     width: 24px;
     height: 24px;
-    background: var(--primary);
-    color: white;
+    background: var(--secondary); /* Standardized to Cyan */
+    color: var(--bg-base);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.8rem;
     font-weight: bold;
-  }
-
-  .immutable-info {
-    border-style: dashed;
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  .locked-list {
-    margin: 0;
-    padding-left: 1.5rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    line-height: 1.6;
-  }
-
-  .locked-list strong {
-    color: var(--text-main);
-    font-weight: 500;
   }
 </style>

@@ -2,9 +2,16 @@
 > flux-player@0.1.0 dev
 > vite dev
 
-error when starting dev server:
-Error: Port 1420 is already in use
-    at Server.onError (file:///app/flux-player/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:25023:18)
-    at Server.emit (node:events:519:28)
-    at emitErrorNT (node:net:1976:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+▲ [WARNING] Cannot find base config file "./.svelte-kit/tsconfig.json" [tsconfig.json]
+
+    tsconfig.json:2:13:
+      2 │   "extends": "./.svelte-kit/tsconfig.json",
+        ╵              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+8:44:14 PM [vite] (client) Forced re-optimization of dependencies
+
+  VITE v6.4.1  ready in 2072 ms
+
+  ➜  Local:   http://localhost:1420/
+
+[1;31m[404] GET /settings[0m

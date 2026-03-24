@@ -1,362 +1,556 @@
 <script lang="ts">
+  /**
+   * @file DetailPanel.svelte
+   * @description Library Detail Panel — displays metadata for the selected media item.
+   * Sits inside the split-view container. Matches the Library Detail mockup.
+   */
   import { mediaItems, selectedMediaId } from '$lib/stores/media';
   import { derived } from 'svelte/store';
 
-  export let isOpen = false;
-
   const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]) => {
-    return $items.find(i => i.id === $id) || null;
+    return $items.find((item: typeof $items[0]) => item.id === $id) || null;
   });
-
-  function closePanel() {
-    isOpen = false;
-  }
 </script>
 
-<aside class="detail-panel" class:open={isOpen}>
+<aside class="detail-panel">
   {#if $selectedItem}
-    <div class="hero-section">
-      <div class="backdrop" style="background-image: url('{$selectedItem.backdrop}')"></div>
+    <!-- Cinematic Header: Backdrop + Hero Row Overlay -->
+    <div class="cinematic-header">
+      {#key $selectedItem.id}
+        <!-- Backdrop Layer -->
+        <div class="backdrop-wrapper">
+          <div 
+            class="backdrop-image" 
+            style="background-image: url('{$selectedItem.backdrop || '/flux_backdrop.png'}')"
+          ></div>
+          <div class="backdrop-overlay"></div>
+        </div>
 
-      <div class="hero-content">
-        <div class="poster" style="background-image: url('{$selectedItem.poster}')"></div>
-        <div class="metadata">
+      <!-- Content Layer: Poster + Title Info -->
+      <div class="hero-row">
+        <!-- Poster -->
+        <div class="poster">
+          {#if $selectedItem.poster && !$selectedItem.poster.includes('flux2d')}
+            <img src={$selectedItem.poster} alt={$selectedItem.title} class="poster-img" />
+          {:else}
+            <div class="poster-placeholder">
+              <img src="/flux2d.png" alt="Flux" />
+            </div>
+          {/if}
+        </div>
+
+        <!-- Title / Meta -->
+        <div class="title-block">
           <h2 class="title">{$selectedItem.title}</h2>
-          <div class="info-row">
-            <span>{$selectedItem.year}</span>
-            <span class="separator">•</span>
-            <span>{$selectedItem.duration}</span>
-            <span class="separator">•</span>
-            <span class="rating">★ {$selectedItem.rating.toFixed(1)}</span>
-          </div>
-          <div class="genres">
-            {#each $selectedItem.genres as genre}
-              <span class="genre-badge">{genre}</span>
-            {/each}
-          </div>
+
+          {#if $selectedItem.type === 'audio'}
+            <!-- Audio Artist/Album Card beside poster -->
+            <div class="artist-card artist-card--side">
+              <div class="card-group">
+                <span class="card-label">ARTIST</span>
+                <span class="card-value">{$selectedItem.artist}</span>
+              </div>
+              <div class="card-group">
+                <span class="card-label">ALBUM</span>
+                <span class="card-value">{$selectedItem.album}</span>
+              </div>
+            </div>
+          {:else}
+            <!-- Video Badges/Genres beside poster -->
+            <div class="badges">
+              <span class="badge">{$selectedItem.year}</span>
+              <span class="badge">{$selectedItem.duration}</span>
+              {#if $selectedItem.rating > 0}
+                <span class="badge badge--rating">★ {$selectedItem.rating.toFixed(1)}</span>
+              {/if}
+            </div>
+
+            {#if $selectedItem.genres.length > 0}
+              <div class="genre-tags">
+                {#each $selectedItem.genres as genre}
+                  <span class="genre-tag">{genre}</span>
+                {/each}
+              </div>
+            {/if}
+          {/if}
         </div>
       </div>
+      {/key}
     </div>
 
-    <div class="scrollable-content">
-      <p class="synopsis">{$selectedItem.synopsis}</p>
+    <!-- Body Information -->
+    <div class="body-content">
+      
+      {#if $selectedItem.type === 'audio'}
+        <!-- Visualizer Button -->
+        <button class="btn-play">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+          Visualizer
+        </button>
+      {:else}
+        <!-- Video Specific Synopsis -->
+        {#if $selectedItem.synopsis && $selectedItem.synopsis !== 'No synopsis available.' && $selectedItem.synopsis !== 'Audio track.'}
+          <p class="synopsis">{$selectedItem.synopsis}</p>
+        {/if}
 
-      <button class="play-btn">
-        <span class="icon">▶</span> Play
-      </button>
+        <!-- Play Button -->
+        <button class="btn-play">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+          Play {$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}
+        </button>
+      {/if}
 
+      <!-- === Subtitle Row (Shared) === -->
       <div class="subtitle-row">
-        <span class="label">Subtitle:</span>
-        <span class="value">{$selectedItem.subtitle}</span>
+        <span class="sub-label">Subtitle:</span>
+        <span class="sub-value">{$selectedItem.subtitle}</span>
         <button class="change-btn">Change</button>
       </div>
 
-      <div class="metadata-grid">
-        <div class="metadata-row">
-          <span class="row-label">TITLE</span>
-          <span class="row-value">{$selectedItem.title}</span>
-        </div>
-        <div class="metadata-row">
-          <span class="row-label">ARTIST</span>
-          <span class="row-value">{$selectedItem.artist}</span>
-        </div>
-        <div class="metadata-row">
-          <span class="row-label">ALBUM</span>
-          <span class="row-value">{$selectedItem.album}</span>
-        </div>
-        {#if $selectedItem.director && $selectedItem.director !== "Unknown"}
-          <div class="metadata-row">
-            <span class="row-label">DIRECTOR</span>
-            <span class="row-value">{$selectedItem.director}</span>
+      <!-- === Metadata Table === -->
+      <div class="meta-table">
+        <div class="meta-row">
+          <span class="meta-key">TITLE</span>
+          <span class="meta-val">{$selectedItem.title}</span>
+          <div class="meta-actions">
+            <button class="icon-action" title="Edit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            {#if $selectedItem.type !== 'audio'}
+              <button class="icon-action" title="Reset">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                </svg>
+              </button>
+            {/if}
           </div>
-        {/if}
-        {#if $selectedItem.starring && $selectedItem.starring !== "Unknown"}
-          <div class="metadata-row">
-            <span class="row-label">STARRING</span>
-            <span class="row-value">{$selectedItem.starring}</span>
+        </div>
+
+        {#if $selectedItem.type === 'audio'}
+          <!-- Audio Table -->
+          <div class="meta-row">
+            <span class="meta-key">ARTIST</span>
+            <span class="meta-val">{$selectedItem.artist}</span>
+            <div class="meta-actions"><button class="icon-action" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
           </div>
+          <div class="meta-row">
+            <span class="meta-key">ALBUM</span>
+            <span class="meta-val">{$selectedItem.album}</span>
+            <div class="meta-actions"><button class="icon-action" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+          </div>
+        {:else}
+          <!-- Video Table -->
+          {#if $selectedItem.director && $selectedItem.director !== 'Unknown'}
+            <div class="meta-row">
+              <span class="meta-key">DIRECTOR</span>
+              <span class="meta-val">{$selectedItem.director}</span>
+            </div>
+          {/if}
+          {#if $selectedItem.starring && $selectedItem.starring !== 'Unknown'}
+            <div class="meta-row">
+              <span class="meta-key">STARRING</span>
+              <span class="meta-val">{$selectedItem.starring}</span>
+            </div>
+          {/if}
         {/if}
       </div>
     </div>
+
   {:else}
+    <!-- Empty / no selection -->
     <div class="empty-state">
+      <img src="/flux2d.png" alt="Flux" class="empty-logo" />
       <p>Select an item to view details</p>
     </div>
   {/if}
 </aside>
 
 <style>
+  /* ===================== Layout ===================== */
   .detail-panel {
-    position: fixed;
-    top: var(--titlebar-height);
-    right: -100%;
-    bottom: var(--footer-height);
-    width: 35%;
-    min-width: 400px;
-    max-width: 600px;
-    background-color: var(--bg-surface);
-    border-left: 1px solid rgba(138, 43, 226, 0.2);
-    transition: right 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-    z-index: 100;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border-low);
+    border-radius: 24px;
+    backdrop-filter: blur(24px);
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    scrollbar-width: thin;
+    scrollbar-color: var(--glass-border-high) transparent;
+  }
+
+  .detail-panel::-webkit-scrollbar { width: 4px; }
+  .detail-panel::-webkit-scrollbar-track { background: transparent; }
+  .detail-panel::-webkit-scrollbar-thumb { background: var(--glass-border-high); border-radius: 4px; }
+
+  /* ===================== Cinematic Header ===================== */
+  .cinematic-header {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end; /* Push content back down slightly */
+    padding: 48px 24px 24px 24px;
     overflow: hidden;
   }
 
-  .detail-panel.open {
-    right: 0;
-  }
-
-  .hero-section {
-    position: relative;
-    height: 40%;
-    min-height: 250px;
-    flex-shrink: 0;
-  }
-
-  .backdrop {
+  .backdrop-wrapper {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .backdrop-image {
+    width: 100%;
+    height: 100%;
     background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: brightness(0.7);
+    background-position: center 20%;
+    filter: brightness(0.6) contrast(1.15);
+    /* Balanced 8s cinematic loop */
+    animation: kenBurns 8s infinite alternate cubic-bezier(0.445, 0.05, 0.55, 0.95);
   }
 
-  .backdrop::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(26,26,31,0.8) 100%);
+  @keyframes kenBurns {
+    from { transform: scale(1.0) translate(0, 0); }
+    to   { transform: scale(1.18) translate(1%, 2%); }
   }
 
-  .hero-content {
+  .backdrop-overlay {
     position: absolute;
-    bottom: -80px;
-    left: 24px;
-    right: 24px;
+    inset: 0;
+    background: linear-gradient(
+      to bottom, 
+      rgba(0, 0, 0, 0.1) 0%, 
+      rgba(0, 0, 0, 0.3) 50%, 
+      var(--bg-surface) 100%
+    );
+  }
+
+  .hero-row {
+    position: relative;
+    z-index: 1;
     display: flex;
+    gap: 20px;
     align-items: flex-end;
-    gap: 24px;
-    z-index: 2;
+    width: 100%;
   }
 
   .poster {
-    width: 180px;
-    height: 270px;
-    background-size: cover;
-    background-position: center;
-    border: 2px solid rgba(138, 43, 226, 0.5);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    width: 140px;
+    aspect-ratio: 2 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    /* Solid matte background for transparent artwork */
+    background: rgba(15, 15, 15, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     flex-shrink: 0;
-    background-color: var(--bg-base); /* fallback */
-  }
-
-  .metadata {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-bottom: 84px; /* Account for the poster extending below */
-    flex-grow: 1;
-    overflow: hidden;
-  }
-
-  .title {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 24px;
-    color: #f8f9fa;
-    letter-spacing: 0.05em;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-  }
-
-  .info-row {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: rgba(248, 249, 250, 0.7);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .separator {
-    font-size: 16px;
-  }
-
-  .rating {
-    color: #ffd700;
-  }
-
-  .genres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .genre-badge {
-    background: rgba(138, 43, 226, 0.2);
-    border: 1px solid rgba(138, 43, 226, 0.4);
-    border-radius: 12px;
-    padding: 4px 12px;
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: #f8f9fa;
-  }
-
-  .scrollable-content {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 100px 24px 24px 24px; /* Top padding to clear the poster */
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .synopsis {
-    font-family: var(--font-body);
-    font-size: 15px;
-    line-height: 1.6;
-    color: rgba(248, 249, 250, 0.8);
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .play-btn {
-    width: 100%;
-    height: 48px;
-    background: linear-gradient(90deg, #8a2be2, #00ffff);
-    border: none;
-    border-radius: 8px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 16px;
-    color: #ffffff;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    transition: all 0.2s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    position: relative;
   }
 
-  .play-btn:hover {
-    filter: brightness(1.1);
-    transform: scale(1.02);
+  .poster::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+    pointer-events: none;
   }
 
-  .subtitle-row {
+  .poster-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .poster-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.3;
+  }
+
+  .poster-placeholder img {
+    width: 50%;
+    object-fit: contain;
+  }
+
+  /* ===================== Body Information ===================== */
+  .body-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 24px 32px 24px;
+  }
+
+  /* ===================== Audio Specific Card ===================== */
+  .artist-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .artist-card--side {
+    margin-bottom: 0;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .card-group {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
+    width: 100%;
+    gap: 12px;
   }
 
-  .label {
-    font-family: var(--font-body);
-    font-size: 14px;
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
     color: var(--text-muted);
-  }
-
-  .value {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: var(--secondary);
-    flex-grow: 1;
-    margin-left: 12px;
-  }
-
-  .change-btn {
-    background: rgba(138, 43, 226, 0.2);
-    border: 1px solid rgba(138, 43, 226, 0.4);
-    color: #f8f9fa;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .change-btn:hover {
-    background: rgba(138, 43, 226, 0.4);
-  }
-
-  .metadata-grid {
-    display: flex;
-    flex-direction: column;
-    margin-top: 8px;
-  }
-
-  .metadata-row {
-    display: flex;
-    align-items: center;
-    height: 40px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .metadata-row:last-child {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .row-label {
-    width: 80px;
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
+    letter-spacing: 0.1em;
     flex-shrink: 0;
   }
 
-  .row-value {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: #ffffff;
-    flex-grow: 1;
+  .card-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--secondary);
+    letter-spacing: 0.02em;
+    text-align: right;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .empty-state {
+  /* ===================== Title Block ===================== */
+  .title-block {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .title {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: 0.025em;
+    margin: 0;
+    line-height: 1.25;
+    /* 3-line clamping with ellipses */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .badge {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .badge--rating {
+    background: rgba(255, 200, 0, 0.1);
+    border-color: rgba(255, 200, 0, 0.3);
+    color: gold;
+  }
+
+  .genre-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .genre-tag {
+    background: rgba(0, 255, 255, 0.07);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    color: var(--secondary);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ===================== Synopsis ===================== */
+  .synopsis {
+    font-size: 13px;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0;
+  }
+
+  /* ===================== Play Button ===================== */
+  .btn-play {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    color: var(--text-muted);
+    gap: 10px;
+    width: 100%;
+    height: 42px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 8px;
     font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    color: #000;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: filter 0.2s, transform 0.2s;
   }
 
-  /* Custom Scrollbar */
-  .scrollable-content::-webkit-scrollbar {
-    width: 6px;
+  .btn-play svg { width: 14px; height: 14px; }
+
+  .btn-play:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
   }
-  .scrollable-content::-webkit-scrollbar-track {
-    background: transparent;
+
+  /* ===================== Subtitle Row ===================== */
+  .subtitle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--glass-bg-low);
+    border: 1px solid var(--glass-border-low);
+    border-radius: 8px;
+    flex-shrink: 0;
   }
-  .scrollable-content::-webkit-scrollbar-thumb {
-    background: var(--border-light);
+
+  .sub-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .sub-value {
+    font-size: 13px;
+    color: var(--secondary);
+    flex: 1;
+  }
+
+  .change-btn {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.35);
+    color: var(--text-main);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .change-btn:hover { background: rgba(138, 43, 226, 0.3); }
+
+  /* ===================== Metadata Table ===================== */
+  .meta-table {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--glass-border-low);
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--glass-border-low);
+    gap: 12px;
+  }
+
+  .meta-key {
+    width: 72px;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .meta-val {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .meta-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .icon-action {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
   }
-  .scrollable-content::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
+
+  .icon-action:hover { color: var(--text-main); }
+  .icon-action svg { width: 13px; height: 13px; }
+
+  /* ===================== Empty State ===================== */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 0.25;
+  }
+
+  .empty-logo { width: 56px; }
+
+  .empty-state p {
+    font-size: 13px;
+    color: var(--text-muted);
   }
 </style>

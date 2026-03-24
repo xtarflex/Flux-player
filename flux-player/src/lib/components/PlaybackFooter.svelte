@@ -17,7 +17,7 @@
     currentTime: string;
     poster?: string;
   }>({
-    type: 'audio', 
+    type: null, 
     title: '',
     duration: '',
     currentTime: ''
@@ -106,7 +106,7 @@
   class="playback-footer" 
   role="contentinfo"
 >
-  <Scrubber bind:progress />
+  <Scrubber bind:progress disabled={!hasMedia} />
 
   <div class="footer-content">
     <MediaInfo {currentMedia} {hasMedia} bind:isLiked={isLiked} />
@@ -131,10 +131,10 @@
     grid-area: footer;
     height: var(--footer-height);
     width: 100%;
-    background: rgba(26, 26, 31, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border-light);
+    background: var(--glass-bg-mid);
+    backdrop-filter: blur(25px) saturate(160%);
+    -webkit-backdrop-filter: blur(25px) saturate(160%);
+    border-top: 1px solid var(--glass-border-low);
     z-index: 9997;
     position: relative;
     display: flex;

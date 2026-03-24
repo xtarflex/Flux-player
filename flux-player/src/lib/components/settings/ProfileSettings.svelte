@@ -52,10 +52,10 @@
   }
 
   h2 {
-    color: var(--primary);
+    color: var(--secondary);
     font-size: 1.5rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--glass-border-low);
     padding-bottom: 1rem;
   }
 
@@ -69,10 +69,10 @@
     display: flex;
     gap: 2rem;
     align-items: flex-start;
-    background: var(--bg-surface);
+    background: var(--glass-bg-mid);
     padding: 2rem;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-low);
   }
 
   .avatar-container {
@@ -82,16 +82,16 @@
     gap: 1rem;
   }
 
-  /* Using the squircle mask, making it 128x128 */
   .avatar {
     width: 128px;
     height: 128px;
-    background: var(--bg-base);
+    background: var(--glass-bg-low);
     clip-path: path('M 0,64 C 0,0 0,0 64,0 C 128,0 128,0 128,64 C 128,128 128,128 64,128 C 0,128 0,128 0,64 Z');
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    border: 1px solid var(--glass-border-mid);
   }
 
   .avatar img {
@@ -119,19 +119,20 @@
   }
 
   input[type="text"] {
-    background: var(--bg-base);
-    border: 1px solid var(--border-light);
+    background: var(--glass-bg-low);
+    border: 1px solid var(--glass-border-mid);
     color: var(--text-main);
     padding: 0.75rem 1rem;
     border-radius: 8px;
     font-family: var(--font-body);
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
   }
 
   input[type="text"]:focus {
-    border-color: var(--primary);
+    border-color: var(--secondary);
+    background: var(--glass-bg-mid);
   }
 
   .help-text {
@@ -142,9 +143,9 @@
   .btn-outline {
     background: transparent;
     color: var(--text-main);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-mid);
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-family: var(--font-body);
     font-size: 0.9rem;
@@ -152,8 +153,9 @@
   }
 
   .btn-outline:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+    border-color: var(--secondary);
+    background: rgba(0, 255, 255, 0.05);
+    color: var(--secondary);
   }
 
   .stats-section {
@@ -169,7 +171,8 @@
   .stat-card {
     padding: 1.5rem;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-low);
+    background: var(--glass-bg-mid);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -197,11 +200,12 @@
   }
 
   .genre-tag {
-    background: rgba(138, 43, 226, 0.15); /* Primary with opacity */
-    color: var(--primary);
+    background: rgba(0, 255, 255, 0.1);
+    color: var(--secondary);
     padding: 0.25rem 0.75rem;
     border-radius: 100px;
     font-size: 0.85rem;
     font-weight: 500;
+    border: 1px solid rgba(0, 255, 255, 0.2);
   }
 </style>

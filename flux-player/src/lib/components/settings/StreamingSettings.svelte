@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Dropdown from '../ui/Dropdown.svelte';
   let tmdbKey = $state('');
   let streamingQuality = $state('Best Available');
   let isCheatSheetOpen = $state(false);
@@ -65,14 +66,9 @@
     <h3>Streaming Quality</h3>
     <div class="setting-row">
       <div class="setting-info">
-        <label for="streamingQuality">Maximum Quality Cap</label>
         <span class="description">Limit resolution to save bandwidth when streaming remote content.</span>
       </div>
-      <select id="streamingQuality" bind:value={streamingQuality}>
-        {#each qualities as quality}
-          <option value={quality}>{quality}</option>
-        {/each}
-      </select>
+      <Dropdown options={qualities} bind:value={streamingQuality} label="Maximum Quality Cap" />
     </div>
   </div>
 </div>
@@ -86,10 +82,10 @@
   }
 
   h2 {
-    color: var(--primary);
+    color: var(--secondary);
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--glass-border-low);
     padding-bottom: 1rem;
   }
 
@@ -107,10 +103,10 @@
   }
 
   .card {
-    background: var(--bg-surface);
+    background: var(--glass-bg-mid);
     padding: 2rem;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-low);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -148,36 +144,38 @@
 
   input[type="password"] {
     flex: 1;
-    background: var(--bg-base);
+    background: var(--glass-bg-low);
     color: var(--text-main);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-mid);
     padding: 0.75rem 1rem;
-    border-radius: 6px;
+    border-radius: 8px;
     font-family: monospace;
     font-size: 0.95rem;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
   }
 
   input[type="password"]:focus {
-    border-color: var(--primary);
+    border-color: var(--secondary);
+    background: var(--glass-bg-mid);
   }
 
   .btn-primary {
-    background: var(--primary);
-    color: white;
+    background: var(--secondary);
+    color: var(--bg-base);
     border: none;
     padding: 0.75rem 1.5rem;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-family: var(--font-body);
-    font-weight: 600;
-    transition: background 0.2s ease;
+    font-weight: 700;
+    transition: all 0.2s ease;
     white-space: nowrap;
   }
 
   .btn-primary:hover {
-    background: #9b4dff;
+    background: #00e5e5;
+    transform: translateY(-1px);
   }
 
   .btn-text {
@@ -188,19 +186,22 @@
     font-size: 0.85rem;
     cursor: pointer;
     text-align: left;
-    text-decoration: underline;
+    text-decoration: none;
     align-self: flex-start;
+    font-weight: 500;
+    transition: color 0.2s ease;
   }
 
   .btn-text:hover {
-    color: #fff;
+    color: var(--text-main);
   }
 
   /* Cheat Sheet */
   .cheat-sheet {
     padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border-mid);
+    background: var(--glass-bg-low);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -226,19 +227,20 @@
   }
 
   .copy-field .value {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 0.5rem 0.75rem;
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.65rem 0.85rem;
+    border-radius: 6px;
     font-family: monospace;
     font-size: 0.85rem;
     color: #e0e0e0;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border-low);
   }
 
   .setting-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 2rem;
   }
 
   .setting-info {
@@ -246,22 +248,5 @@
     flex-direction: column;
     gap: 0.25rem;
     flex: 1;
-  }
-
-  select {
-    background: var(--bg-base);
-    color: var(--text-main);
-    border: 1px solid var(--border-light);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    outline: none;
-    cursor: pointer;
-    min-width: 150px;
-  }
-
-  select:focus {
-    border-color: var(--primary);
   }
 </style>

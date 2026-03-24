@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Dropdown from '../ui/Dropdown.svelte';
   let hwAcceleration = $state(true);
   let ffmpegThreading = $state('Auto');
   let watchedThreshold = $state(90); // percent
@@ -35,14 +36,9 @@
 
     <div class="setting-row">
       <div class="setting-info">
-        <label for="ffmpegThreading">FFmpeg Threading</label>
         <span class="description">Control CPU core allocation for the rendering pipeline.</span>
       </div>
-      <select id="ffmpegThreading" bind:value={ffmpegThreading}>
-        {#each threadingOptions as opt}
-          <option value={opt}>{opt}</option>
-        {/each}
-      </select>
+      <Dropdown options={threadingOptions} bind:value={ffmpegThreading} label="FFmpeg Threading" />
     </div>
 
     <div class="setting-row">
@@ -111,16 +107,9 @@
 
     <div class="setting-row">
       <div class="setting-info">
-        <label for="subtitleLanguage">Preferred Language</label>
         <span class="description">Default language for selected subtitles.</span>
       </div>
-      <select id="subtitleLanguage" bind:value={subtitleLanguage}>
-        <option value="System Default">System Default</option>
-        <option value="English">English</option>
-        <option value="Spanish">Spanish</option>
-        <option value="French">French</option>
-        <option value="Japanese">Japanese</option>
-      </select>
+      <Dropdown options={['System Default', 'English', 'Spanish', 'French', 'Japanese']} bind:value={subtitleLanguage} label="Preferred Language" />
     </div>
 
     <div class="setting-row">
@@ -156,7 +145,6 @@
       </div>
     </div>
   </div>
-
 </div>
 
 <style>
@@ -168,10 +156,10 @@
   }
 
   h2 {
-    color: var(--primary);
+    color: var(--secondary);
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--glass-border-low);
     padding-bottom: 1rem;
   }
 
@@ -182,10 +170,10 @@
   }
 
   .card {
-    background: var(--bg-surface);
+    background: var(--glass-bg-mid);
     padding: 2rem;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-low);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -195,7 +183,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--glass-border-low);
     padding-bottom: 1.5rem;
   }
 
@@ -227,51 +215,35 @@
     margin: 0;
   }
 
-  /* Form Elements */
-  select {
-    background: var(--bg-base);
-    color: var(--text-main);
-    border: 1px solid var(--border-light);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    outline: none;
-    cursor: pointer;
-    min-width: 150px;
-  }
-
-  select:focus {
-    border-color: var(--primary);
-  }
-
+  /* Input elements */
   .input-group {
     display: flex;
     gap: 0.5rem;
   }
 
   input[type="text"] {
-    background: var(--bg-base);
+    background: var(--glass-bg-low);
     color: var(--text-main);
-    border: 1px solid var(--border-light);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border: 1px solid var(--glass-border-mid);
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
     font-family: var(--font-body);
     font-size: 0.95rem;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
   }
 
   input[type="text"]:focus {
-    border-color: var(--primary);
+    border-color: var(--secondary);
+    background: var(--glass-bg-mid);
   }
 
   .btn-outline {
     background: transparent;
     color: var(--text-main);
-    border: 1px solid var(--border-light);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border: 1px solid var(--glass-border-mid);
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
     cursor: pointer;
     font-family: var(--font-body);
     font-weight: 500;
@@ -279,8 +251,9 @@
   }
 
   .btn-outline:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+    border-color: var(--secondary);
+    color: var(--secondary);
+    background: rgba(0, 255, 255, 0.05);
   }
 
   /* Radio Group Styles */
@@ -297,6 +270,12 @@
     gap: 0.75rem;
     cursor: pointer;
     font-size: 0.95rem;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+  }
+
+  .radio-label:hover {
+    color: var(--text-main);
   }
 
   .radio-label input[type="radio"] {
@@ -304,33 +283,37 @@
   }
 
   .radio-custom {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    border: 2px solid var(--border-light);
+    border: 2px solid var(--glass-border-high);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .radio-label input[type="radio"]:checked + .radio-custom {
-    border-color: var(--primary);
+    border-color: var(--secondary);
+    background: rgba(0, 255, 255, 0.1);
   }
 
   .radio-label input[type="radio"]:checked + .radio-custom::after {
     content: '';
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--secondary);
+    box-shadow: 0 0 8px var(--secondary);
   }
 
   .help-text {
     font-size: 0.8rem;
     color: var(--secondary);
-    margin-left: 1.75rem;
+    opacity: 0.8;
+    margin-left: 2rem;
     margin-top: -0.25rem;
+    font-weight: 500;
   }
 
   /* Slider Container */
@@ -342,45 +325,44 @@
   }
 
   input[type="range"] {
-    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     background: transparent;
   }
 
   input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 16px;
-    width: 16px;
+    appearance: none;
+    height: 18px;
+    width: 18px;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--secondary);
     cursor: pointer;
-    margin-top: -6px;
+    margin-top: -7px;
+    border: 2px solid var(--bg-base);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
   }
 
   input[type="range"]::-webkit-slider-runnable-track {
     width: 100%;
     height: 4px;
     cursor: pointer;
-    background: var(--border-light);
-    border-radius: 2px;
-  }
-
-  input[type="range"]:focus::-webkit-slider-runnable-track {
-    background: var(--primary);
+    background: var(--glass-border-mid);
+    border-radius: 4px;
   }
 
   .slider-marks {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
+    font-weight: 600;
   }
 
   /* Switch */
   .switch {
     position: relative;
     display: inline-block;
-    width: 50px;
+    width: 48px;
     height: 24px;
   }
 
@@ -397,42 +379,28 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--border-light);
-    -webkit-transition: .4s;
-    transition: .4s;
+    background-color: var(--glass-border-high);
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 24px;
   }
 
   .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
-    left: 4px;
-    bottom: 4px;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
   }
 
   input:checked + .slider {
-    background-color: var(--primary);
-  }
-
-  input:focus + .slider {
-    box-shadow: 0 0 1px var(--primary);
+    background-color: var(--secondary);
   }
 
   input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
-  }
-
-  .slider.round {
-    border-radius: 24px;
-  }
-
-  .slider.round:before {
-    border-radius: 50%;
+    transform: translateX(24px);
   }
 </style>

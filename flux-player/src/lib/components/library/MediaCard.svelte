@@ -1,6 +1,6 @@
 <script lang="ts">
 
-  let { item, viewMode = 'grid', selected = false } = $props<{
+  let { item, viewMode = 'grid', selected = false, onclick } = $props<{
     item: {
       id: string;
       title: string;
@@ -9,18 +9,28 @@
     };
     viewMode?: 'grid' | 'list' | 'detail';
     selected?: boolean;
+    onclick?: () => void;
   }>();
 
   let hasPoster = $derived(!!item.poster);
 </script>
 
-<div class="media-card" class:fallback={!hasPoster} class:list-mode={viewMode === 'list'} class:selected={selected} >
+<div 
+  class="media-card" 
+  class:fallback={!hasPoster} 
+  class:list-mode={viewMode === 'list'} 
+  class:selected={selected}
+  onclick={onclick}
+  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onclick?.()}
+  role="button"
+  tabindex="0"
+>
   <div class="poster-container">
     {#if hasPoster}
       <img src={item.poster} alt={item.title} class="poster-image" />
     {:else}
       <div class="placeholder-logo">
-        <img src="/flux2d.png" alt="Flux Fallback Logo" />
+        <img src="/flux2d.png" alt="Flux" />
       </div>
     {/if}
   </div>
@@ -55,32 +65,47 @@
   .poster-container {
     aspect-ratio: 2 / 3;
     width: 100%;
-    background: var(--glass-bg-mid);
-    border: 1px solid var(--glass-border-low);
+    /* Solid matte background for transparent artwork */
+    background: rgba(14, 14, 14, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 8px;
     overflow: hidden;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: border-color 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+  .poster-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 20%, transparent 60%);
+    pointer-events: none;
+    z-index: 2; /* Ensures it sits above both image and placeholder logo */
   }
 
   .poster-image {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* allows transparent posters to sit inside gracefully */
-    transition: opacity 0.3s ease;
+    object-fit: cover; 
+    transition: opacity 0.3s ease, transform 1.7s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
-  .fallback .poster-container {
-    background: linear-gradient(135deg, rgba(26,26,31,0.8) 0%, rgba(10,10,12,0.9) 100%);
+  .media-card:hover .poster-image {
+    transform: scale(1.1);
+  }
+
+  .media-card:hover .placeholder-logo {
+    transform: scale(1.1);
   }
 
   .placeholder-logo {
     width: 40%;
     aspect-ratio: 1 / 1;
     opacity: 0.5;
+    transition: transform 1.7s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .placeholder-logo img {

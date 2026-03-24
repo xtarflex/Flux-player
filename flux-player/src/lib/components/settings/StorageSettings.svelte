@@ -106,10 +106,10 @@
   }
 
   h2 {
-    color: var(--primary);
+    color: var(--secondary);
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--glass-border-low);
     padding-bottom: 1rem;
   }
 
@@ -120,10 +120,10 @@
   }
 
   .card {
-    background: var(--bg-surface);
+    background: var(--glass-bg-mid);
     padding: 2rem;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--glass-border-low);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -147,27 +147,28 @@
   }
 
   .btn-primary {
-    background: var(--primary);
-    color: white;
+    background: var(--secondary);
+    color: var(--bg-base);
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
     cursor: pointer;
     font-family: var(--font-body);
-    font-weight: 500;
-    transition: background 0.2s ease;
+    font-weight: 700;
+    transition: all 0.2s ease;
   }
 
   .btn-primary:hover {
-    background: #9b4dff;
+    background: #00e5e5;
+    transform: translateY(-1px);
   }
 
   .btn-outline {
     background: transparent;
     color: var(--text-main);
-    border: 1px solid var(--border-light);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border: 1px solid var(--glass-border-mid);
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
     cursor: pointer;
     font-family: var(--font-body);
     font-weight: 500;
@@ -175,49 +176,59 @@
   }
 
   .btn-outline:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+    border-color: var(--secondary);
+    color: var(--secondary);
+    background: rgba(0, 255, 255, 0.05);
   }
 
   .folder-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
   }
 
   .folder-item {
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: var(--bg-base);
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-light);
+    background: var(--glass-bg-low);
+    padding: 1.25rem;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border-mid);
+    transition: border-color 0.2s ease;
+  }
+
+  .folder-item:hover {
+    border-color: var(--secondary-muted);
   }
 
   .folder-icon {
     font-size: 1.5rem;
+    opacity: 0.8;
   }
 
   .folder-details {
     flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
   }
 
   .folder-path {
     font-family: monospace;
     color: var(--text-main);
     font-size: 0.95rem;
+    word-break: break-all;
   }
 
   .folder-type {
-    font-size: 0.8rem;
-    color: var(--primary);
+    font-size: 0.75rem;
+    color: var(--secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     font-family: var(--font-heading);
-    margin-top: 0.25rem;
+    font-weight: 600;
   }
 
   .btn-icon {
@@ -228,29 +239,34 @@
     cursor: pointer;
     padding: 0 0.5rem;
     line-height: 1;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
   }
 
   .btn-icon:hover {
     color: #ff4444;
+    transform: scale(1.1);
   }
 
   .empty-state {
     text-align: center;
-    padding: 2rem;
+    padding: 3rem;
     color: var(--text-muted);
     font-style: italic;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    border: 1px dashed var(--glass-border-low);
   }
 
   .setting-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 2rem;
   }
 
   .sub-setting {
-    padding-top: 1rem;
-    border-top: 1px dashed var(--border-light);
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--glass-border-low);
     margin-top: -0.5rem;
   }
 
@@ -276,45 +292,44 @@
   }
 
   input[type="range"] {
-    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     background: transparent;
   }
 
   input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 16px;
-    width: 16px;
+    appearance: none;
+    height: 18px;
+    width: 18px;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--secondary);
     cursor: pointer;
-    margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+    margin-top: -7px;
+    border: 2px solid var(--bg-base);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
   }
 
   input[type="range"]::-webkit-slider-runnable-track {
     width: 100%;
     height: 4px;
     cursor: pointer;
-    background: var(--border-light);
-    border-radius: 2px;
-  }
-
-  input[type="range"]:focus::-webkit-slider-runnable-track {
-    background: var(--primary);
+    background: var(--glass-border-mid);
+    border-radius: 4px;
   }
 
   .slider-marks {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
+    font-weight: 600;
   }
 
-  /* The switch - the box around the slider */
+  /* The switch */
   .switch {
     position: relative;
     display: inline-block;
-    width: 50px;
+    width: 48px;
     height: 24px;
   }
 
@@ -331,42 +346,29 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--border-light);
-    -webkit-transition: .4s;
-    transition: .4s;
+    background-color: var(--glass-border-high);
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 24px;
   }
 
   .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
-    left: 4px;
-    bottom: 4px;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
 
   input:checked + .slider {
-    background-color: var(--primary);
-  }
-
-  input:focus + .slider {
-    box-shadow: 0 0 1px var(--primary);
+    background-color: var(--secondary);
   }
 
   input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
-  }
-
-  .slider.round {
-    border-radius: 24px;
-  }
-
-  .slider.round:before {
-    border-radius: 50%;
+    transform: translateX(24px);
   }
 </style>
