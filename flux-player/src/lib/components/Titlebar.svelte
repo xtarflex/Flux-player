@@ -4,7 +4,11 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import ProfileAvatar from './ProfileAvatar.svelte';
   
-  const appWindow = getCurrentWindow();
+  let appWindow: any;
+  // Use a safer check for Tauri context to prevent browser dev errors
+  if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window)) {
+    appWindow = getCurrentWindow();
+  }
 
   let isOnline = $state(true);
   let pcName = $state("FLUX-DEVICE");
