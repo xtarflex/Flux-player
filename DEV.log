@@ -14,4 +14,13 @@
 - **CLEANUP**: Removed root-level `src/` and `src-tauri/` placeholders to avoid "Double-Source" confusion with `flux-player/`.
 
 ---
-*End of initialization log. Ready for Discovery Hub (Target 2).*
+
+## [2026-03-24] - Library Detail Panel & Cinematic UI
+- **ACTION**: Completed the high-fidelity "Island Card" refactor for the Library Detail Panel.
+- **CINEMATIC**: Implemented Netflix-style header with a balanced 8s Ken Burns backdrop animation (resets on item selection via `{#key}`).
+- **PERSONAS**: Created distinct UI logic for Video (Cast/Director/Technical Badges) vs. Audio (Artist/Album Artist Card layouts).
+- **ARCH**: Finalized the "Complete Audio Album Art Caching Flow" (SHA-256 deduplication + `asset://` local serving).
+- **UX**: Cleared the default media selection in the store to ensure a clean "empty state" on startup.
+- **GIT**: Committed cinematic UI refinements and Island card architecture.
+
+*End of Library Detail Panel refinement phase. Roadmap updated.*
