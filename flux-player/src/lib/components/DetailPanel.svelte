@@ -174,7 +174,7 @@
     height: 100%;
     background: var(--bg-surface);
     border: 1px solid var(--glass-border-low);
-    border-radius: 24px;
+    border-radius: 12px;
     backdrop-filter: blur(24px);
     display: flex;
     flex-direction: column;
@@ -409,7 +409,7 @@
 
   /* ===================== Synopsis ===================== */
   .synopsis {
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.65;
     color: rgba(255, 255, 255, 0.65);
     margin: 0;
@@ -428,8 +428,8 @@
     border-radius: 8px;
     font-family: var(--font-body);
     font-weight: 700;
-    font-size: 14px;
-    color: #000;
+    font-size: 16px;
+    color: var(--text-main);
     cursor: pointer;
     flex-shrink: 0;
     transition: filter 0.2s, transform 0.2s;

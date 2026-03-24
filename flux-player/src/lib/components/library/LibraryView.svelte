@@ -2,6 +2,8 @@
   import MediaCard from './MediaCard.svelte';
   import Dropdown from '../ui/Dropdown.svelte';
   import DetailPanel from '../DetailPanel.svelte';
+  import ContextMenu from '../ui/ContextMenu.svelte';
+  import type { MenuItem } from '../ui/context-menu';
   import { mediaItems, selectedMediaId } from '$lib/stores/media';
 
   type ViewMode = 'grid' | 'list' | 'detail';
@@ -92,6 +94,48 @@
       $selectedMediaId = id;
     }
   }
+
+  // Context Menu Logic
+  let menuVisible = $state(false);
+  let menuPos = $state({ x: 0, y: 0 });
+  let menuTarget = $state<any>(null);
+
+  function openMenu(e: MouseEvent, item: any) {
+    menuPos = { x: e.clientX, y: e.clientY };
+    menuTarget = item;
+    menuVisible = true;
+  }
+
+  function handleMenuAction(action: string) {
+    console.log(`Action: ${action} on ${menuTarget?.title}`);
+    // Future: Connect to PlaylistStore and PlayerEngine
+    menuVisible = false;
+  }
+
+  let menuItems = $derived.by(() => {
+    if (!menuTarget) return [] as MenuItem[];
+    
+    return [
+      { label: 'Play Now', action: () => handleMenuAction('play') },
+      { label: 'Add to Queue', action: () => handleMenuAction('queue') },
+      { separator: true },
+      { label: 'Select Item', action: () => handleMenuAction('select') },
+      { 
+        label: 'Add to Playlist', 
+        children: [
+          { label: 'Recently Played', action: () => handleMenuAction('playlist-recent') },
+          { label: 'Favorites', action: () => handleMenuAction('playlist-favs') },
+          { separator: true },
+          { label: '+ New Playlist', action: () => handleMenuAction('playlist-new') },
+        ]
+      },
+      { label: 'Add to Favorite', action: () => handleMenuAction('favorite') },
+      { label: 'Get Subtitles', action: () => handleMenuAction('subtitles') },
+      { label: 'Remove from Library', danger: true, action: () => handleMenuAction('remove') },
+      { separator: true },
+      { label: 'Details', action: () => handleMenuAction('details') },
+    ] as MenuItem[];
+  });
 </script>
 
 <div class="discovery-hub">
@@ -170,6 +214,7 @@
               {viewMode} 
               selected={$selectedMediaId === item.id}
               onclick={() => selectItem(item.id)}
+              onmenu={(e) => openMenu(e, item)}
             />
           {/each}
         {:else}
@@ -180,6 +225,7 @@
               viewMode="list" 
               selected={$selectedMediaId === item.id}
               onclick={() => selectItem(item.id)}
+              onmenu={(e) => openMenu(e, item)}
             />
           {/each}
         {/if}
@@ -193,6 +239,15 @@
     {/if}
   </div>
 </div>
+
+{#if menuVisible}
+  <ContextMenu 
+    x={menuPos.x} 
+    y={menuPos.y} 
+    items={menuItems} 
+    onclose={() => (menuVisible = false)} 
+  />
+{/if}
 
 <style>
   .discovery-hub {

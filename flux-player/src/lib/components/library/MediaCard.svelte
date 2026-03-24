@@ -1,6 +1,6 @@
 <script lang="ts">
 
-  let { item, viewMode = 'grid', selected = false, onclick } = $props<{
+  let { item, viewMode = 'grid', selected = false, onclick, onmenu } = $props<{
     item: {
       id: string;
       title: string;
@@ -10,6 +10,7 @@
     viewMode?: 'grid' | 'list' | 'detail';
     selected?: boolean;
     onclick?: () => void;
+    onmenu?: (e: MouseEvent) => void;
   }>();
 
   let hasPoster = $derived(!!item.poster);
@@ -34,9 +35,27 @@
       </div>
     {/if}
   </div>
+
   <div class="metadata">
     <span class="title" title={item.title}>{item.title}</span>
   </div>
+
+  <!-- Context Menu Button: Transparent, reveals on hover -->
+  <button 
+    class="menu-btn" 
+    aria-label="Media Options"
+    title="Options"
+    onclick={(e) => {
+      e.stopPropagation();
+      onmenu?.(e);
+    }}
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="1.5"></circle>
+      <circle cx="12" cy="5" r="1.5"></circle>
+      <circle cx="12" cy="19" r="1.5"></circle>
+    </svg>
+  </button>
 </div>
 
 <style>
@@ -50,6 +69,7 @@
     border-radius: 12px;
     padding: 6px;
     border: 1px solid transparent; /* Base state invisible border */
+    position: relative; /* Context for children */
   }
 
   .media-card:hover {
@@ -60,6 +80,43 @@
   .media-card:active, .media-card.selected {
     background: var(--glass-bg-mid);
     border-color: var(--secondary);
+  }
+
+  .menu-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, background 0.15s ease, transform 0.2s ease;
+    padding: 0;
+    cursor: pointer;
+    z-index: 20;
+    border-radius: 50%;
+  }
+
+  .media-card:hover .menu-btn {
+    opacity: 0.7;
+    pointer-events: auto;
+  }
+
+  .menu-btn:hover {
+    opacity: 1 !important;
+    transform: scale(1.1);
+  }
+
+  .menu-btn svg {
+    width: 18px;
+    height: 18px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
 
   .poster-container {
@@ -159,5 +216,18 @@
   .media-card.list-mode .metadata {
     text-align: left;
     flex-grow: 1;
+  }
+
+  /* List Mode Menu Button */
+  .media-card.list-mode .menu-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    opacity: 0;
+  }
+
+  .media-card.list-mode:hover .menu-btn {
+    opacity: 0.8;
+    pointer-events: auto;
   }
 </style>
