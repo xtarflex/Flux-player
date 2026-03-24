@@ -9,6 +9,11 @@
   type ViewMode = 'grid' | 'list' | 'detail';
   let viewMode = $state<ViewMode>('grid');
 
+  // Batch Selection State
+  let isSelectionMode = $state(false);
+  let selectedBatchIds = $state<string[]>([]);
+  let lastSelectedIndex = $state(-1);
+
   const gridZoomSteps = [130, 220, 320];
   const listZoomSteps = [2, 1]; // Index 0 (Zoom out) = 2 columns, Index 1 (Zoom in) = 1 column
 
@@ -86,12 +91,76 @@
     return result;
   });
 
-  function selectItem(id: string) {
+  function selectItem(id: string, event?: MouseEvent) {
+    if (isSelectionMode) {
+      toggleSelection(id, event);
+      return;
+    }
+
     if ($selectedMediaId === id && viewMode === 'detail') {
-      // If we are already in detail mode and click the same item, it's already selected
-      // but maybe switch mode if it was grid? No, user said "detail mode" is a permanent state
+      // Already selected
     } else {
       $selectedMediaId = id;
+    }
+  }
+
+  function toggleSelection(id: string, event?: MouseEvent) {
+    const currentIndex = filteredItems.findIndex(i => i.id === id);
+
+    if (event?.shiftKey && lastSelectedIndex !== -1) {
+      const [start, end] = lastSelectedIndex < currentIndex 
+        ? [lastSelectedIndex, currentIndex] 
+        : [currentIndex, lastSelectedIndex];
+      
+      const rangeIds = filteredItems.slice(start, end + 1).map(i => i.id);
+      
+      // If majority of range is selected, deselect all. Otherwise select all.
+      const alreadySelectedInRange = rangeIds.filter(rid => selectedBatchIds.includes(rid));
+      
+      if (alreadySelectedInRange.length > rangeIds.length / 2) {
+        selectedBatchIds = selectedBatchIds.filter(rid => !rangeIds.includes(rid));
+      } else {
+        const newSelection = [...selectedBatchIds];
+        rangeIds.forEach(rid => {
+          if (!newSelection.includes(rid)) newSelection.push(rid);
+        });
+        selectedBatchIds = newSelection;
+      }
+    } else {
+      if (selectedBatchIds.includes(id)) {
+        selectedBatchIds = selectedBatchIds.filter(rid => rid !== id);
+      } else {
+        selectedBatchIds = [...selectedBatchIds, id];
+      }
+    }
+    
+    lastSelectedIndex = currentIndex;
+  }
+
+  function exitSelectionMode() {
+    isSelectionMode = false;
+    selectedBatchIds = [];
+    lastSelectedIndex = -1;
+  }
+
+  function enterSelectionMode(id?: string) {
+    isSelectionMode = true;
+    if (id && !selectedBatchIds.includes(id)) {
+      selectedBatchIds = [...selectedBatchIds, id];
+      lastSelectedIndex = filteredItems.findIndex(i => i.id === id);
+    }
+    // Also close any open context menu
+    menuVisible = false;
+  }
+
+  function handleCardContextMenu(e: MouseEvent, id: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isSelectionMode) {
+      enterSelectionMode(id);
+    } else {
+      toggleSelection(id, e);
     }
   }
 
@@ -119,7 +188,7 @@
       { label: 'Play Now', action: () => handleMenuAction('play') },
       { label: 'Add to Queue', action: () => handleMenuAction('queue') },
       { separator: true },
-      { label: 'Select Item', action: () => handleMenuAction('select') },
+      { label: isSelectionMode ? 'Exit Selection Mode' : 'Batch Select', action: () => isSelectionMode ? exitSelectionMode() : enterSelectionMode(menuTarget.id) },
       { 
         label: 'Add to Playlist', 
         children: [
@@ -206,6 +275,47 @@
 
   <div class="content-area">
     <div class="main-view">
+      {#if isSelectionMode}
+        <div class="batch-action-bar glass">
+          <div class="selection-info">
+            <span class="count-bubble">{selectedBatchIds.length}</span>
+            <span class="selection-label">Items Selected</span>
+          </div>
+
+          <div class="action-divider"></div>
+
+          <div class="batch-actions">
+            <button class="action-btn" onclick={() => console.log('Playing Batch', selectedBatchIds)} title="Play Selection">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+              <span>Play All</span>
+            </button>
+            <button class="action-btn" onclick={() => console.log('Queueing Batch', selectedBatchIds)} title="Add to Queue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Queue</span>
+            </button>
+            
+            <div class="action-divider"></div>
+            
+            <button class="action-btn" onclick={() => console.log('Playlist Batch', selectedBatchIds)} title="Add to Playlist">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>Playlist</span>
+            </button>
+            <button class="action-btn" onclick={() => console.log('Favorite Batch', selectedBatchIds)} title="Toggle Favorites">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span>Favorite</span>
+            </button>
+            <button class="action-btn danger" onclick={() => console.log('Remove Batch', selectedBatchIds)} title="Remove Selection">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span>Remove</span>
+            </button>
+          </div>
+
+          <button class="exit-btn" onclick={exitSelectionMode} title="Cancel Selection">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      {/if}
+
       <div class="media-grid" style={gridStyle}>
         {#if viewMode !== 'detail'}
           {#each filteredItems as item (item.id)}
@@ -213,8 +323,11 @@
               {item} 
               {viewMode} 
               selected={$selectedMediaId === item.id}
-              onclick={() => selectItem(item.id)}
-              onmenu={(e) => openMenu(e, item)}
+              selectionMode={isSelectionMode}
+              batchSelected={selectedBatchIds.includes(item.id)}
+              onclick={(e: MouseEvent) => selectItem(item.id, e)}
+              onmenu={(e: MouseEvent) => openMenu(e, item)}
+              onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
             />
           {/each}
         {:else}
@@ -224,8 +337,11 @@
               {item} 
               viewMode="list" 
               selected={$selectedMediaId === item.id}
-              onclick={() => selectItem(item.id)}
-              onmenu={(e) => openMenu(e, item)}
+              selectionMode={isSelectionMode}
+              batchSelected={selectedBatchIds.includes(item.id)}
+              onclick={(e: MouseEvent) => selectItem(item.id, e)}
+              onmenu={(e: MouseEvent) => openMenu(e, item)}
+              onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
             />
           {/each}
         {/if}
@@ -504,5 +620,148 @@
     }
     .search-container { order: -1; min-width: 250px; width: 100%; }
     .main-view { padding: 0 20px 20px; }
+  }
+
+  .batch-action-bar {
+    position: fixed;
+    bottom: 110px;
+    left: calc(50% + 125px);
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: auto;
+    min-width: 620px;
+    background: rgba(14, 14, 16, 0.85); /* Deep frosted obsidian */
+    backdrop-filter: blur(40px) saturate(220%);
+    -webkit-backdrop-filter: blur(40px) saturate(220%);
+    border: 1px solid var(--glass-border-mid);
+    border-radius: 28px;
+    padding: 10px 14px 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.9);
+    animation: barSlideUp 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @keyframes barSlideUp {
+    from { transform: translate(-50%, 40px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+  }
+
+  .selection-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .count-bubble {
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .selection-label {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+
+  .batch-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-grow: 0;
+  }
+
+  .action-btn {
+    background: var(--glass-bg-low);
+    border: 1px solid var(--glass-border-low);
+    color: var(--text-main);
+    padding: 10px 20px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  .action-btn:hover {
+    background: var(--glass-bg-high);
+    border-color: var(--glass-border-high);
+    transform: scale(1.03);
+  }
+
+  .action-btn.danger {
+    color: #ff5555; /* Soft Red Protective Tint */
+  }
+
+  .action-btn.danger:hover {
+    background: rgba(255, 85, 85, 0.1);
+    border-color: rgba(255, 85, 85, 0.3);
+  }
+
+  .action-btn svg {
+    width: 17px;
+    height: 17px;
+    opacity: 0.85;
+  }
+
+  .action-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .action-btn.favorite:hover {
+    color: #ff9d00;
+  }
+
+  .action-btn.danger:hover {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+    border-color: rgba(255, 68, 68, 0.2);
+  }
+
+  .exit-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg-low);
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .exit-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+  }
+
+  .exit-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .action-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--glass-border-low);
   }
 </style>

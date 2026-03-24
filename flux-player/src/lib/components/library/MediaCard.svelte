@@ -1,6 +1,15 @@
 <script lang="ts">
 
-  let { item, viewMode = 'grid', selected = false, onclick, onmenu } = $props<{
+  let { 
+    item, 
+    viewMode = 'grid', 
+    selected = false, 
+    selectionMode = false,
+    batchSelected = false,
+    onclick, 
+    onmenu,
+    onrightclick
+  } = $props<{
     item: {
       id: string;
       title: string;
@@ -9,8 +18,11 @@
     };
     viewMode?: 'grid' | 'list' | 'detail';
     selected?: boolean;
-    onclick?: () => void;
+    selectionMode?: boolean;
+    batchSelected?: boolean;
+    onclick?: (e: MouseEvent) => void;
     onmenu?: (e: MouseEvent) => void;
+    onrightclick?: (e: MouseEvent) => void;
   }>();
 
   let hasPoster = $derived(!!item.poster);
@@ -21,11 +33,21 @@
   class:fallback={!hasPoster} 
   class:list-mode={viewMode === 'list'} 
   class:selected={selected}
-  onclick={onclick}
-  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onclick?.()}
+  class:selection-mode={selectionMode}
+  class:batch-selected={batchSelected}
+  onclick={(e) => onclick?.(e)}
+  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onclick?.(e as any)}
+  oncontextmenu={(e) => onrightclick?.(e)}
   role="button"
   tabindex="0"
 >
+  {#if selectionMode}
+    <div class="choice-indicator">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+  {/if}
   <div class="poster-container">
     {#if hasPoster}
       <img src={item.poster} alt={item.title} class="poster-image" />
@@ -41,21 +63,23 @@
   </div>
 
   <!-- Context Menu Button: Transparent, reveals on hover -->
-  <button 
-    class="menu-btn" 
-    aria-label="Media Options"
-    title="Options"
-    onclick={(e) => {
-      e.stopPropagation();
-      onmenu?.(e);
-    }}
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="1.5"></circle>
-      <circle cx="12" cy="5" r="1.5"></circle>
-      <circle cx="12" cy="19" r="1.5"></circle>
-    </svg>
-  </button>
+  {#if !selectionMode}
+    <button 
+      class="menu-btn" 
+      aria-label="Media Options"
+      title="Options"
+      onclick={(e) => {
+        e.stopPropagation();
+        onmenu?.(e);
+      }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="1.5"></circle>
+        <circle cx="12" cy="5" r="1.5"></circle>
+        <circle cx="12" cy="19" r="1.5"></circle>
+      </svg>
+    </button>
+  {/if}
 </div>
 
 <style>
@@ -64,7 +88,7 @@
     flex-direction: column;
     gap: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     border-radius: 12px;
     padding: 6px;
@@ -72,14 +96,73 @@
     position: relative; /* Context for children */
   }
 
-  .media-card:hover {
+  /* Selection Mode Dimming */
+  .media-card.selection-mode:not(.batch-selected) {
+    opacity: 0.4;
+    filter: grayscale(0.2);
+  }
+
+  .media-card.selection-mode:not(.batch-selected):hover {
+    opacity: 0.7;
+    filter: grayscale(0);
+  }
+
+  /* Base Hover behavior: only for neutral items */
+  .media-card:hover:not(.selected):not(.batch-selected) {
     background: var(--glass-bg-low);
     border-color: var(--glass-border-mid);
   }
 
-  .media-card:active, .media-card.selected {
+  /* Single Selection (Cyan): High Viz, but only outside Batch Mode */
+  .media-card.selected:not(.selection-mode) {
     background: var(--glass-bg-mid);
     border-color: var(--secondary);
+    border-width: 1px;
+  }
+
+  /* Batch Selection (Purple): Absolute Precedence */
+  .media-card.batch-selected {
+    background: rgba(138, 43, 226, 0.1) !important;
+    border-color: var(--primary) !important;
+    border-width: 2px !important;
+    opacity: 1 !important;
+    filter: grayscale(0) !important;
+  }
+
+  .choice-indicator {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(4px);
+  }
+
+  .media-card.batch-selected .choice-indicator {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .choice-indicator svg {
+    width: 14px;
+    height: 14px;
+    color: var(--bg-base);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .media-card.batch-selected .choice-indicator svg {
+    opacity: 1;
+    transform: scale(1);
   }
 
   .menu-btn {
@@ -131,7 +214,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   }
 
   .poster-container::after {
