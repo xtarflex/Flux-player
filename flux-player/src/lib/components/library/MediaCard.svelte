@@ -25,7 +25,34 @@
     onrightclick?: (e: MouseEvent) => void;
   }>();
 
+  let isFavorited = $state(false);
+
+  function toggleFavorite(e?: Event) {
+    if (e) e.stopPropagation();
+    isFavorited = !isFavorited;
+    window.dispatchEvent(new CustomEvent('flux-toast', { 
+      detail: { 
+        label: isFavorited ? 'Added to Favorites' : 'Removed from Favorites', 
+        icon: 'star'
+      } 
+    }));
+  }
+
   let hasPoster = $derived(!!item.poster);
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.ctrlKey) {
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Playing ${item.title}`, icon: 'playing' } }));
+        console.log(`Action: Play ${item.title} now`);
+      } else {
+        onclick?.(e as any);
+      }
+    } else if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      toggleFavorite(e);
+    }
+  }
 </script>
 
 <div 
@@ -35,9 +62,15 @@
   class:selected={selected}
   class:selection-mode={selectionMode}
   class:batch-selected={batchSelected}
-  onclick={(e) => onclick?.(e)}
-  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onclick?.(e as any)}
-  oncontextmenu={(e) => onrightclick?.(e)}
+  onclick={(e) => {
+    e.stopPropagation();
+    onclick?.(e);
+  }}
+  onkeydown={handleKeydown}
+  oncontextmenu={(e) => {
+    e.stopPropagation();
+    onrightclick?.(e);
+  }}
   role="button"
   tabindex="0"
 >
@@ -62,8 +95,20 @@
     <span class="title" title={item.title}>{item.title}</span>
   </div>
 
-  <!-- Context Menu Button: Transparent, reveals on hover -->
+  <!-- Favorite Button (Top Left) -->
   {#if !selectionMode}
+    <button 
+      class="favorite-btn" 
+      class:is-favorited={isFavorited}
+      aria-label="Toggle Favorite"
+      title={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
+      onclick={toggleFavorite}
+    >
+      <svg viewBox="0 0 24 24" fill={isFavorited ? "var(--secondary)" : "none"} stroke={isFavorited ? "var(--secondary)" : "currentColor"} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    </button>
+
     <button 
       class="menu-btn" 
       aria-label="Media Options"
@@ -111,6 +156,12 @@
   .media-card:hover:not(.selected):not(.batch-selected) {
     background: var(--glass-bg-low);
     border-color: var(--glass-border-mid);
+  }
+
+  .media-card:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
+    border-radius: 12px;
   }
 
   /* Single Selection (Cyan): High Viz, but only outside Batch Mode */
@@ -163,6 +214,55 @@
   .media-card.batch-selected .choice-indicator svg {
     opacity: 1;
     transform: scale(1);
+  }
+
+  /* Favorite Button */
+  .favorite-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease, color 0.15s ease;
+    padding: 0;
+    cursor: pointer;
+    z-index: 20;
+    border-radius: 50%;
+  }
+
+  .media-card:hover .favorite-btn {
+    opacity: 0.7;
+    pointer-events: auto;
+  }
+
+  .favorite-btn:hover {
+    opacity: 1 !important;
+    transform: scale(1.1);
+    pointer-events: auto;
+  }
+
+  .favorite-btn.is-favorited {
+    opacity: 0.6; /* Dimmed when not hovered */
+    pointer-events: auto;
+  }
+
+  /* List Mode Overrides (Remove button to save space) */
+  .media-card.list-mode .favorite-btn {
+    display: none;
+  }
+
+  .favorite-btn svg {
+    width: 18px;
+    height: 18px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
 
   .menu-btn {

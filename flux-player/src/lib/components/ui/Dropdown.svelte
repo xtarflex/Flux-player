@@ -10,16 +10,26 @@
     options, 
     value = $bindable(), 
     label = "", 
-    showCheckmark = true 
+    showCheckmark = true,
+    isOpen = $bindable(false)
   } = $props<{
     options: string[];
     value: string;
     label?: string;
     showCheckmark?: boolean;
+    isOpen?: boolean;
   }>();
 
+  let highlightedIndex = $state(-1);
+
+  // Sync highlight with current value when opened
+  $effect(() => {
+    if (isOpen) {
+      highlightedIndex = options.indexOf(value);
+    }
+  });
+
   let container = $state<HTMLElement>();
-  let isOpen = $state(false);
 
   function selectOption(option: string) {
     value = option;
@@ -36,12 +46,37 @@
     }
   }
 
+  function handleKeydown(e: KeyboardEvent) {
+    if (!isOpen) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        highlightedIndex = (highlightedIndex + 1) % options.length;
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        highlightedIndex = (highlightedIndex - 1 + options.length) % options.length;
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0) selectOption(options[highlightedIndex]);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        isOpen = false;
+        break;
+    }
+  }
+
   import { onMount, onDestroy } from 'svelte';
   onMount(() => {
     window.addEventListener('click', handleGlobalClick);
+    window.addEventListener('keydown', handleKeydown);
   });
   onDestroy(() => {
     window.removeEventListener('click', handleGlobalClick);
+    window.removeEventListener('keydown', handleKeydown);
   });
 </script>
 
@@ -71,11 +106,13 @@
 
   {#if isOpen}
     <div class="dropdown-menu glass">
-      {#each options as option}
+      {#each options as option, i}
         <button 
           class="dropdown-item" 
           class:selected={option === value}
+          class:highlighted={i === highlightedIndex}
           onclick={() => selectOption(option)}
+          onmouseenter={() => highlightedIndex = i}
         >
           {option}
           {#if showCheckmark && option === value}
@@ -172,7 +209,7 @@
     font-family: var(--font-body);
   }
 
-  .dropdown-item:hover {
+  .dropdown-item:hover, .dropdown-item.highlighted {
     background: var(--glass-bg-low);
     color: var(--text-main);
   }

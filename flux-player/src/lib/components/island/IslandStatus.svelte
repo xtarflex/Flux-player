@@ -1,16 +1,23 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import Icon from "../ui/Icon.svelte";
 
-  let { mediaState, bufferingProgress, onClose } = $props<{ 
+  let { mediaState, bufferingProgress, toast = null, onClose } = $props<{ 
     mediaState: string; 
     bufferingProgress: number;
+    toast?: { icon: string, label: string } | null;
     onClose: () => void;
   }>();
 </script>
 
 <div class="island-layer" transition:fade={{ duration: 300 }}>
   <div class="status-content">
-    {#if mediaState === "loading"}
+    {#if toast}
+      <div class="toast-state">
+        <Icon name={toast.icon} size={24} strokeWidth={2.5} class="toast-svg" />
+        <span class="status-msg">{toast.label.toUpperCase()}</span>
+      </div>
+    {:else if mediaState === "loading"}
       <div class="loading-state">
         <div class="spinner-box">
           <svg class="flux-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -69,11 +76,15 @@
     letter-spacing: 0.1em;
   }
 
-  .loading-state, .buffering-state {
+  .loading-state, .buffering-state, .toast-state {
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
+  }
+
+  :global(.toast-svg) {
+    color: var(--secondary);
   }
 
   .status-msg {

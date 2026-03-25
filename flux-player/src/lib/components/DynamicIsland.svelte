@@ -57,15 +57,25 @@
     }
   });
 
+  let currentToast = $state<{ icon: string, label: string } | null>(null);
+  let toastTimeout: any;
+
   onMount(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "o") {
-        isOffline = !isOffline;
-        console.log("Offline mode:", isOffline);
-      }
+    const handleToast = (e: any) => {
+      currentToast = e.detail;
+      // If we are in "playing" or something, save it
+      if (currentState !== "status") previousState = currentState;
+      currentState = "status";
+      
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        currentToast = null;
+        if (currentState === "status") currentState = previousState;
+      }, 2000);
     };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+
+    window.addEventListener('flux-toast', handleToast);
+    return () => window.removeEventListener('flux-toast', handleToast);
   });
 
   $effect(() => {
@@ -132,7 +142,11 @@
     <IslandStatus 
       {mediaState} 
       {bufferingProgress} 
-      onClose={() => currentState = "idle"} 
+      toast={currentToast}
+      onClose={() => { 
+        currentToast = null;
+        currentState = previousState;
+      }} 
     />
   {:else if currentState === "audio" || currentState === "playing"}
     <IslandMedia 

@@ -50,6 +50,19 @@
   // Enable/disable states
   let controlsEnabled = $derived(hasMedia);
 
+  // Track Navigation Stubs
+  function nextTrack() {
+    if (!controlsEnabled) return;
+    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Next Track', icon: 'skip-next' } }));
+    console.log('Action: Next Track');
+  }
+
+  function prevTrack() {
+    if (!controlsEnabled) return;
+    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Previous Track', icon: 'skip-previous' } }));
+    console.log('Action: Previous Track');
+  }
+
   // Keyboard Shortcuts
   function handleKeydown(e: KeyboardEvent) {
     if (!controlsEnabled) return;
@@ -60,41 +73,97 @@
       return;
     }
 
+    const key = e.key.toLowerCase();
+
+    // 0-9: Jump to 0%-90%
+    if (e.key >= '0' && e.key <= '9') {
+      e.preventDefault();
+      progress = parseInt(e.key) / 10;
+      window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Jump to ${e.key}0%`, icon: 'playing' } }));
+      return;
+    }
+
     switch (e.key) {
       case ' ':
       case 'k':
+      case 'K':
         e.preventDefault();
         isPlaying = !isPlaying;
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isPlaying ? 'Play' : 'Pause', icon: isPlaying ? 'play' : 'pause' } }));
         break;
       case 'm':
       case 'M':
         e.preventDefault();
         isMuted = !isMuted;
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isMuted ? 'Muted' : 'Unmuted', icon: isMuted ? 'volume-mute' : 'volume-up' } }));
         break;
       case 'f':
       case 'F':
+      case 'F11':
         if (isVideo) {
           e.preventDefault();
           isFullscreen = !isFullscreen;
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isFullscreen ? 'Fullscreen' : 'Windowed', icon: 'fullscreen' } }));
         }
+        break;
+      case 'Escape':
+        if (isFullscreen) {
+          e.preventDefault();
+          isFullscreen = false;
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Exited Fullscreen', icon: 'fullscreen' } }));
+        }
+        break;
+      case 'j':
+      case 'J':
+        e.preventDefault();
+        progress = Math.max(0, progress - 0.1);
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Rewind 10%', icon: 'seek-backward' } }));
+        break;
+      case 'l':
+      case 'L':
+        e.preventDefault();
+        progress = Math.min(1, progress + 0.1);
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Forward 10%', icon: 'seek-forward' } }));
+        break;
+      case 'Home':
+        e.preventDefault();
+        progress = 0;
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to Start', icon: 'skip-previous' } }));
+        break;
+      case 'End':
+        e.preventDefault();
+        progress = 1;
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to End', icon: 'skip-next' } }));
         break;
       case 'ArrowUp':
         e.preventDefault();
         volume = Math.min(1, volume + 0.1);
         if (volume > 0) isMuted = false;
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume ${Math.round(volume * 100)}%`, icon: 'volume-up' } }));
         break;
       case 'ArrowDown':
         e.preventDefault();
         volume = Math.max(0, volume - 0.1);
         if (volume === 0) isMuted = true;
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume ${Math.round(volume * 100)}%`, icon: 'volume-down' } }));
         break;
       case 'ArrowRight':
         e.preventDefault();
-        progress = Math.min(1, progress + 0.05);
+        if (e.shiftKey) {
+          nextTrack();
+        } else {
+          progress = Math.min(1, progress + 0.05);
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Forward', icon: 'seek-forward' } }));
+        }
         break;
       case 'ArrowLeft':
         e.preventDefault();
-        progress = Math.max(0, progress - 0.05);
+        if (e.shiftKey) {
+          prevTrack();
+        } else {
+          progress = Math.max(0, progress - 0.05);
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Backward', icon: 'seek-backward' } }));
+        }
         break;
     }
   }

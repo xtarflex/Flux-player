@@ -5,21 +5,44 @@
   import PlaybackSettings from '$lib/components/settings/PlaybackSettings.svelte';
   import AppearanceSettings from '$lib/components/settings/AppearanceSettings.svelte';
   import StreamingSettings from '$lib/components/settings/StreamingSettings.svelte';
+  import ShortcutSettings from '$lib/components/settings/ShortcutSettings.svelte';
 
   const tabs = [
     { id: 'profile', label: 'My Profile', component: ProfileSettings },
     { id: 'storage', label: 'Storage & Library', component: StorageSettings },
     { id: 'playback', label: 'Playback & Performance', component: PlaybackSettings },
     { id: 'appearance', label: 'Appearance & UI', component: AppearanceSettings },
-    { id: 'streaming', label: 'Streaming & Network', component: StreamingSettings }
+    { id: 'streaming', label: 'Streaming & Network', component: StreamingSettings },
+    { id: 'shortcuts', label: 'Hotkeys & Control', component: ShortcutSettings }
   ];
 
   let activeTab = $state(tabs[0].id);
 
-  function getActiveComponent() {
-    return tabs.find(t => t.id === activeTab)?.component;
+  function handleKeydown(e: KeyboardEvent) {
+    const target = e.target as HTMLElement;
+    const isEditing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    if (isEditing) return;
+
+    // 1-6 Navigation
+    if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+      if (e.key >= '1' && e.key <= '6') {
+        const idx = parseInt(e.key) - 1;
+        if (tabs[idx]) activeTab = tabs[idx].id;
+      }
+    }
+
+    // Ctrl + Tab Cycling
+    if (e.ctrlKey && e.key === 'Tab') {
+      e.preventDefault();
+      const idx = tabs.findIndex(t => t.id === activeTab);
+      const step = e.shiftKey ? -1 : 1;
+      const nextIdx = (idx + step + tabs.length) % tabs.length;
+      activeTab = tabs[nextIdx].id;
+    }
   }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="settings-hub">
   <div class="settings-sidebar">
@@ -47,6 +70,8 @@
       <AppearanceSettings />
     {:else if activeTab === 'streaming'}
       <StreamingSettings />
+    {:else if activeTab === 'shortcuts'}
+      <ShortcutSettings />
     {/if}
   </div>
 </div>

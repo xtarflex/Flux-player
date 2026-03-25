@@ -1,0 +1,58 @@
+<script lang="ts">
+  /**
+   * Icon.svelte
+   * Centralized SVG Icon component for Flux.
+   * Provides consistent weight, sizing, and brand-tailored styling.
+   */
+  let { name, size = 20, strokeWidth = 2, class: className = "" } = $props<{
+    name: string;
+    size?: number | string;
+    strokeWidth?: number;
+    class?: string;
+  }>();
+
+  // Icon Path Dictionary (Using Lucide-inspired geometric paths)
+  const icons: Record<string, string[]> = {
+    discovery: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'M9 12l2 2 4-4'],
+    library: ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'],
+    playing: ['M12 2v20 M12 2a10 10 0 0 0-10 10 M12 22a10 10 0 0 0 10-10 M18 8l-8 4 8 4V8z'],
+    playlists: ['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'],
+    settings: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z'],
+    refresh: ['M23 4v6h-6', 'M20.49 15a9 9 0 1 1-2.12-9.36L23 10'],
+    search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'M21 21l-4.35-4.35'],
+    'new-playlist': ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z', 'M12 11v6', 'M9 14h6'],
+    import: ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z', 'M12 11v6', 'M9 14h6'],
+    save: ['M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z', 'M17 21v-8H7v8', 'M7 3v5h8'],
+    screenshot: ['M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z', 'M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
+    play: ['M5 3l14 9-14 9V3z'],
+    pause: ['M6 4h4v16H6z', 'M14 4h4v16H14z'],
+    'volume-up': ['M11 5L6 9H2v6h4l5 4V5z', 'M15.54 8.46a5 5 0 0 1 0 7.07', 'M19.07 4.93a10 10 0 0 1 0 14.14'],
+    'volume-down': ['M11 5L6 9H2v6h4l5 4V5z', 'M15.54 8.46a5 5 0 0 1 0 7.07'],
+    'volume-mute': ['M11 5L6 9H2v6h4l5 4V5z', 'M23 9l-6 6', 'M17 9l6 6'],
+    'seek-forward': ['M13 19l6-7-6-7', 'M5 19l6-7-5-7'],
+    'seek-backward': ['M11 19l-6-7 6-7', 'M19 19l-6-7 6-7'],
+    'skip-next': ['M5 4l10 8-10 8V4z', 'M19 5v14'],
+    'skip-previous': ['M19 20L9 12l10-8v16z', 'M5 19V5'],
+    fullscreen: ['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7'],
+    star: ['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'],
+    check: ['M20 6L9 17l-5-5'],
+  };
+
+  let paths = $derived(icons[name] || []);
+</script>
+
+<svg 
+  viewBox="0 0 24 24" 
+  width={size} 
+  height={size} 
+  fill="none" 
+  stroke="currentColor" 
+  stroke-width={strokeWidth} 
+  stroke-linecap="round" 
+  stroke-linejoin="round"
+  class={className}
+>
+  {#each paths as d}
+    <path {d} />
+  {/each}
+</svg>

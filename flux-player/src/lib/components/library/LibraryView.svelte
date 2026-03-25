@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import MediaCard from './MediaCard.svelte';
   import Dropdown from '../ui/Dropdown.svelte';
   import DetailPanel from '../DetailPanel.svelte';
@@ -13,6 +14,7 @@
   let isSelectionMode = $state(false);
   let selectedBatchIds = $state<string[]>([]);
   let lastSelectedIndex = $state(-1);
+  let searchInput = $state<HTMLInputElement>();
 
   const gridZoomSteps = [130, 220, 320];
   const listZoomSteps = [2, 1]; // Index 0 (Zoom out) = 2 columns, Index 1 (Zoom in) = 1 column
@@ -51,6 +53,8 @@
 
   let mediaFilter = $state('All Media');
   let sortOption = $state('Recently Added');
+  let isFilterOpen = $state(false);
+  let isSortOpen = $state(false);
 
   const mediaOptions = ['All Media', 'Movies', 'Music', 'Series'];
   const sortOptions = ['Recently Added', 'A-Z', 'Z-A', 'Release Date'];
@@ -92,16 +96,30 @@
   });
 
   function selectItem(id: string, event?: MouseEvent) {
+    const idx = filteredItems.findIndex(i => i.id === id);
+
+    // 1. Modifier Check: Auto-enter Selection Mode if Shift/Ctrl held
+    if (event?.shiftKey || event?.ctrlKey) {
+      if (!isSelectionMode) isSelectionMode = true;
+      toggleSelection(id, event);
+      return;
+    }
+
+    // 2. Standard Selection Mode Check
     if (isSelectionMode) {
       toggleSelection(id, event);
       return;
     }
 
+    // 3. Normal Single Selection
     if ($selectedMediaId === id && viewMode === 'detail') {
       // Already selected
     } else {
       $selectedMediaId = id;
     }
+    
+    // CRITICAL: Always update lastSelectedIndex so Shift+Click knows the start point
+    lastSelectedIndex = idx;
   }
 
   function toggleSelection(id: string, event?: MouseEvent) {
@@ -114,7 +132,6 @@
       
       const rangeIds = filteredItems.slice(start, end + 1).map(i => i.id);
       
-      // If majority of range is selected, deselect all. Otherwise select all.
       const alreadySelectedInRange = rangeIds.filter(rid => selectedBatchIds.includes(rid));
       
       if (alreadySelectedInRange.length > rangeIds.length / 2) {
@@ -164,6 +181,153 @@
     }
   }
 
+  function handleGlobalKeydown(e: KeyboardEvent) {
+    // 1. Context Check: Ignore if typing
+    const target = e.target as HTMLElement;
+    const isEditing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+    if (isEditing) {
+      if (e.key === 'Escape') {
+        searchInput?.blur();
+        if (searchText) searchText = '';
+      }
+      return;
+    }
+
+    const isCmd = e.ctrlKey || e.metaKey;
+
+    // 2. Global Toggles & Navigation
+    if (e.key === 'Escape') {
+      if (menuVisible) { menuVisible = false; return; }
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      if (searchText) { searchText = ''; return; }
+    }
+
+    // 3. Library Search Focus
+    if (e.key === '/' || (isCmd && e.key === 'f')) {
+      e.preventDefault();
+      searchInput?.focus();
+    }
+
+    // 4. Batch Operations
+    if (isCmd && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        selectedBatchIds = [];
+      } else {
+        isSelectionMode = true;
+        selectedBatchIds = filteredItems.map(i => i.id);
+      }
+    }
+
+    if (isCmd && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      if (!isSelectionMode) isSelectionMode = true;
+      const currentSet = new Set(selectedBatchIds);
+      selectedBatchIds = filteredItems
+        .filter(item => !currentSet.has(item.id))
+        .map(item => item.id);
+    }
+
+    // 5. View & Zoom Cycle
+    if (e.key.toLowerCase() === 'v' && !isCmd) {
+      const modes: ViewMode[] = ['grid', 'list', 'detail'];
+      const nextIdx = (modes.indexOf(viewMode) + 1) % modes.length;
+      viewMode = modes[nextIdx];
+    }
+
+    if (isCmd && (e.key === '=' || e.key === '+')) { e.preventDefault(); zoomIn(); }
+    if (isCmd && e.key === '-') { e.preventDefault(); zoomOut(); }
+    if (isCmd && e.key === '0') { e.preventDefault(); gridZoomIndex = 1; listZoomIndex = 0; }
+
+    // 6. View & Sort (Section 3.B)
+    if (!isCmd) {
+      const active = document.activeElement as HTMLElement;
+      const isCardFocused = active?.classList.contains('media-card');
+
+      switch(e.key.toLowerCase()) {
+        case 's':
+          e.preventDefault();
+          isSortOpen = !isSortOpen;
+          isFilterOpen = false;
+          break;
+        case 'f':
+          e.preventDefault();
+          if (!isCardFocused) {
+            isFilterOpen = !isFilterOpen;
+            isSortOpen = false;
+          }
+          break;
+        case 'delete':
+          if (isCardFocused) {
+            e.preventDefault();
+            const deep = e.shiftKey;
+            window.dispatchEvent(new CustomEvent('flux-toast', { detail: { 
+              label: deep ? 'Permanent Delete' : 'Remove from Library', 
+              icon: deep ? 'check' : 'check' 
+            }}));
+          }
+          break;
+        case 'e':
+          if (isCardFocused) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Edit Metadata', icon: 'settings' } }));
+          }
+          break;
+        case 'r':
+          if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Refresh Info', icon: 'refresh' } })); }
+          break;
+        case 'i':
+          if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Media Info', icon: 'library' } })); }
+          break;
+        case 'w':
+          if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Toggled Watched', icon: 'playing' } })); }
+          break;
+      }
+    }
+
+    // 7. Grid Navigation
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && !isCmd) {
+      const active = document.activeElement as HTMLElement;
+      const isCardFocused = active?.classList.contains('media-card');
+      
+      if (isCardFocused) {
+        e.preventDefault();
+        const cards = Array.from(document.querySelectorAll('.media-grid .media-card')) as HTMLElement[];
+        const index = cards.indexOf(active);
+        if (index === -1) return;
+
+        // Position-based column detection (100% accurate)
+        let cols = 1;
+        if (cards.length > 1) {
+          const firstTop = cards[0].getBoundingClientRect().top;
+          for (let i = 1; i < cards.length; i++) {
+            if (cards[i].getBoundingClientRect().top > firstTop + 10) {
+              cols = i;
+              break;
+            }
+          }
+        }
+
+        let nextIdx = index;
+        switch (e.key) {
+          case 'ArrowLeft': nextIdx = Math.max(0, index - 1); break;
+          case 'ArrowRight': nextIdx = Math.min(cards.length - 1, index + 1); break;
+          case 'ArrowUp': nextIdx = Math.max(0, index - cols); break;
+          case 'ArrowDown': nextIdx = Math.min(cards.length - 1, index + cols); break;
+        }
+
+        cards[nextIdx]?.focus();
+      }
+    }
+  }
+
+  onMount(() => {
+    const handleFocus = () => searchInput?.focus();
+    window.addEventListener('flux-search-focus', handleFocus);
+    return () => window.removeEventListener('flux-search-focus', handleFocus);
+  });
+
   // Context Menu Logic
   let menuVisible = $state(false);
   let menuPos = $state({ x: 0, y: 0 });
@@ -207,7 +371,22 @@
   });
 </script>
 
-<div class="discovery-hub">
+<svelte:window onkeydown={handleGlobalKeydown} />
+
+<div 
+  class="discovery-hub" 
+  onclick={(e: MouseEvent) => {
+    // Only deselect if we clicked the actual background (not a card, bar, or modal)
+    const target = e.target as HTMLElement;
+    if (target.closest('.media-card, .batch-action-bar, .action-bar, .context-menu, .dropdown')) {
+      return;
+    }
+    
+    $selectedMediaId = '';
+    if (isSelectionMode) exitSelectionMode();
+  }}
+  role="presentation"
+>
   <div class="hub-header">
     <div class="hub-title-section">
       <h1 class="hub-title">Your <span class="uppercase">Library</span></h1>
@@ -226,11 +405,12 @@
           class="search-input" 
           placeholder="Search library..." 
           bind:value={searchText}
+          bind:this={searchInput}
         />
       </div>
 
-      <Dropdown options={mediaOptions} bind:value={mediaFilter} showCheckmark={false} />
-      <Dropdown options={sortOptions} bind:value={sortOption} showCheckmark={false} />
+      <Dropdown options={mediaOptions} bind:value={mediaFilter} bind:isOpen={isFilterOpen} showCheckmark={false} />
+      <Dropdown options={sortOptions} bind:value={sortOption} bind:isOpen={isSortOpen} showCheckmark={false} />
 
       <!-- Zoom Controls -->
       <div class="zoom-controls" style:opacity={disableZoom ? 0.3 : 1} style:pointer-events={disableZoom ? 'none' : 'auto'}>
@@ -723,16 +903,6 @@
   .action-btn svg {
     width: 16px;
     height: 16px;
-  }
-
-  .action-btn.favorite:hover {
-    color: #ff9d00;
-  }
-
-  .action-btn.danger:hover {
-    background: rgba(255, 68, 68, 0.1);
-    color: #ff4444;
-    border-color: rgba(255, 68, 68, 0.2);
   }
 
   .exit-btn {
