@@ -6,6 +6,7 @@
    */
   import { mediaItems, selectedMediaId } from '$lib/stores/media';
   import { derived } from 'svelte/store';
+  export let isOpen = false;
 
   const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]) => {
     return $items.find((item: typeof $items[0]) => item.id === $id) || null;

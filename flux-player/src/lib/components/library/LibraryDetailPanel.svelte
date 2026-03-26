@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '$lib/components/ui/Icon.svelte';
   /**
    * @typedef {Object} Props
    * @property {any} item - The media item to display details for
@@ -26,9 +27,7 @@
 
 <div class="detail-panel glass-dark">
   <button class="close-btn" onclick={onClose} aria-label="Close Details">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
+    <Icon name="close" />
   </button>
 
   <div class="hero-section">
@@ -114,7 +113,7 @@
     transform: rotate(90deg);
   }
 
-  .close-btn svg { width: 20px; height: 20px; }
+  :global(.close-btn svg) { width: 20px; height: 20px; }
 
   /* Hero Section */
   .hero-section {

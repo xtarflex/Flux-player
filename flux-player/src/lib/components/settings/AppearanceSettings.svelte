@@ -1,5 +1,9 @@
+
 <script lang="ts">
+  import AnimatedPlayPause from '$lib/components/ui/animated-icons/AnimatedPlayPause.svelte';
+
   let uiTheme = $state('Cyber Dark');
+  let isDemoPlaying = $state(false);
 
   const themes = [
     { name: 'Cyber Dark', description: 'Deep blacks with Cyan accents.', icon: '🌙' },

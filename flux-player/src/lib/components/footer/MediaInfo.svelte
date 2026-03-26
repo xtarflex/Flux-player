@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '$lib/components/ui/Icon.svelte';
   let { 
     currentMedia, 
     hasMedia, 

@@ -1,15 +1,27 @@
 <script lang="ts">
+
   import { page } from '$app/stores';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import AnimatedDiscovery from '$lib/components/ui/animated-icons/AnimatedDiscovery.svelte';
+  import AnimatedLibrary from '$lib/components/ui/animated-icons/AnimatedLibrary.svelte';
+  import AnimatedPlaying from '$lib/components/ui/animated-icons/AnimatedPlaying.svelte';
+  import AnimatedPlaylists from '$lib/components/ui/animated-icons/AnimatedPlaylists.svelte';
+  import AnimatedSettings from '$lib/components/ui/animated-icons/AnimatedSettings.svelte';
+
 
   let isCollapsed = $state(false);
   
+
   const navItems = [
-    { id: 'discovery', label: 'Discovery', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4' },
-    { id: 'library', label: 'Library', icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' },
-    { id: 'playing', label: 'Now Playing', icon: 'M12 2v20 M12 2a10 10 0 0 0-10 10 M12 22a10 10 0 0 0 10-10 M18 8l-8 4 8 4V8z' },
-    { id: 'playlists', label: 'Playlists', icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
-    { id: 'settings', label: 'Settings', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' }
+    { id: 'discovery', label: 'Discovery', component: AnimatedDiscovery },
+    { id: 'library', label: 'Library', component: AnimatedLibrary },
+    { id: 'playing', label: 'Now Playing', component: AnimatedPlaying },
+    { id: 'playlists', label: 'Playlists', component: AnimatedPlaylists },
+    { id: 'settings', label: 'Settings', component: AnimatedSettings }
   ];
+
+  let hoveredItem = $state<string | null>(null);
+
 </script>
 
 <aside class="sidebar" class:collapsed={isCollapsed}>
@@ -22,38 +34,42 @@
       </div>
     </div>
     <button class="menu-toggle" onclick={() => isCollapsed = !isCollapsed} aria-label="Toggle Sidebar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12h18M3 6h18M3 18h18" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
+      <Icon name="menu" size="24" />
     </button>
   </div>
 
   <div class="nav-section">
+
     {#each navItems as item}
+
       <a 
         href="/{item.id}"
         class="nav-item" 
         class:active={$page.url.pathname.startsWith('/' + item.id)}
         title={isCollapsed ? item.label : ''}
+        onmouseenter={() => hoveredItem = item.id}
+        onmouseleave={() => hoveredItem = null}
       >
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d={item.icon} stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <div class="nav-icon-container">
+
+          <item.component
+            active={$page.url.pathname.startsWith('/' + item.id)}
+            hovered={hoveredItem === item.id}
+          />
+        </div>
         {#if !isCollapsed}
           <span class="nav-label">{item.label}</span>
         {/if}
       </a>
     {/each}
+
   </div>
 
   <div class="sidebar-spacer"></div>
 
   <div class="sidebar-footer">
     <button class="add-folder-btn" class:collapsed={isCollapsed} aria-label="Add Media Folder">
-      <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z" />
-        <path d="M12 11v6m-3-3h6" stroke-width="2" />
-      </svg>
+      <Icon name="new-playlist" class="add-icon" />
       <span class="btn-text">Add Folder</span>
     </button>
     
@@ -149,7 +165,7 @@
     transform: scale(1.05);
   }
 
-  .menu-toggle svg {
+  :global(.menu-toggle svg) {
     width: 24px;
     height: 24px;
   }
@@ -204,14 +220,14 @@
     border-radius: 0 4px 4px 0;
   }
 
-  .nav-icon {
+  .nav-icon-container {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
     transition: color 0.3s;
   }
 
-  .nav-item.active .nav-icon {
+  .nav-item.active .nav-icon-container {
     color: var(--secondary);
   }
 
@@ -280,7 +296,7 @@
     margin: 0;
   }
 
-  .add-icon {
+  :global(.add-icon) {
     width: 18px;
     height: 18px;
   }
@@ -373,7 +389,7 @@
       justify-content: center;
     }
 
-    .sidebar:not(.collapsed) .nav-icon {
+    .sidebar:not(.collapsed) .nav-icon-container {
       margin: 0;
     }
   }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '$lib/components/ui/Icon.svelte';
   let { 
     controlsEnabled, 
     playbackSpeed = $bindable(1), 
@@ -95,11 +96,7 @@
       aria-label="Subtitles"
       disabled={!controlsEnabled}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" />
-        <path d="M9 10.5 A 1.5 1.5 0 0 0 6 12 A 1.5 1.5 0 0 0 9 13.5" stroke="currentColor" />
-        <path d="M18 10.5 A 1.5 1.5 0 0 0 15 12 A 1.5 1.5 0 0 0 18 13.5" stroke="currentColor" />
-      </svg>
+      <Icon name="subtitles" />
     </button>
   {/if}
 
@@ -111,10 +108,7 @@
       aria-label="Picture-in-Picture"
       onclick={togglePiP}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" />
-        <rect x="11" y="11" width="9" height="7" rx="1" fill={isPiPActive ? "var(--secondary)" : "currentColor"} stroke="none" />
-      </svg>
+      <Icon name="pip" class={isPiPActive ? "active" : ""} />
     </button>
   {/if}
 
@@ -126,9 +120,7 @@
       disabled={!controlsEnabled}
       onclick={() => console.log('Open Visualizer Options')}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2v20M17 5v14M7 8v8M22 10v4M2 11v2" stroke="currentColor" />
-      </svg>
+      <Icon name="visualizer" />
     </button>
   {/if}
 
@@ -143,20 +135,10 @@
   >
     {#if isFullscreen}
       <!-- Exit Fullscreen -->
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 3v3a2 2 0 0 1-2 2H3" stroke="currentColor" />
-        <path d="M21 8h-3a2 2 0 0 1-2-2V3" stroke="currentColor" />
-        <path d="M3 16h3a2 2 0 0 1 2 2v3" stroke="currentColor" />
-        <path d="M16 21v-3a2 2 0 0 1 2-2h3" stroke="currentColor" />
-      </svg>
+      <Icon name="exit-fullscreen" />
     {:else}
       <!-- Enter Fullscreen -->
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 3h6v6" stroke="currentColor" />
-        <path d="M9 21H3v-6" stroke="currentColor" />
-        <path d="M21 14v7h-7" stroke="currentColor" />
-        <path d="M3 10V3h7" stroke="currentColor" />
-      </svg>
+      <Icon name="fullscreen" />
     {/if}
   </button>
 
@@ -254,7 +236,7 @@
     pointer-events: none;
   }
 
-  .icon-btn-large svg {
+  :global(.icon-btn-large svg) {
     width: 32px;
     height: 32px;
   }

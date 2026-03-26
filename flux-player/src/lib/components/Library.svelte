@@ -67,7 +67,7 @@
   </div>
 </div>
 
-<DetailPanel bind:isOpen={isDetailPanelOpen} />
+<DetailPanel isOpen={isDetailPanelOpen} />
 
 <style>
   .library-container {

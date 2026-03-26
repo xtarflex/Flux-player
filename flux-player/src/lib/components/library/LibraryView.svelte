@@ -6,6 +6,7 @@
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
   import { mediaItems, selectedMediaId } from '$lib/stores/media';
+  import Icon from '$lib/components/ui/Icon.svelte';
 
   type ViewMode = 'grid' | 'list' | 'detail';
   let viewMode = $state<ViewMode>('grid');
@@ -396,10 +397,7 @@
     <div class="action-bar">
       <!-- Search Input -->
       <div class="search-container">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
+        <Icon name="search" class="search-icon" />
         <input 
           type="text" 
           class="search-input" 
@@ -415,39 +413,24 @@
       <!-- Zoom Controls -->
       <div class="zoom-controls" style:opacity={disableZoom ? 0.3 : 1} style:pointer-events={disableZoom ? 'none' : 'auto'}>
         <button class="icon-btn" onclick={zoomOut} aria-label="Zoom Out" title="Smaller Grid" disabled={disableZoom}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          <Icon name="zoom-out" />
         </button>
         <div class="v-divider"></div>
         <button class="icon-btn" onclick={zoomIn} aria-label="Zoom In" title="Larger Grid" disabled={disableZoom}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          <Icon name="zoom-in" />
         </button>
       </div>
 
       <!-- View Toggles -->
       <div class="view-toggles">
         <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'} aria-label="Grid View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
+          <Icon name="grid-view" />
         </button>
         <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => viewMode = 'list'} aria-label="List View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+          <Icon name="list-view" />
         </button>
         <button class="toggle-btn" class:active={viewMode === 'detail'} onclick={() => viewMode = 'detail'} aria-label="Detail View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="9" y1="3" x2="9" y2="21"></line>
-          </svg>
+          <Icon name="detail-view" />
         </button>
       </div>
     </div>
@@ -466,32 +449,32 @@
 
           <div class="batch-actions">
             <button class="action-btn" onclick={() => console.log('Playing Batch', selectedBatchIds)} title="Play Selection">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+              <Icon name="play" />
               <span>Play All</span>
             </button>
             <button class="action-btn" onclick={() => console.log('Queueing Batch', selectedBatchIds)} title="Add to Queue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <Icon name="plus" />
               <span>Queue</span>
             </button>
             
             <div class="action-divider"></div>
             
             <button class="action-btn" onclick={() => console.log('Playlist Batch', selectedBatchIds)} title="Add to Playlist">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <Icon name="library" />
               <span>Playlist</span>
             </button>
             <button class="action-btn" onclick={() => console.log('Favorite Batch', selectedBatchIds)} title="Toggle Favorites">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <Icon name="heart" />
               <span>Favorite</span>
             </button>
             <button class="action-btn danger" onclick={() => console.log('Remove Batch', selectedBatchIds)} title="Remove Selection">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <Icon name="trash" />
               <span>Remove</span>
             </button>
           </div>
 
           <button class="exit-btn" onclick={exitSelectionMode} title="Cancel Selection">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <Icon name="close" />
           </button>
         </div>
       {/if}
@@ -658,7 +641,7 @@
     align-items: center;
   }
 
-  .search-icon {
+  :global(.search-icon) {
     position: absolute;
     left: 12px;
     width: 18px;
@@ -730,7 +713,7 @@
     background: var(--glass-bg-low);
   }
 
-  .icon-btn svg {
+  :global(.icon-btn svg) {
     width: 18px;
     height: 18px;
   }
@@ -758,7 +741,7 @@
     transition: all 0.2s;
   }
 
-  .toggle-btn svg {
+  :global(.toggle-btn svg) {
     width: 18px;
     height: 18px;
   }
@@ -894,13 +877,13 @@
     border-color: rgba(255, 85, 85, 0.3);
   }
 
-  .action-btn svg {
+  :global(.action-btn svg) {
     width: 17px;
     height: 17px;
     opacity: 0.85;
   }
 
-  .action-btn svg {
+  :global(.action-btn svg) {
     width: 16px;
     height: 16px;
   }
@@ -924,7 +907,7 @@
     color: var(--text-main);
   }
 
-  .exit-btn svg {
+  :global(.exit-btn svg) {
     width: 18px;
     height: 18px;
   }
