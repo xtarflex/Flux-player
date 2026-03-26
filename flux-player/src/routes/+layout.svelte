@@ -6,8 +6,6 @@
   import DynamicIsland from '$lib/components/DynamicIsland.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import PlaybackFooter from '$lib/components/PlaybackFooter.svelte';
-  import VideoPlayer from '$lib/components/player/VideoPlayer.svelte';
-  
   let { children } = $props();
   let showShortcutsRef = $state(false);
 
@@ -119,7 +117,6 @@
     {@render children()}
   </main>
   <PlaybackFooter />
-  <VideoPlayer />
 
   <!-- Shortcuts Reference Modal -->
   {#if showShortcutsRef}

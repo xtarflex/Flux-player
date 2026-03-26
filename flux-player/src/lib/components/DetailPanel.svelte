@@ -5,7 +5,6 @@
    */
   import { mediaItems, selectedMediaId, type MediaItem } from '$lib/stores/media';
   import { derived } from 'svelte/store';
-  import { playerActions } from '$lib/stores/player';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
 
   const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]: [MediaItem[], string | null]) => {
@@ -13,12 +12,6 @@
   });
 
   let playingHovered = $state(false);
-
-  function formatTime(seconds: number) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
 </script>
 
 <aside class="detail-panel">
@@ -106,27 +99,15 @@
           <p class="synopsis">{$selectedItem.synopsis}</p>
         {/if}
 
-        <!-- Action Buttons -->
-        <div class="action-row">
-          <button 
-            class="btn-play"
-            onmouseenter={() => playingHovered = true}
-            onmouseleave={() => playingHovered = false}
-            onclick={() => playerActions.play($selectedItem)}
-          >
-            <AnimatedPlayPause isPlaying={playingHovered} size={14} />
-            Play {$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}
-          </button>
-
-          {#if $selectedItem.last_position > 5 && !$selectedItem.is_watched}
-            <button 
-              class="btn-resume"
-              onclick={() => playerActions.play($selectedItem)}
-            >
-              Resume from {formatTime($selectedItem.last_position)}
-            </button>
-          {/if}
-        </div>
+        <!-- Play Button -->
+        <button 
+          class="btn-play"
+          onmouseenter={() => playingHovered = true}
+          onmouseleave={() => playingHovered = false}
+        >
+          <AnimatedPlayPause isPlaying={playingHovered} size={14} />
+          Play {$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}
+        </button>
       {/if}
 
       <!-- === Subtitle Row (Shared) === -->
@@ -446,19 +427,12 @@
   }
 
   /* ===================== Play Button ===================== */
-  .action-row {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-    flex-shrink: 0;
-  }
-
   .btn-play {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    flex: 1;
+    width: 100%;
     height: 42px;
     background: linear-gradient(90deg, var(--primary), var(--secondary));
     border: none;
@@ -468,33 +442,9 @@
     font-size: 16px;
     color: var(--text-main);
     cursor: pointer;
+    flex-shrink: 0;
     transition: filter 0.2s, transform 0.2s;
   }
-
-  .btn-resume {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    height: 42px;
-    background: var(--glass-bg-low);
-    border: 1px solid var(--glass-border-low);
-    border-radius: 8px;
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-resume:hover {
-    background: var(--glass-bg-mid);
-    border-color: var(--secondary);
-    color: var(--secondary);
-  }
-
-  .btn-play :global(svg) { width: 14px; height: 14px; }
 
   .btn-play:hover {
     filter: brightness(1.1);

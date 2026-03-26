@@ -23,8 +23,6 @@ export interface MediaItem {
   type: 'video' | 'audio' | 'mixed';
   last_played: number;
   added_at: number;
-  last_position: number;    // seconds
-  is_watched: boolean;
   // UI-only enriched fields (populated from TMDB later)
   rating?: number;
   genres?: string[];
@@ -50,7 +48,7 @@ export async function loadLibraryFromDb(): Promise<void> {
   try {
     const db = await Database.load('sqlite:flux.db');
     const rows = await db.select<any[]>(
-      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, last_position, is_watched FROM media ORDER BY added_at DESC'
+      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at FROM media ORDER BY added_at DESC'
     );
 
     const items: MediaItem[] = rows.map((row) => ({
@@ -67,8 +65,6 @@ export async function loadLibraryFromDb(): Promise<void> {
       type: (row.media_type as 'video' | 'audio' | 'mixed') ?? 'video',
       last_played: row.last_played ?? 0,
       added_at: row.added_at ?? 0,
-      last_position: row.last_position ?? 0,
-      is_watched: !!row.is_watched,
     }));
 
     mediaItems.set(items);
@@ -76,28 +72,5 @@ export async function loadLibraryFromDb(): Promise<void> {
   } catch (e) {
     console.error('[MediaStore] Failed to load library from DB:', e);
     libraryLoadState.set('error');
-  }
-}
-
-/**
- * Updates the playback progress for a specific media item.
- */
-export async function updatePlaybackProgress(path: string, seconds: number, isWatched: boolean): Promise<void> {
-  try {
-    const db = await Database.load('sqlite:flux.db');
-    await db.execute(
-      'UPDATE media SET last_position = ?, is_watched = ?, last_played = ? WHERE path = ?',
-      [seconds, isWatched ? 1 : 0, Math.floor(Date.now() / 1000), path]
-    );
-
-    // Update local store to avoid a full re-query
-    mediaItems.update(items => items.map(item => {
-      if (item.path === path) {
-        return { ...item, last_position: seconds, is_watched: isWatched, last_played: Math.floor(Date.now() / 1000) };
-      }
-      return item;
-    }));
-  } catch (e) {
-    console.error('[MediaStore] Failed to update playback progress:', e);
   }
 }
