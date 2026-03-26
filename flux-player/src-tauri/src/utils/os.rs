@@ -5,10 +5,8 @@ pub fn compute_oshash(path: &str) -> Result<String, std::io::Error> {
     let mut file = File::open(path)?;
     let file_size = file.metadata()?.len();
     
-    // OSHash = file_size + sum of first 64KB + sum of last 64KB
     let mut hash: u64 = file_size;
     
-    // Read first 64KB
     let mut buffer = vec![0u8; 65536];
     let read_amount = file.read(&mut buffer)?;
     if read_amount < 65536 {
@@ -16,7 +14,6 @@ pub fn compute_oshash(path: &str) -> Result<String, std::io::Error> {
     }
     hash = hash.wrapping_add(bytes_to_u64_sum(&buffer));
     
-    // Read last 64KB
     if file_size > 65536 {
         let seek_pos = if file_size > 131072 {
             file_size - 65536

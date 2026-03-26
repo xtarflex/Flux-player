@@ -1,93 +1,75 @@
-import { writable } from 'svelte/store';
+/**
+ * @file media.ts
+ * @description Svelte store for the media library. On first load, fetches all 
+ * media items from the SQLite database via plugin-sql. After a library scan 
+ * completes (triggered by the `flux-library-updated` event), it refreshes 
+ * automatically.
+ */
+
+import { writable, get } from 'svelte/store';
+import Database from '@tauri-apps/plugin-sql';
 
 export interface MediaItem {
-  id: string;
+  id: string;      // maps to `path` (PRIMARY KEY)
+  path: string;
   title: string;
-  artist: string;
-  album: string;
-  duration: string;
-  poster?: string;
-  backdrop?: string;
-  year: string;
-  rating: number;
-  genres: string[];
-  synopsis: string;
-  director: string;
-  starring: string;
-  type: 'video' | 'audio' | 'unknown';
-  subtitle: string;
+  artist: string | null;
+  album: string | null;
+  duration: number | null;  // seconds
+  poster?: string | null;   // poster_path (asset:// or null)
+  backdrop?: string | null; // backdrop_path
+  album_art?: string | null;// album_art_path
+  year: number | null;
+  type: 'video' | 'audio' | 'mixed';
+  last_played: number;
+  added_at: number;
+  // UI-only enriched fields (populated from TMDB later)
+  rating?: number;
+  genres?: string[];
+  synopsis?: string;
+  director?: string;
+  starring?: string;
+  subtitle?: string;
 }
 
-const namedItems: MediaItem[] = [
-  {
-    id: "1", title: "dropped_video.mp4", artist: "Unknown Artist", album: "Unknown Album",
-    duration: "1:23:45", year: "2024", rating: 0, genres: [],
-    synopsis: "No synopsis available.", director: "Unknown", starring: "Unknown",
-    type: "video", subtitle: "None"
-  },
-  {
-    id: "2", title: "Blue Lock-S2E1-480P", artist: "Unknown Artist", album: "Blue Lock",
-    duration: "24:00", year: "2024", rating: 4.8,
-    genres: ["Anime", "Sports"], synopsis: "The second selection begins.",
-    director: "Shunsuke Ishikawa", starring: "Nobunaga Shimazaki, Kazuki Ura",
-    type: "video", subtitle: "English"
-  },
-  {
-    id: "3", title: "BLUE LOCK THE MOVIE -EPISODE NAGI-", artist: "Unknown Artist",
-    album: "Blue Lock", duration: "1:30:00", year: "2024",
-    rating: 4.9, genres: ["Anime", "Sports", "Movie"],
-    synopsis: "Nagi Seishiro's journey to Blue Lock.", director: "Shunsuke Ishikawa",
-    starring: "Nobunaga Shimazaki, Yuma Uchida", type: "video", subtitle: "English"
-  },
-  {
-    id: "4", title: "Guardians of the galaxy", artist: "Marvel", album: "Guardians Vol. 3",
-    duration: "2:30:00", year: "2023", rating: 4.5,
-    genres: ["Action", "Sci-Fi", "Comedy"],
-    synopsis: "Still reeling from the loss of Gamora, Peter Quill rallies his team.",
-    director: "James Gunn", starring: "Chris Pratt, Zoe Saldana",
-    type: "video", subtitle: "English"
-  },
-  {
-    id: "5", title: "Fi Kan We Kan (feat. Rema)", artist: "BNXN", album: "Unknown Album",
-    duration: "2:39",
-    poster: "https://i.scdn.co/image/ab67616d0000b273d46a8d799059f0861113b244",
-    backdrop: "https://i.scdn.co/image/ab67616d0000b273d46a8d799059f0861113b244",
-    year: "2024", rating: 5.0, genres: ["Afrobeats", "Pop"],
-    synopsis: "A hit collaboration between BNXN and Rema.",
-    director: "Unknown", starring: "BNXN, Rema", type: "audio", subtitle: "None"
-  },
-  {
-    id: "6", title: "Addicted | Xclusiveloaded.com", artist: "Unknown Artist",
-    album: "Unknown Album", duration: "3:15", year: "2024",
-    rating: 0, genres: [], synopsis: "Audio track.", director: "Unknown",
-    starring: "Unknown", type: "audio", subtitle: "None"
-  },
-  {
-    id: "7", title: "Are You There || TrendyBeatz.com", artist: "Unknown Artist",
-    album: "Unknown Album", duration: "4:00", year: "2024",
-    rating: 0, genres: [], synopsis: "Audio track.", director: "Unknown",
-    starring: "Unknown", type: "audio", subtitle: "None"
-  },
-];
+export type LibraryLoadState = 'idle' | 'loading' | 'done' | 'error';
 
-// Generate 17 more placeholder items to reach 24 total
-const placeholderItems: MediaItem[] = Array.from({ length: 17 }, (_, i) => ({
-  id: String(i + 8),
-  title: `Placeholder File ${i + 8}`,
-  artist: "Unknown Artist",
-  album: "Unknown Album",
-  duration: "0:00",
-  year: "2024",
-  rating: 0,
-  genres: [] as string[],
-  synopsis: "No synopsis available.",
-  director: "Unknown",
-  starring: "Unknown",
-  type: (i % 3 === 0 ? "audio" : "video") as 'video' | 'audio' | 'unknown',
-  subtitle: "None"
-}));
-
-export const mockMediaItems: MediaItem[] = [...namedItems, ...placeholderItems];
-
-export const mediaItems = writable<MediaItem[]>(mockMediaItems);
+export const mediaItems = writable<MediaItem[]>([]);
 export const selectedMediaId = writable<string | null>(null);
+export const libraryLoadState = writable<LibraryLoadState>('idle');
+
+/**
+ * Queries all rows from the `media` table in flux.db and updates the store.
+ * Maps SQLite column names to the MediaItem interface.
+ */
+export async function loadLibraryFromDb(): Promise<void> {
+  libraryLoadState.set('loading');
+  try {
+    const db = await Database.load('sqlite:flux.db');
+    const rows = await db.select<any[]>(
+      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at FROM media ORDER BY added_at DESC'
+    );
+
+    const items: MediaItem[] = rows.map((row) => ({
+      id: row.path,
+      path: row.path,
+      title: row.title,
+      artist: row.artist ?? null,
+      album: row.album ?? null,
+      duration: row.duration ?? null,
+      poster: row.poster_path ?? null,
+      backdrop: row.backdrop_path ?? null,
+      album_art: row.album_art_path ?? null,
+      year: row.year ?? null,
+      type: (row.media_type as 'video' | 'audio' | 'mixed') ?? 'video',
+      last_played: row.last_played ?? 0,
+      added_at: row.added_at ?? 0,
+    }));
+
+    mediaItems.set(items);
+    libraryLoadState.set('done');
+  } catch (e) {
+    console.error('[MediaStore] Failed to load library from DB:', e);
+    libraryLoadState.set('error');
+  }
+}

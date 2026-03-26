@@ -1,8 +1,26 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { invoke } from '@tauri-apps/api/core';
 
   let isCollapsed = $state(false);
-  
+
+  async function addFolder() {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Select Media Folder to Scan'
+    });
+
+    if (selected && typeof selected === 'string') {
+      try {
+        await invoke('start_library_scan', { dir: selected });
+      } catch (e) {
+        console.error('Failed to start scan:', e);
+      }
+    }
+  }
+
   const navItems = [
     { id: 'discovery', label: 'Discovery', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4' },
     { id: 'library', label: 'Library', icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' },
@@ -49,7 +67,7 @@
   <div class="sidebar-spacer"></div>
 
   <div class="sidebar-footer">
-    <button class="add-folder-btn" class:collapsed={isCollapsed} aria-label="Add Media Folder">
+    <button class="add-folder-btn" onclick={addFolder} class:collapsed={isCollapsed} aria-label="Add Media Folder">
       <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z" />
         <path d="M12 11v6m-3-3h6" stroke-width="2" />

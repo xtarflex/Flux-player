@@ -1,15 +1,31 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Icon from "../ui/Icon.svelte";
   import { open } from '@tauri-apps/plugin-dialog';
+  import { invoke } from '@tauri-apps/api/core';
+  import { loadLibraryFromDb } from '$lib/stores/media';
 
-  let storageLocations = $state([
-    { path: "D:/Media/Movies", type: "video" },
-    { path: "D:/Media/TV Shows", type: "video" },
-    { path: "C:/Users/Flux/Music", type: "audio" }
-  ]);
+  type FolderEntry = { path: string; type: 'video' | 'audio' };
 
-  let cacheSize = "1.2 GB";
-  let dbSize = "45 MB";
+  let storageLocations = $state<FolderEntry[]>([]);
+  let isLoading = $state(true);
+  let isScanning = $state(false);
+
+  let cacheSize = "—";
+  let dbSize = "—";
+
+  onMount(async () => {
+    try {
+      const defaults = await invoke<FolderEntry[]>('get_default_media_folders');
+      if (storageLocations.length === 0) {
+        storageLocations = defaults;
+      }
+    } catch (e) {
+      console.warn('Could not fetch system defaults:', e);
+    } finally {
+      isLoading = false;
+    }
+  });
 
   async function addFolder() {
     try {
@@ -19,19 +35,40 @@
         title: "Select Media Folder"
       });
 
-      if (selected) {
-        // Just push to UI state for now
-        storageLocations.push({ path: selected as string, type: "video" }); // Default to video for now
+      if (selected && typeof selected === 'string') {
+        storageLocations = [...storageLocations, { path: selected, type: "video" }];
+        
+        // Kick off the scan and refresh the library
+        isScanning = true;
+        window.dispatchEvent(new CustomEvent('flux-toast', { 
+          detail: { label: 'Scanning folder…', icon: 'refresh' } 
+        }));
+
+        try {
+          await invoke('start_library_scan', { dir: selected });
+          await loadLibraryFromDb();
+          window.dispatchEvent(new CustomEvent('flux-toast', { 
+            detail: { label: 'Library updated', icon: 'library' } 
+          }));
+        } catch (scanErr) {
+          console.error('Scan failed:', scanErr);
+          window.dispatchEvent(new CustomEvent('flux-toast', { 
+            detail: { label: 'Scan failed', icon: 'error' } 
+          }));
+        } finally {
+          isScanning = false;
+        }
       }
     } catch (err) {
       console.error("Failed to open dialog", err);
-      // Fallback for browser testing
-      window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Cannot open dialog in browser', icon: 'error' } }));
+      window.dispatchEvent(new CustomEvent('flux-toast', { 
+        detail: { label: 'Cannot open dialog in browser', icon: 'error' } 
+      }));
     }
   }
 
   function removeFolder(index: number) {
-    storageLocations.splice(index, 1);
+    storageLocations = storageLocations.filter((_, i) => i !== index);
   }
 
   function openFolderDialog() {
@@ -58,8 +95,12 @@
           <h3>Base Media Folders</h3>
           <p class="subtitle">Folders that Flux Player will automatically scan for media files.</p>
         </div>
-        <button class="btn-primary" onclick={openFolderDialog}>
-          <Icon name="plus" size={16} /> Add Folder
+        <button class="btn-primary" onclick={openFolderDialog} disabled={isScanning}>
+          {#if isScanning}
+            <span class="spinner"></span> Scanning…
+          {:else}
+            <Icon name="plus" size={16} /> Add Folder
+          {/if}
         </button>
       </div>
 
@@ -99,7 +140,7 @@
     <section class="settings-card">
       <div class="card-header">
         <div>
-          <h3>SQLite Database</h3>
+          <h3>Flux Database</h3>
           <p class="subtitle">Metadata, playlists, and playback history.</p>
         </div>
       </div>
@@ -325,5 +366,24 @@
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    border-top-color: var(--secondary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>

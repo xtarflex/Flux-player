@@ -10,6 +10,33 @@
   let { children } = $props();
   let showShortcutsRef = $state(false);
 
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { invoke } from '@tauri-apps/api/core';
+
+  async function importFolder() {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Select Media Folder to Scan'
+    });
+
+    if (selected && typeof selected === 'string') {
+      window.dispatchEvent(new CustomEvent('flux-toast', { 
+        detail: { label: 'Scanning Library...', icon: 'refresh' } 
+      }));
+      
+      try {
+        await invoke('start_library_scan', { dir: selected });
+        window.dispatchEvent(new CustomEvent('flux-library-updated'));
+        window.dispatchEvent(new CustomEvent('flux-toast', { 
+          detail: { label: 'Library Updated', icon: 'library' } 
+        }));
+      } catch (e) {
+        console.error('Failed to start scan:', e);
+      }
+    }
+  }
+
   function handleGlobalKeydown(e: KeyboardEvent) {
     const target = e.target as HTMLElement;
     const isEditing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
@@ -42,7 +69,7 @@
           break;
         case 'o':
           e.preventDefault();
-          dispatchToast('Import Media Folder', 'import');
+          importFolder();
           break;
         case 's':
           e.preventDefault();

@@ -5,7 +5,7 @@
   import DetailPanel from '../DetailPanel.svelte';
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
-  import { mediaItems, selectedMediaId } from '$lib/stores/media';
+  import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState } from '$lib/stores/media';
 
   type ViewMode = 'grid' | 'list' | 'detail';
   let viewMode = $state<ViewMode>('grid');
@@ -323,9 +323,20 @@
   }
 
   onMount(() => {
+    // Load real data from SQLite immediately
+    loadLibraryFromDb();
+
     const handleFocus = () => searchInput?.focus();
     window.addEventListener('flux-search-focus', handleFocus);
-    return () => window.removeEventListener('flux-search-focus', handleFocus);
+
+    // Re-fetch after any library scan completes
+    const handleLibraryUpdate = () => loadLibraryFromDb();
+    window.addEventListener('flux-library-updated', handleLibraryUpdate);
+
+    return () => {
+      window.removeEventListener('flux-search-focus', handleFocus);
+      window.removeEventListener('flux-library-updated', handleLibraryUpdate);
+    };
   });
 
   // Context Menu Logic
@@ -497,7 +508,21 @@
       {/if}
 
       <div class="media-grid" style={gridStyle}>
-        {#if viewMode !== 'detail'}
+        {#if $libraryLoadState === 'loading'}
+          <div class="grid-state">
+            <div class="grid-spinner"></div>
+            <p>Loading library…</p>
+          </div>
+        {:else if filteredItems.length === 0}
+          <div class="grid-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              <path d="M12 11v6m-3-3h6" stroke-width="1.5"/>
+            </svg>
+            <p>Your library is empty.</p>
+            <span>Use the <strong>Add Folder</strong> button in the sidebar or go to <strong>Settings → Storage</strong> to add media folders.</span>
+          </div>
+        {:else if viewMode !== 'detail'}
           {#each filteredItems as item (item.id)}
             <MediaCard 
               {item} 
@@ -800,6 +825,51 @@
     }
     .search-container { order: -1; min-width: 250px; width: 100%; }
     .main-view { padding: 0 20px 20px; }
+  }
+
+  /* Loading & Empty States */
+  .grid-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 80px 32px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .grid-state p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+  }
+
+  .grid-state span {
+    font-size: 0.9rem;
+    max-width: 340px;
+    line-height: 1.6;
+  }
+
+  .empty-icon {
+    width: 56px;
+    height: 56px;
+    opacity: 0.3;
+  }
+
+  .grid-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(138, 43, 226, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: gridSpin 0.8s linear infinite;
+  }
+
+  @keyframes gridSpin {
+    to { transform: rotate(360deg); }
   }
 
   .batch-action-bar {
