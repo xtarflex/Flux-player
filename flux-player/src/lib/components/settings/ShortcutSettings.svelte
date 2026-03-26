@@ -37,13 +37,62 @@
   ]);
 
   let editingId = $state<string | null>(null);
+  let currentKeyCombo = $state<string>("");
 
-  function startEdit(sectionTitle: string, action: string) {
+  function startEdit(sectionTitle: string, action: string, currentKey: string) {
     editingId = `${sectionTitle}-${action}`;
+    currentKeyCombo = currentKey;
   }
 
-  function stopEdit() {
+  function stopEdit(sectionIndex: number, itemIndex: number) {
+    if (editingId && currentKeyCombo) {
+      // Save the intercepted keys
+      sections[sectionIndex].items[itemIndex].key = currentKeyCombo;
+    }
     editingId = null;
+    currentKeyCombo = "";
+  }
+
+  function handleKeydown(e: KeyboardEvent, sectionIndex: number, itemIndex: number) {
+    if (!editingId) return;
+
+    e.preventDefault();
+
+    // Prevent saving just modifier keys
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      editingId = null;
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      stopEdit(sectionIndex, itemIndex);
+      return;
+    }
+
+    let keys = [];
+    if (e.ctrlKey || e.metaKey) keys.push('CTRL');
+    if (e.shiftKey) keys.push('SHIFT');
+    if (e.altKey) keys.push('ALT');
+
+    let mainKey = e.key;
+    if (mainKey === ' ') mainKey = 'SPACE';
+    else if (mainKey.length === 1) mainKey = mainKey.toUpperCase();
+    else if (mainKey.startsWith('Arrow')) mainKey = mainKey.replace('Arrow', ''); // e.g., ArrowRight -> Right
+    // map arrows to symbols
+    if (mainKey === 'Up') mainKey = '↑';
+    if (mainKey === 'Down') mainKey = '↓';
+    if (mainKey === 'Left') mainKey = '←';
+    if (mainKey === 'Right') mainKey = '→';
+
+    keys.push(mainKey);
+    currentKeyCombo = keys.join(' + ');
+
+    // Automatically stop editing and save once a full combo is pressed
+    stopEdit(sectionIndex, itemIndex);
   }
 </script>
 
@@ -60,11 +109,11 @@
   </header>
 
   <div class="shortcuts-container">
-    {#each sections as section}
+    {#each sections as section, sIdx}
       <section class="shortcut-group">
         <h3>{section.title}</h3>
         <div class="shortcut-list">
-          {#each section.items as item}
+          {#each section.items as item, iIdx}
             <div class="shortcut-row" class:is-editing={editingId === `${section.title}-${item.action}`}>
               <span class="action-name">{item.action}</span>
               <div class="key-container">
@@ -72,16 +121,18 @@
                   <input 
                     type="text" 
                     class="key-input" 
-                    value={item.key} 
-                    onblur={stopEdit}
-                    onkeydown={(e) => e.key === 'Enter' && stopEdit()}
+                    value={currentKeyCombo}
+                    onkeydown={(e) => handleKeydown(e, sIdx, iIdx)}
+                    onblur={() => { editingId = null; }}
                     autoFocus
+                    readonly
+                    placeholder="Press keys..."
                   />
                 {:else}
                   <button 
                     class="key-chip" 
                     class:editable={item.editable}
-                    onclick={() => item.editable && startEdit(section.title, item.action)}
+                    onclick={() => item.editable && startEdit(section.title, item.action, item.key)}
                   >
                     {item.key}
                   </button>
@@ -222,14 +273,18 @@
   .key-input {
     background: var(--bg-base);
     border: 1px solid var(--secondary);
-    color: var(--secondary);
+    color: var(--text-main);
     font-family: monospace;
     padding: 0.4rem 0.8rem;
     border-radius: 6px;
     font-size: 0.85rem;
-    width: 120px;
+    width: 140px;
     outline: none;
     text-align: center;
+  }
+
+  .key-input:focus {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
   }
 
   @keyframes fadeIn {
