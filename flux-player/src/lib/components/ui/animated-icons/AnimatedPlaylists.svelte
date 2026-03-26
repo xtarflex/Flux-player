@@ -49,7 +49,8 @@
 
   .animated-playlists.animating .note-dot {
     transform: scale(1.1);
-    transform-origin: 8px 14px;
+    transform-origin: center;
+    transform-box: fill-box;
   }
 
   .animated-playlists.animating .note-stem {

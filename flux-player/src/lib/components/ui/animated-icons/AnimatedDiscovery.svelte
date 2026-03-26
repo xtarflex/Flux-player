@@ -24,6 +24,7 @@
   stroke-linecap="round"
   stroke-linejoin="round"
   class="animated-discovery {isAnimating ? 'animating' : ''}"
+  style="overflow: visible;"
 >
   <circle class="radar-dot" cx="12" cy="12" r="3" />
   <path class="radar-beam" d="M19 12a7 7 0 0 0-7-7 7 7 0 0 0-7 7" />
@@ -59,12 +60,14 @@
 
   .animated-discovery.animating .radar-dot {
     transform: scale(1.3);
-    transform-origin: 12px 12px;
+    transform-origin: center;
+    transform-box: fill-box;
   }
 
   .animated-discovery.animating .radar-tick {
     transform: scale(0.9);
-    transform-origin: 12px 12px;
+    transform-origin: center;
+    transform-box: fill-box;
     opacity: 0.5;
   }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   /**
    * EmptyState.svelte
    *
@@ -8,21 +9,30 @@
    * It features a clean, geometric, abstract SVG illustration by default that
    * adheres to the Cyber Dark theme (crisp borders, primary/secondary colors).
    *
-   * Note: The `<slot name="illustration">` allows you to easily swap this
+   * Note: The `illustration` snippet allows you to easily swap this
    * geometric SVG for a more complex unDraw-style illustration later.
    */
-  let { title, description, actionLabel = "", onAction = () => {} } = $props<{
+  let { 
+    title, 
+    description, 
+    actionLabel = "", 
+    onAction = () => {},
+    illustration
+  } = $props<{
     title: string;
     description: string;
     actionLabel?: string;
     onAction?: () => void;
+    illustration?: Snippet;
   }>();
 </script>
 
 <div class="empty-state">
   <div class="illustration-container">
-    <!-- Default Geometric Illustration -->
-    <slot name="illustration">
+    <!-- Default Geometric Illustration or Custom Snippet -->
+    {#if illustration}
+      {@render illustration()}
+    {:else}
       <svg class="geometric-illustration" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- Floating Elements Background -->
         <circle cx="20" cy="20" r="4" fill="var(--secondary)" opacity="0.2" />
@@ -39,7 +49,7 @@
         <path class="data-line" d="M65 65 L80 65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4" />
         <path class="data-line delay-1" d="M65 75 L75 75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4" />
       </svg>
-    </slot>
+    {/if}
   </div>
 
   <h2 class="empty-title">{title}</h2>

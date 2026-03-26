@@ -2,49 +2,48 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { goto } from '$app/navigation';
   import ProfileAvatar from './ProfileAvatar.svelte';
   
   let appWindow: any;
-  // Use a safer check for Tauri context to prevent browser dev errors
   if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window)) {
     appWindow = getCurrentWindow();
   }
 
   let isOnline = $state(true);
   let pcName = $state("FLUX-DEVICE");
+  let displayName = $state("");
 
-  onMount(async () => {
+  async function loadProfile() {
     try {
       pcName = await invoke('get_computer_name');
-      console.log("Flux Titlebar: Initialized with window:", appWindow.label);
+      const saved = await invoke<string | null>('get_setting', { key: 'display_name' });
+      displayName = saved || pcName;
     } catch (e) {
-      console.error("Flux Titlebar: Failed to fetch computer name:", e);
+      console.error("Flux Titlebar: Failed to fetch profile:", e);
     }
+  }
+
+  onMount(() => {
+    loadProfile();
+    console.log("Flux Titlebar: Initialized");
+
+    window.addEventListener('flux-settings-updated', loadProfile);
+    return () => window.removeEventListener('flux-settings-updated', loadProfile);
   });
 
-  const minimize = async () => {
-    console.log("Flux Titlebar: Minimizing window");
-    await appWindow.minimize();
-  };
-  
-  const toggleMaximize = async () => {
-    console.log("Flux Titlebar: Toggling maximize");
-    await appWindow.toggleMaximize();
-  };
-  
-  const close = async () => {
-    console.log("Flux Titlebar: Closing window");
-    await appWindow.close();
-  };
-  
+  const minimize = async () => appWindow.minimize();
+  const toggleMaximize = async () => appWindow.toggleMaximize();
+  const close = async () => appWindow.close();
   const refresh = () => window.location.reload();
+  const openSettings = () => goto('/settings');
 </script>
 
 <div class="titlebar" data-tauri-drag-region>
   <div class="left-section" data-tauri-drag-region>
     <div class="user-profile" data-tauri-drag-region>
       <ProfileAvatar size="small" />
-      <span class="pc-name" data-tauri-drag-region>{pcName}</span>
+      <span class="pc-name" data-tauri-drag-region>{displayName}</span>
     </div>
   </div>
 
@@ -69,7 +68,7 @@
         </div>
       </div>
 
-      <button class="settings-btn" title="Settings Hub">
+      <button class="settings-btn" title="Settings Hub" onclick={openSettings}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />

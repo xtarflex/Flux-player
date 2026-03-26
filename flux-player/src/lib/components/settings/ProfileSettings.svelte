@@ -9,27 +9,39 @@
 
   onMount(async () => {
     try {
-      // Safe context check for Playwright/Browser environment
       if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
         const name = await invoke<string>('get_computer_name');
         computerName = name;
-        if (displayName === "Flux User") {
-          displayName = name; // Auto-set display name to computer name initially
+        
+        // Try to load custom display name
+        const savedName = await invoke<string | null>('get_setting', { key: 'display_name' });
+        if (savedName) {
+          displayName = savedName;
+        } else {
+          displayName = name; // Default to computer name
         }
       } else {
         computerName = "LOCAL-TEST-PC";
       }
     } catch (err) {
-      console.error("Failed to fetch computer name", err);
+      console.error("Failed to initialize profile:", err);
       computerName = "UNKNOWN-PC";
     }
   });
 
-  function saveProfile() {
-    window.dispatchEvent(new CustomEvent('flux-toast', {
-      detail: { label: `Profile saved: ${displayName}`, icon: 'settings' }
-    }));
-    // Future: Save to SQLite / Settings Config via Rust invoke here
+  async function saveProfile() {
+    try {
+      await invoke('save_setting', { key: 'display_name', value: displayName });
+      window.dispatchEvent(new CustomEvent('flux-settings-updated'));
+      window.dispatchEvent(new CustomEvent('flux-toast', {
+        detail: { label: `Profile updated: ${displayName}`, icon: 'settings' }
+      }));
+    } catch (err) {
+      console.error("Failed to save profile:", err);
+      window.dispatchEvent(new CustomEvent('flux-toast', {
+        detail: { label: 'Failed to save changes', icon: 'error' }
+      }));
+    }
   }
 </script>
 

@@ -2,14 +2,23 @@
   /**
    * @file DetailPanel.svelte
    * @description Library Detail Panel — displays metadata for the selected media item.
-   * Sits inside the split-view container. Matches the Library Detail mockup.
    */
-  import { mediaItems, selectedMediaId } from '$lib/stores/media';
+  import { mediaItems, selectedMediaId, type MediaItem } from '$lib/stores/media';
   import { derived } from 'svelte/store';
+  import { playerActions } from '$lib/stores/player';
+  import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
 
-  const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]) => {
-    return $items.find((item: typeof $items[0]) => item.id === $id) || null;
+  const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]: [MediaItem[], string | null]) => {
+    return $items.find((item: MediaItem) => item.id === $id) || null;
   });
+
+  let playingHovered = $state(false);
+
+  function formatTime(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
 </script>
 
 <aside class="detail-panel">
@@ -48,24 +57,24 @@
             <div class="artist-card artist-card--side">
               <div class="card-group">
                 <span class="card-label">ARTIST</span>
-                <span class="card-value">{$selectedItem.artist}</span>
+                <span class="card-value">{$selectedItem.artist || 'Unknown Artist'}</span>
               </div>
               <div class="card-group">
                 <span class="card-label">ALBUM</span>
-                <span class="card-value">{$selectedItem.album}</span>
+                <span class="card-value">{$selectedItem.album || 'Unknown Album'}</span>
               </div>
             </div>
           {:else}
             <!-- Video Badges/Genres beside poster -->
             <div class="badges">
-              <span class="badge">{$selectedItem.year}</span>
-              <span class="badge">{$selectedItem.duration}</span>
-              {#if $selectedItem.rating > 0}
+              <span class="badge">{$selectedItem.year || 'N/A'}</span>
+              <span class="badge">{$selectedItem.duration || '0m'}</span>
+              {#if $selectedItem.rating && $selectedItem.rating > 0}
                 <span class="badge badge--rating">★ {$selectedItem.rating.toFixed(1)}</span>
               {/if}
             </div>
 
-            {#if $selectedItem.genres.length > 0}
+            {#if $selectedItem.genres && $selectedItem.genres.length > 0}
               <div class="genre-tags">
                 {#each $selectedItem.genres as genre}
                   <span class="genre-tag">{genre}</span>
@@ -83,8 +92,12 @@
       
       {#if $selectedItem.type === 'audio'}
         <!-- Visualizer Button -->
-        <button class="btn-play">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+        <button 
+          class="btn-play"
+          onmouseenter={() => playingHovered = true}
+          onmouseleave={() => playingHovered = false}
+        >
+          <AnimatedPlayPause isPlaying={playingHovered} size={14} />
           Visualizer
         </button>
       {:else}
@@ -93,17 +106,33 @@
           <p class="synopsis">{$selectedItem.synopsis}</p>
         {/if}
 
-        <!-- Play Button -->
-        <button class="btn-play">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
-          Play {$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}
-        </button>
+        <!-- Action Buttons -->
+        <div class="action-row">
+          <button 
+            class="btn-play"
+            onmouseenter={() => playingHovered = true}
+            onmouseleave={() => playingHovered = false}
+            onclick={() => playerActions.play($selectedItem)}
+          >
+            <AnimatedPlayPause isPlaying={playingHovered} size={14} />
+            Play {$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}
+          </button>
+
+          {#if $selectedItem.last_position > 5 && !$selectedItem.is_watched}
+            <button 
+              class="btn-resume"
+              onclick={() => playerActions.play($selectedItem)}
+            >
+              Resume from {formatTime($selectedItem.last_position)}
+            </button>
+          {/if}
+        </div>
       {/if}
 
       <!-- === Subtitle Row (Shared) === -->
       <div class="subtitle-row">
         <span class="sub-label">Subtitle:</span>
-        <span class="sub-value">{$selectedItem.subtitle}</span>
+        <span class="sub-value">{$selectedItem.subtitle || 'None'}</span>
         <button class="change-btn">Change</button>
       </div>
 
@@ -132,12 +161,12 @@
           <!-- Audio Table -->
           <div class="meta-row">
             <span class="meta-key">ARTIST</span>
-            <span class="meta-val">{$selectedItem.artist}</span>
+            <span class="meta-val">{$selectedItem.artist || 'Unknown'}</span>
             <div class="meta-actions"><button class="icon-action" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
           </div>
           <div class="meta-row">
             <span class="meta-key">ALBUM</span>
-            <span class="meta-val">{$selectedItem.album}</span>
+            <span class="meta-val">{$selectedItem.album || 'Unknown'}</span>
             <div class="meta-actions"><button class="icon-action" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
           </div>
         {:else}
@@ -340,6 +369,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: block;
   }
 
   /* ===================== Title Block ===================== */
@@ -416,12 +446,19 @@
   }
 
   /* ===================== Play Button ===================== */
+  .action-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
   .btn-play {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    width: 100%;
+    flex: 1;
     height: 42px;
     background: linear-gradient(90deg, var(--primary), var(--secondary));
     border: none;
@@ -431,11 +468,33 @@
     font-size: 16px;
     color: var(--text-main);
     cursor: pointer;
-    flex-shrink: 0;
     transition: filter 0.2s, transform 0.2s;
   }
 
-  .btn-play svg { width: 14px; height: 14px; }
+  .btn-resume {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 42px;
+    background: var(--glass-bg-low);
+    border: 1px solid var(--glass-border-low);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-resume:hover {
+    background: var(--glass-bg-mid);
+    border-color: var(--secondary);
+    color: var(--secondary);
+  }
+
+  .btn-play :global(svg) { width: 14px; height: 14px; }
 
   .btn-play:hover {
     filter: brightness(1.1);

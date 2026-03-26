@@ -6,12 +6,14 @@
   import DynamicIsland from '$lib/components/DynamicIsland.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import PlaybackFooter from '$lib/components/PlaybackFooter.svelte';
+  import VideoPlayer from '$lib/components/player/VideoPlayer.svelte';
   
   let { children } = $props();
   let showShortcutsRef = $state(false);
 
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
+  import { isScanning } from '$lib/stores/media';
 
   async function importFolder() {
     const selected = await open({
@@ -21,6 +23,7 @@
     });
 
     if (selected && typeof selected === 'string') {
+      isScanning.set(true);
       window.dispatchEvent(new CustomEvent('flux-toast', { 
         detail: { label: 'Scanning Library...', icon: 'refresh' } 
       }));
@@ -33,6 +36,8 @@
         }));
       } catch (e) {
         console.error('Failed to start scan:', e);
+      } finally {
+        isScanning.set(false);
       }
     }
   }
@@ -94,7 +99,15 @@
 
   onMount(() => {
     window.addEventListener('keydown', handleGlobalKeydown);
-    return () => window.removeEventListener('keydown', handleGlobalKeydown);
+    
+    // Centralized folder picker trigger
+    const handleImportEvent = () => importFolder();
+    window.addEventListener('flux-import-folder', handleImportEvent);
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeydown);
+      window.removeEventListener('flux-import-folder', handleImportEvent);
+    };
   });
 </script>
 
@@ -106,6 +119,7 @@
     {@render children()}
   </main>
   <PlaybackFooter />
+  <VideoPlayer />
 
   <!-- Shortcuts Reference Modal -->
   {#if showShortcutsRef}

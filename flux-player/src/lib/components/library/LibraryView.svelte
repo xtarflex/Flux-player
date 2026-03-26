@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import MediaCard from './MediaCard.svelte';
+  import Icon from '../ui/Icon.svelte';
   import Dropdown from '../ui/Dropdown.svelte';
   import DetailPanel from '../DetailPanel.svelte';
+  import EmptyState from '../ui/EmptyState.svelte';
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
   import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState } from '$lib/stores/media';
@@ -389,7 +391,7 @@
   onclick={(e: MouseEvent) => {
     // Only deselect if we clicked the actual background (not a card, bar, or modal)
     const target = e.target as HTMLElement;
-    if (target.closest('.media-card, .batch-action-bar, .action-bar, .context-menu, .dropdown')) {
+    if (target.closest('.media-card, .batch-action-bar, .action-bar, .context-menu, .dropdown, .detail-panel')) {
       return;
     }
     
@@ -407,10 +409,7 @@
     <div class="action-bar">
       <!-- Search Input -->
       <div class="search-container">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
+        <Icon name="search" size={18} class="search-icon" />
         <input 
           type="text" 
           class="search-input" 
@@ -426,39 +425,24 @@
       <!-- Zoom Controls -->
       <div class="zoom-controls" style:opacity={disableZoom ? 0.3 : 1} style:pointer-events={disableZoom ? 'none' : 'auto'}>
         <button class="icon-btn" onclick={zoomOut} aria-label="Zoom Out" title="Smaller Grid" disabled={disableZoom}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          <Icon name="zoom-out" size={16} />
         </button>
         <div class="v-divider"></div>
         <button class="icon-btn" onclick={zoomIn} aria-label="Zoom In" title="Larger Grid" disabled={disableZoom}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          <Icon name="zoom-in" size={16} />
         </button>
       </div>
 
       <!-- View Toggles -->
       <div class="view-toggles">
         <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'} aria-label="Grid View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
+          <Icon name="grid-view" size={20} />
         </button>
         <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => viewMode = 'list'} aria-label="List View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+          <Icon name="list-view" size={20} />
         </button>
         <button class="toggle-btn" class:active={viewMode === 'detail'} onclick={() => viewMode = 'detail'} aria-label="Detail View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="9" y1="3" x2="9" y2="21"></line>
-          </svg>
+          <Icon name="library" size={20} />
         </button>
       </div>
     </div>
@@ -513,14 +497,23 @@
             <div class="grid-spinner"></div>
             <p>Loading library…</p>
           </div>
+        {:else if $mediaItems.length === 0}
+          <div class="grid-state">
+            <EmptyState 
+              title="Your Library is Empty" 
+              description="Flux Player hasn't found any media files yet. Connect a folder to begin scanning your collection."
+              actionLabel="Add Media Folder"
+              onAction={() => window.dispatchEvent(new CustomEvent('flux-import-folder'))}
+            />
+          </div>
         {:else if filteredItems.length === 0}
           <div class="grid-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-              <path d="M12 11v6m-3-3h6" stroke-width="1.5"/>
-            </svg>
-            <p>Your library is empty.</p>
-            <span>Use the <strong>Add Folder</strong> button in the sidebar or go to <strong>Settings → Storage</strong> to add media folders.</span>
+            <EmptyState 
+              title="No matches found" 
+              description="We couldn't find any items matching your current filters or search terms."
+              actionLabel="Reset Filters"
+              onAction={() => { searchText = ''; mediaFilter = 'All Media'; }}
+            />
           </div>
         {:else if viewMode !== 'detail'}
           {#each filteredItems as item (item.id)}
@@ -683,7 +676,7 @@
     align-items: center;
   }
 
-  .search-icon {
+  :global(.search-icon) {
     position: absolute;
     left: 12px;
     width: 18px;
@@ -755,7 +748,7 @@
     background: var(--glass-bg-low);
   }
 
-  .icon-btn svg {
+  .icon-btn :global(svg) {
     width: 18px;
     height: 18px;
   }
@@ -783,7 +776,7 @@
     transition: all 0.2s;
   }
 
-  .toggle-btn svg {
+  .toggle-btn :global(svg) {
     width: 18px;
     height: 18px;
   }
@@ -846,19 +839,6 @@
     color: var(--text-main);
     margin: 0;
   }
-
-  .grid-state span {
-    font-size: 0.9rem;
-    max-width: 340px;
-    line-height: 1.6;
-  }
-
-  .empty-icon {
-    width: 56px;
-    height: 56px;
-    opacity: 0.3;
-  }
-
   .grid-spinner {
     width: 32px;
     height: 32px;

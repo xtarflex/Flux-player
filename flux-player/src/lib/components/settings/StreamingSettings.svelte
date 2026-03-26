@@ -1,10 +1,36 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import Dropdown from '../ui/Dropdown.svelte';
+  
   let tmdbKey = $state('');
   let streamingQuality = $state('Best Available');
   let isCheatSheetOpen = $state(false);
 
   const qualities = ['720p', '1080p', '4K', 'Best Available'];
+
+  onMount(async () => {
+    try {
+      const savedKey = await invoke<string | null>('get_setting', { key: 'tmdb_read_token' });
+      if (savedKey) tmdbKey = savedKey;
+    } catch (err) {
+      console.error("Failed to load TMDB key:", err);
+    }
+  });
+
+  async function saveToken() {
+    try {
+      await invoke('save_setting', { key: 'tmdb_read_token', value: tmdbKey });
+      window.dispatchEvent(new CustomEvent('flux-toast', {
+        detail: { label: 'TMDB Token Saved', icon: 'settings' }
+      }));
+    } catch (err) {
+      console.error("Failed to save TMDB token:", err);
+      window.dispatchEvent(new CustomEvent('flux-toast', {
+        detail: { label: 'Failed to save token', icon: 'error' }
+      }));
+    }
+  }
 
   function toggleCheatSheet() {
     isCheatSheetOpen = !isCheatSheetOpen;
@@ -32,7 +58,7 @@
             bind:value={tmdbKey}
             placeholder="eyJhbGciOiJIUzI1NiJ9..."
           />
-          <button class="btn-primary">Save Token</button>
+          <button class="btn-primary" onclick={saveToken}>Save Token</button>
         </div>
       </div>
 

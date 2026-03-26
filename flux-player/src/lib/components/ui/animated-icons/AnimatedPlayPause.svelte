@@ -8,7 +8,11 @@
    *
    * Usage: Provide an `isPlaying` boolean prop.
    */
-  let { isPlaying = false, size = 24, class: className = "" } = $props<{
+  let {
+    isPlaying = false,
+    size = 24,
+    class: className = "",
+  } = $props<{
     isPlaying?: boolean;
     size?: number;
     class?: string;

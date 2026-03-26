@@ -5,6 +5,7 @@
   import IslandControls from "./island/IslandControls.svelte";
   import IslandStatus from "./island/IslandStatus.svelte";
   import IslandMedia from "./island/IslandMedia.svelte";
+  import { isScanning } from "$lib/stores/media";
 
   // ── Island State ────────────────────────────────────────────────────
   let currentState = $state("idle"); // idle | status | audio | playing | hover
@@ -79,6 +80,12 @@
   });
 
   $effect(() => {
+    if ($isScanning) {
+      if (currentState !== "status") previousState = currentState;
+      currentState = "status";
+      return;
+    }
+
     switch (mediaState) {
       case "loading":   currentState = "status"; break;
       case "buffering": currentState = "status"; break;
@@ -142,6 +149,7 @@
     <IslandStatus 
       {mediaState} 
       {bufferingProgress} 
+      isScanning={$isScanning}
       toast={currentToast}
       onClose={() => { 
         currentToast = null;

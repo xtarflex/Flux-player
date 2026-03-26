@@ -44,3 +44,39 @@ pub fn get_computer_name() -> String {
         std::env::var("HOSTNAME").unwrap_or_else(|_| "FLUX-DEVICE".to_string())
     }
 }
+
+#[tauri::command]
+pub async fn save_setting<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    key: String,
+    value: String
+) -> Result<(), String> {
+    let db_path = crate::database::connection::get_db_path(&app)?;
+    let conn = rusqlite::Connection::open(db_path).map_err(|e| e.to_string())?;
+    
+    conn.execute(
+        "INSERT INTO settings (key, value) VALUES (?1, ?2)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, value),
+    ).map_err(|e| e.to_string())?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_setting<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    key: String
+) -> Result<Option<String>, String> {
+    let db_path = crate::database::connection::get_db_path(&app)?;
+    let conn = rusqlite::Connection::open(db_path).map_err(|e| e.to_string())?;
+    
+    let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1").map_err(|e| e.to_string())?;
+    let mut rows = stmt.query((key,)).map_err(|e| e.to_string())?;
+    
+    if let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        Ok(Some(row.get(0).map_err(|e| e.to_string())?))
+    } else {
+        Ok(None)
+    }
+}

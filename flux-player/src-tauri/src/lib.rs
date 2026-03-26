@@ -24,6 +24,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::settings::get_computer_name, 
             commands::settings::get_tmdb_key, 
+            commands::settings::save_setting,
+            commands::settings::get_setting,
             commands::library::cache_tmdb_image,
             commands::library::get_file_oshash,
             commands::library::start_library_scan,

@@ -2,9 +2,10 @@
   import { fade } from "svelte/transition";
   import Icon from "../ui/Icon.svelte";
 
-  let { mediaState, bufferingProgress, toast = null, onClose } = $props<{ 
+  let { mediaState, bufferingProgress, isScanning = false, toast = null, onClose } = $props<{ 
     mediaState: string; 
     bufferingProgress: number;
+    isScanning?: boolean;
     toast?: { icon: string, label: string } | null;
     onClose: () => void;
   }>();
@@ -16,6 +17,16 @@
       <div class="toast-state">
         <Icon name={toast.icon} size={24} strokeWidth={2.5} class="toast-svg" />
         <span class="status-msg">{toast.label.toUpperCase()}</span>
+      </div>
+    {:else if isScanning}
+      <div class="loading-state">
+        <div class="spinner-box">
+          <svg class="flux-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path class="flux-spin-cyan" d="M12 22 A10 10 0 0 1 12 2 A5 5 0 0 1 12 12 A5 5 0 0 0 12 22 Z" fill="var(--secondary)"/>
+            <path class="flux-spin-violet" d="M12 2 A10 10 0 0 1 12 22 A5 5 0 0 1 12 12 A5 5 0 0 0 12 2 Z" fill="var(--primary)"/>
+          </svg>
+        </div>
+        <span class="status-msg">SCANNING LIBRARY...</span>
       </div>
     {:else if mediaState === "loading"}
       <div class="loading-state">

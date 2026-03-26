@@ -47,6 +47,26 @@ pub fn get_migrations() -> Vec<Migration> {
                 );
             ",
             kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "create settings table",
+            sql: "
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+            ",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 3,
+            description: "add playback memory columns to media",
+            sql: "
+                ALTER TABLE media ADD COLUMN last_position INTEGER DEFAULT 0;
+                ALTER TABLE media ADD COLUMN is_watched BOOLEAN DEFAULT 0;
+            ",
+            kind: MigrationKind::Up,
         }
     ]
 }

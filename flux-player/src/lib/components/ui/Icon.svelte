@@ -9,10 +9,11 @@
    * For complex animated navigation icons, use the `Animated*.svelte` components
    * in `src/lib/components/ui/animated-icons/`.
    */
-  let { name, size = 20, strokeWidth = 2, class: className = "" } = $props<{
+  let { name, size = 20, strokeWidth = 2, fill = "none", class: className = "" } = $props<{
     name: string;
     size?: number | string;
     strokeWidth?: number;
+    fill?: string;
     class?: string;
   }>();
 
@@ -37,8 +38,10 @@
     menu: ['M3 12h18M3 6h18M3 18h18'], // Added from Sidebar
 
     // View Toggles
-    'list-view': ['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'], // The old playlists icon, perfect for list-view
+    'list-view': ['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'], 
     'grid-view': ['M7 3H3v4h4V3zM14 3h-4v4h4V3zM21 3h-4v4h4V3zM7 10H3v4h4v-4zM14 10h-4v4h4v-4zM21 10h-4v4h4v-4zM7 17H3v4h4v-4zM14 17h-4v4h4v-4zM21 17h-4v4h4v-4z'],
+    'zoom-in': ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'M21 21l-4.35-4.35', 'M11 8v6', 'M8 11h6'],
+    'zoom-out': ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'M21 21l-4.35-4.35', 'M8 11h6'],
 
     // Playback
 

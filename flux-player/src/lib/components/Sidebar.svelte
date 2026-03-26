@@ -1,32 +1,25 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import { open } from '@tauri-apps/plugin-dialog';
-  import { invoke } from '@tauri-apps/api/core';
+  import { isScanning } from '$lib/stores/media';
+  import AnimatedDiscovery from './ui/animated-icons/AnimatedDiscovery.svelte';
+  import AnimatedLibrary from './ui/animated-icons/AnimatedLibrary.svelte';
+  import AnimatedPlaying from './ui/animated-icons/AnimatedPlaying.svelte';
+  import AnimatedPlaylists from './ui/animated-icons/AnimatedPlaylists.svelte';
+  import AnimatedSettings from './ui/animated-icons/AnimatedSettings.svelte';
+  import Icon from "./ui/Icon.svelte";
 
   let isCollapsed = $state(false);
 
-  async function addFolder() {
-    const selected = await open({
-      directory: true,
-      multiple: false,
-      title: 'Select Media Folder to Scan'
-    });
-
-    if (selected && typeof selected === 'string') {
-      try {
-        await invoke('start_library_scan', { dir: selected });
-      } catch (e) {
-        console.error('Failed to start scan:', e);
-      }
-    }
+  function triggerImport() {
+    window.dispatchEvent(new CustomEvent('flux-import-folder'));
   }
 
   const navItems = [
-    { id: 'discovery', label: 'Discovery', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4' },
-    { id: 'library', label: 'Library', icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' },
-    { id: 'playing', label: 'Now Playing', icon: 'M12 2v20 M12 2a10 10 0 0 0-10 10 M12 22a10 10 0 0 0 10-10 M18 8l-8 4 8 4V8z' },
-    { id: 'playlists', label: 'Playlists', icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
-    { id: 'settings', label: 'Settings', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' }
+    { id: 'discovery', label: 'Discovery', Icon: AnimatedDiscovery },
+    { id: 'library', label: 'Library', Icon: AnimatedLibrary },
+    { id: 'playing', label: 'Now Playing', Icon: AnimatedPlaying },
+    { id: 'playlists', label: 'Playlists', Icon: AnimatedPlaylists },
+    { id: 'settings', label: 'Settings', Icon: AnimatedSettings }
   ];
 </script>
 
@@ -40,9 +33,7 @@
       </div>
     </div>
     <button class="menu-toggle" onclick={() => isCollapsed = !isCollapsed} aria-label="Toggle Sidebar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12h18M3 6h18M3 18h18" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
+      <Icon name="menu" strokeWidth={2.5} />
     </button>
   </div>
 
@@ -52,11 +43,14 @@
         href="/{item.id}"
         class="nav-item" 
         class:active={$page.url.pathname.startsWith('/' + item.id)}
+        onmouseenter={() => { if (isCollapsed) return; /* could trigger hover state here */ }}
         title={isCollapsed ? item.label : ''}
       >
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d={item.icon} stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <div class="nav-icon">
+          <item.Icon 
+            active={$page.url.pathname.startsWith('/' + item.id)} 
+          />
+        </div>
         {#if !isCollapsed}
           <span class="nav-label">{item.label}</span>
         {/if}
@@ -67,12 +61,19 @@
   <div class="sidebar-spacer"></div>
 
   <div class="sidebar-footer">
-    <button class="add-folder-btn" onclick={addFolder} class:collapsed={isCollapsed} aria-label="Add Media Folder">
-      <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z" />
-        <path d="M12 11v6m-3-3h6" stroke-width="2" />
-      </svg>
-      <span class="btn-text">Add Folder</span>
+    <button 
+      class="add-folder-btn" 
+      onclick={triggerImport} 
+      disabled={$isScanning}
+      class:collapsed={isCollapsed} 
+      aria-label="Add Media Folder"
+    >
+      {#if $isScanning}
+        <div class="btn-spinner"></div>
+      {:else}
+        <Icon name="import" size={20} strokeWidth={2} />
+      {/if}
+      <span class="btn-text">{$isScanning ? 'Scanning...' : 'Add Folder'}</span>
     </button>
     
     <div class="tmdb-credit" class:collapsed={isCollapsed}>
@@ -165,11 +166,6 @@
     border-color: var(--glass-border-high);
     color: var(--text-main);
     transform: scale(1.05);
-  }
-
-  .menu-toggle svg {
-    width: 24px;
-    height: 24px;
   }
 
   /* Navigation Styles */
@@ -298,9 +294,17 @@
     margin: 0;
   }
 
-  .add-icon {
+  .btn-spinner {
     width: 18px;
     height: 18px;
+    border: 2px solid rgba(138, 43, 226, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: sideSpin 0.8s linear infinite;
+  }
+
+  @keyframes sideSpin {
+    to { transform: rotate(360deg); }
   }
 
   .tmdb-credit {

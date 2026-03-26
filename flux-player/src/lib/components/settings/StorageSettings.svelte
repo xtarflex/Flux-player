@@ -3,13 +3,13 @@
   import Icon from "../ui/Icon.svelte";
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
-  import { loadLibraryFromDb } from '$lib/stores/media';
+  import { loadLibraryFromDb, isScanning } from '$lib/stores/media';
 
   type FolderEntry = { path: string; type: 'video' | 'audio' };
 
   let storageLocations = $state<FolderEntry[]>([]);
   let isLoading = $state(true);
-  let isScanning = $state(false);
+  // Using global store instead of local state
 
   let cacheSize = "—";
   let dbSize = "—";
@@ -39,7 +39,7 @@
         storageLocations = [...storageLocations, { path: selected, type: "video" }];
         
         // Kick off the scan and refresh the library
-        isScanning = true;
+        isScanning.set(true);
         window.dispatchEvent(new CustomEvent('flux-toast', { 
           detail: { label: 'Scanning folder…', icon: 'refresh' } 
         }));
@@ -56,7 +56,7 @@
             detail: { label: 'Scan failed', icon: 'error' } 
           }));
         } finally {
-          isScanning = false;
+          isScanning.set(false);
         }
       }
     } catch (err) {
@@ -95,8 +95,8 @@
           <h3>Base Media Folders</h3>
           <p class="subtitle">Folders that Flux Player will automatically scan for media files.</p>
         </div>
-        <button class="btn-primary" onclick={openFolderDialog} disabled={isScanning}>
-          {#if isScanning}
+        <button class="btn-primary" onclick={openFolderDialog} disabled={$isScanning}>
+          {#if $isScanning}
             <span class="spinner"></span> Scanning…
           {:else}
             <Icon name="plus" size={16} /> Add Folder

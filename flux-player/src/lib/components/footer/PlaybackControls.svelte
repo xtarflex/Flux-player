@@ -141,9 +141,11 @@
 
   .play-btn {
     margin: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .play-btn svg { width: 28px; height: 28px; }
   .pill-btn svg { width: 20px; height: 20px; }
 
   .seek-btn {

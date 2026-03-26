@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../ui/Icon.svelte';
 
   let { 
     item, 
@@ -13,8 +14,8 @@
     item: {
       id: string;
       title: string;
-      poster?: string;
-      type: 'video' | 'audio' | 'unknown';
+      poster?: string | null;
+      type: 'video' | 'audio' | 'mixed' | 'unknown';
     };
     viewMode?: 'grid' | 'list' | 'detail';
     selected?: boolean;
@@ -76,9 +77,7 @@
 >
   {#if selectionMode}
     <div class="choice-indicator">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
+      <Icon name="check" strokeWidth={3} size={14} />
     </div>
   {/if}
   <div class="poster-container">
@@ -104,9 +103,7 @@
       title={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
       onclick={toggleFavorite}
     >
-      <svg viewBox="0 0 24 24" fill={isFavorited ? "var(--secondary)" : "none"} stroke={isFavorited ? "var(--secondary)" : "currentColor"} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-      </svg>
+      <Icon name="star" fill={isFavorited ? "var(--secondary)" : "none"} strokeWidth={2.5} size={18} />
     </button>
 
     <button 
@@ -118,11 +115,7 @@
         onmenu?.(e);
       }}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="1.5"></circle>
-        <circle cx="12" cy="5" r="1.5"></circle>
-        <circle cx="12" cy="19" r="1.5"></circle>
-      </svg>
+      <Icon name="more" strokeWidth={2.5} size={18} />
     </button>
   {/if}
 </div>
@@ -202,18 +195,12 @@
     border-color: var(--primary);
   }
 
-  .choice-indicator svg {
-    width: 14px;
-    height: 14px;
-    color: var(--bg-base);
-    opacity: 0;
-    transform: scale(0.5);
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-
-  .media-card.batch-selected .choice-indicator svg {
-    opacity: 1;
-    transform: scale(1);
+  /* List mode specific indicator positioning */
+  .media-card.list-mode .choice-indicator {
+    top: 6px;
+    left: 6px;
+    width: 20px;
+    height: 20px;
   }
 
   /* Favorite Button */
@@ -259,12 +246,6 @@
     display: none;
   }
 
-  .favorite-btn svg {
-    width: 18px;
-    height: 18px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-  }
-
   .menu-btn {
     position: absolute;
     top: 12px;
@@ -294,12 +275,6 @@
   .menu-btn:hover {
     opacity: 1 !important;
     transform: scale(1.1);
-  }
-
-  .menu-btn svg {
-    width: 18px;
-    height: 18px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
 
   .poster-container {
@@ -368,48 +343,66 @@
     text-overflow: ellipsis;
   }
 
-  /* List Mode Overrides */
+  /* List Mode Overrides (Refined for "Compact" Efficiency) */
   .media-card.list-mode {
     flex-direction: row;
     align-items: center;
-    gap: 16px;
-    padding: 12px;
-    background: var(--glass-bg-low);
-    border-radius: 12px;
-    height: 100%;
+    gap: 12px;
+    padding: 6px 10px;
+    background: transparent;
+    border-radius: 8px;
+    height: 48px;
+    border: 1px solid transparent;
   }
 
   .media-card.list-mode:hover {
-    background: var(--glass-bg-mid);
-    border-color: var(--glass-border-high);
+    background: var(--glass-bg-low);
+    border-color: var(--glass-border-low);
   }
 
-  .media-card.list-mode:active, .media-card.list-mode.selected {
+  .media-card.list-mode.selected {
+    background: var(--glass-bg-mid);
     border-color: var(--secondary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
   .media-card.list-mode .poster-container {
-    height: 72px;
-    width: 48px; /* maintains 2:3 ratio */
-    min-width: 48px;
-    border-radius: 8px;
+    height: 36px;
+    width: 24px; /* Tiny 2:3 iconic representation */
+    min-width: 24px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   .media-card.list-mode .metadata {
     text-align: left;
     flex-grow: 1;
+    overflow: hidden;
   }
 
-  /* List Mode Menu Button */
+  .media-card.list-mode .title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+  }
+
+  /* List Mode Menu Button - perfectly centered vertically */
   .media-card.list-mode .menu-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
+    position: static;
     opacity: 0;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
   }
 
   .media-card.list-mode:hover .menu-btn {
-    opacity: 0.8;
+    opacity: 0.6;
     pointer-events: auto;
+  }
+
+  .media-card.list-mode .menu-btn:hover {
+    opacity: 1;
+    background: var(--glass-bg-mid);
   }
 </style>
