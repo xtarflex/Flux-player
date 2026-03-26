@@ -24,3 +24,16 @@
 - **GIT**: Committed cinematic UI refinements and Island card architecture.
 
 *End of Library Detail Panel refinement phase. Roadmap updated.*
+
+---
+
+## [2026-03-25] - Keyboard Navigation & SVG Icon System
+- **ACTION**: Completed the "Power User" keyboard system for Universal Navigation, Library, and Settings.
+- **ICONS**: Migrated all hotkey visual feedback (toasts) from emojis to a custom, high-fidelity SVG Icon system in `Icon.svelte`.
+- **ISLAND**: Integrated real-time hotkey status into the Dynamic Island with strict "No Glow" aesthetic compliance.
+- **LIBRARY**: Implemented grid-aware arrow navigation, Shift+Click range selection, and hotkey-triggered Dropdown menus (S/F).
+- **SETTINGS**: Created the "Hotkeys & Control" tab with numerical navigation (1-6) and Ctrl+Tab cycling.
+- **FAVORITES**: Added local "Love" button to MediaCards with context-aware `F` key binding and visual dimming logic.
+- **AX**: Achieved a 100% mouse-free workflow for library management and app configuration.
+
+*End of Universal Keyboard System Phase. Preparing for Now Playing precision controls.*
