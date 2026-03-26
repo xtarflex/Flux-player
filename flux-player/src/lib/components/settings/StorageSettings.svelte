@@ -1,129 +1,173 @@
 <script lang="ts">
-  let baseFolders = $state([
-    { path: 'C:\\Users\\Default\\Videos', type: 'Videos' },
-    { path: 'C:\\Users\\Default\\Music', type: 'Music' }
+  import Icon from "../ui/Icon.svelte";
+  import { open } from '@tauri-apps/plugin-dialog';
+
+  let storageLocations = $state([
+    { path: "D:/Media/Movies", type: "video" },
+    { path: "D:/Media/TV Shows", type: "video" },
+    { path: "C:/Users/Flux/Music", type: "audio" }
   ]);
 
-  let autoIndexing = $state(true);
-  let scanFrequency = $state(30); // minutes
-  let experimentalSearch = $state(false);
+  let cacheSize = "1.2 GB";
+  let dbSize = "45 MB";
 
-  function removeFolder(index: number) {
-    baseFolders = baseFolders.filter((_, i) => i !== index);
+  async function addFolder() {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: "Select Media Folder"
+      });
+
+      if (selected) {
+        // Just push to UI state for now
+        storageLocations.push({ path: selected as string, type: "video" }); // Default to video for now
+      }
+    } catch (err) {
+      console.error("Failed to open dialog", err);
+      // Fallback for browser testing
+      window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Cannot open dialog in browser', icon: 'error' } }));
+    }
   }
 
-  function addFolder() {
-    // In a real implementation, this would open a directory picker via Tauri
-    baseFolders = [...baseFolders, { path: 'C:\\New\\Media\\Folder', type: 'Mixed' }];
+  function removeFolder(index: number) {
+    storageLocations.splice(index, 1);
+  }
+
+  function openFolderDialog() {
+    addFolder();
   }
 </script>
 
-<div class="settings-section">
-  <h2>Storage & Library</h2>
-
-  <div class="card">
-    <div class="card-header">
-      <h3>Base Folders Management</h3>
-      <div class="actions">
-        <button class="btn-primary" onclick={addFolder}>+ Add Folder</button>
-        <button class="btn-outline">Refresh Now</button>
+<div class="storage-settings">
+  <header class="section-header">
+    <div class="header-content">
+      <Icon name="library" size={24} class="header-icon" />
+      <div>
+        <h2>Storage & Library</h2>
+        <p>Manage media folders, cache size, and database settings.</p>
       </div>
     </div>
-    <p class="description">Select the local directories where your media is stored.</p>
+  </header>
 
-    <div class="folder-list">
-      {#each baseFolders as folder, i}
-        <div class="folder-item">
-          <div class="folder-icon">📁</div>
-          <div class="folder-details">
-            <span class="folder-path">{folder.path}</span>
-            <span class="folder-type">{folder.type}</span>
+  <div class="settings-grid">
+    <!-- Media Folders -->
+    <section class="settings-card full-width">
+      <div class="card-header">
+        <div>
+          <h3>Base Media Folders</h3>
+          <p class="subtitle">Folders that Flux Player will automatically scan for media files.</p>
+        </div>
+        <button class="btn-primary" onclick={openFolderDialog}>
+          <Icon name="plus" size={16} /> Add Folder
+        </button>
+      </div>
+
+      <div class="folder-list">
+        {#each storageLocations as folder, index}
+          <div class="folder-item">
+            <div class="folder-info">
+              <Icon name={folder.type === 'video' ? 'movie' : 'music'} size={18} class="folder-icon" />
+              <span class="folder-path">{folder.path}</span>
+            </div>
+            <button class="btn-remove" onclick={() => removeFolder(index)}>
+              <Icon name="close" size={16} />
+            </button>
           </div>
-          <button class="btn-icon" aria-label="Remove folder" onclick={() => removeFolder(i)}>×</button>
-        </div>
-      {/each}
-
-      {#if baseFolders.length === 0}
-        <div class="empty-state">
-          No folders added. Your library is empty.
-        </div>
-      {/if}
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Auto-Indexing</h3>
-    <div class="setting-row">
-      <div class="setting-info">
-        <label for="autoIndexing">Enable Auto-Indexing</label>
-        <span class="description">Automatically scan your base folders for new content.</span>
+        {/each}
+        {#if storageLocations.length === 0}
+          <div class="empty-state">No media folders added. Click "Add Folder" to begin scanning.</div>
+        {/if}
       </div>
-      <label class="switch">
-        <input type="checkbox" id="autoIndexing" bind:checked={autoIndexing} />
-        <span class="slider round"></span>
-      </label>
-    </div>
+    </section>
 
-    {#if autoIndexing}
-      <div class="setting-row sub-setting">
-        <div class="setting-info">
-          <label for="scanFrequency">Scan Frequency</label>
-          <span class="description">Every {scanFrequency} minutes</span>
-        </div>
-        <div class="slider-container">
-          <input type="range" id="scanFrequency" min="5" max="120" step="5" bind:value={scanFrequency} />
-          <div class="slider-marks">
-            <span>5m</span>
-            <span>60m</span>
-            <span>120m</span>
-          </div>
+    <!-- Cache Management -->
+    <section class="settings-card">
+      <div class="card-header">
+        <div>
+          <h3>Image Cache</h3>
+          <p class="subtitle">Offline posters, backdrops, and album art.</p>
         </div>
       </div>
-    {/if}
-  </div>
-
-  <div class="card">
-    <h3>Windows Indexing Integration</h3>
-    <div class="setting-row">
-      <div class="setting-info">
-        <label for="experimentalSearch">Experimental Native Search</label>
-        <span class="description">Use the Windows Search Index instead of a recursive file scan. May improve performance on very large drives.</span>
+      <div class="stat-row">
+        <span class="stat-value">{cacheSize}</span>
+        <button class="btn-secondary">Clear Cache</button>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="experimentalSearch" bind:checked={experimentalSearch} />
-        <span class="slider round"></span>
-      </label>
-    </div>
+    </section>
+
+    <!-- Database Management -->
+    <section class="settings-card">
+      <div class="card-header">
+        <div>
+          <h3>SQLite Database</h3>
+          <p class="subtitle">Metadata, playlists, and playback history.</p>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-value">{dbSize}</span>
+        <div class="action-group">
+          <button class="btn-secondary">Optimize</button>
+          <button class="btn-danger">Reset All</button>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
 <style>
-  .settings-section {
+  .storage-settings {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    max-width: 800px;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--glass-border-low);
+  }
+
+  .header-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  :global(.header-icon) {
+    color: var(--secondary);
   }
 
   h2 {
-    color: var(--secondary);
+    font-family: var(--font-heading);
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--glass-border-low);
-    padding-bottom: 1rem;
-  }
-
-  h3 {
-    color: var(--text-main);
-    font-size: 1.1rem;
     margin: 0;
+    letter-spacing: 0.05em;
   }
 
-  .card {
-    background: var(--glass-bg-mid);
-    padding: 2rem;
-    border-radius: 12px;
+  p {
+    color: var(--text-muted);
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .settings-card {
+    background: var(--glass-bg-low);
     border: 1px solid var(--glass-border-low);
+    border-radius: 16px;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -132,243 +176,154 @@
   .card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
   }
 
-  .actions {
-    display: flex;
-    gap: 1rem;
+  .card-header h3 {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+    color: var(--text-main);
   }
 
-  .description {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+  .subtitle {
+    font-size: 0.85rem;
     margin: 0;
   }
 
   .btn-primary {
-    background: var(--secondary);
-    color: var(--bg-base);
-    border: none;
-    padding: 0.5rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 255, 255, 0.1);
+    color: var(--secondary);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
     border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
-    font-family: var(--font-body);
-    font-weight: 700;
     transition: all 0.2s ease;
   }
 
   .btn-primary:hover {
-    background: #00e5e5;
-    transform: translateY(-1px);
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
   }
 
-  .btn-outline {
-    background: transparent;
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-main);
     border: 1px solid var(--glass-border-mid);
-    padding: 0.5rem 1.25rem;
+    padding: 0.5rem 1rem;
     border-radius: 8px;
+    font-size: 0.85rem;
     cursor: pointer;
-    font-family: var(--font-body);
-    font-weight: 500;
     transition: all 0.2s ease;
   }
 
-  .btn-outline:hover {
-    border-color: var(--secondary);
-    color: var(--secondary);
-    background: rgba(0, 255, 255, 0.05);
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
   }
 
+  .btn-danger {
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff5555;
+    border: 1px solid rgba(255, 50, 50, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-danger:hover {
+    background: rgba(255, 50, 50, 0.2);
+  }
+
+  /* Folder List */
   .folder-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-  }
-
-  .folder-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: var(--glass-bg-low);
-    padding: 1.25rem;
-    border-radius: 10px;
-    border: 1px solid var(--glass-border-mid);
-    transition: border-color 0.2s ease;
-  }
-
-  .folder-item:hover {
-    border-color: var(--secondary-muted);
-  }
-
-  .folder-icon {
-    font-size: 1.5rem;
-    opacity: 0.8;
-  }
-
-  .folder-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .folder-path {
-    font-family: monospace;
-    color: var(--text-main);
-    font-size: 0.95rem;
-    word-break: break-all;
-  }
-
-  .folder-type {
-    font-size: 0.75rem;
-    color: var(--secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-family: var(--font-heading);
-    font-weight: 600;
-  }
-
-  .btn-icon {
-    background: transparent;
-    color: var(--text-muted);
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0 0.5rem;
-    line-height: 1;
-    transition: all 0.2s ease;
-  }
-
-  .btn-icon:hover {
-    color: #ff4444;
-    transform: scale(1.1);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-muted);
-    font-style: italic;
-    background: rgba(0,0,0,0.2);
-    border-radius: 12px;
-    border: 1px dashed var(--glass-border-low);
-  }
-
-  .setting-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 2rem;
-  }
-
-  .sub-setting {
-    padding-top: 1.5rem;
-    border-top: 1px dashed var(--glass-border-low);
-    margin-top: -0.5rem;
-  }
-
-  .setting-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
-  }
-
-  label {
-    font-weight: 500;
-    color: var(--text-main);
-  }
-
-  /* Slider Container */
-  .slider-container {
-    flex: 1;
-    max-width: 300px;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  input[type="range"] {
-    appearance: none;
-    width: 100%;
-    background: transparent;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    background: var(--secondary);
-    cursor: pointer;
-    margin-top: -7px;
-    border: 2px solid var(--bg-base);
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-  }
-
-  input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    cursor: pointer;
-    background: var(--glass-border-mid);
-    border-radius: 4px;
-  }
-
-  .slider-marks {
+  .folder-item {
     display: flex;
     justify-content: space-between;
-    font-size: 0.7rem;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border-low);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+  }
+
+  .folder-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  :global(.folder-icon) {
     color: var(--text-muted);
-    font-weight: 600;
   }
 
-  /* The switch */
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 24px;
+  .folder-path {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--text-main);
   }
 
-  .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .slider {
-    position: absolute;
+  .btn-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--glass-border-high);
-    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
   }
 
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  .btn-remove:hover {
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff5555;
   }
 
-  input:checked + .slider {
-    background-color: var(--secondary);
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    border: 1px dashed var(--glass-border-mid);
   }
 
-  input:checked + .slider:before {
-    transform: translateX(24px);
+  /* Stat Rows */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border-low);
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .action-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>

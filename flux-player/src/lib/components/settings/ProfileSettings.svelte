@@ -1,110 +1,187 @@
 <script lang="ts">
-  let displayName = $state('Sunny'); // Mock OS username
-  let totalWatchTime = '142h 35m';
-  let topGenres = ['Sci-Fi', 'Cyberpunk', 'Action'];
+  import Icon from "../ui/Icon.svelte";
+  import ProfileAvatar from "../ProfileAvatar.svelte";
+  import { onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
+
+  let computerName = $state("Fetching...");
+  let displayName = $state("Flux User");
+
+  onMount(async () => {
+    try {
+      // Safe context check for Playwright/Browser environment
+      if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+        const name = await invoke<string>('get_computer_name');
+        computerName = name;
+        if (displayName === "Flux User") {
+          displayName = name; // Auto-set display name to computer name initially
+        }
+      } else {
+        computerName = "LOCAL-TEST-PC";
+      }
+    } catch (err) {
+      console.error("Failed to fetch computer name", err);
+      computerName = "UNKNOWN-PC";
+    }
+  });
+
+  function saveProfile() {
+    window.dispatchEvent(new CustomEvent('flux-toast', {
+      detail: { label: `Profile saved: ${displayName}`, icon: 'settings' }
+    }));
+    // Future: Save to SQLite / Settings Config via Rust invoke here
+  }
 </script>
 
-<div class="settings-section">
-  <h2>My Profile</h2>
-
-  <div class="profile-card">
-    <div class="avatar-container">
-      <div class="avatar squircle">
-        <img src="/flux.png" alt="Profile Avatar" />
-      </div>
-      <button class="btn-outline">Change Avatar</button>
-    </div>
-
-    <div class="info-container">
-      <div class="form-group">
-        <label for="displayName">Display Name</label>
-        <input type="text" id="displayName" bind:value={displayName} placeholder="Enter your name..." />
-        <span class="help-text">Used for personalized greetings on the Home Screen.</span>
+<div class="profile-settings">
+  <header class="section-header">
+    <div class="header-content">
+      <Icon name="profile" size={24} class="header-icon" />
+      <div>
+        <h2>My Profile</h2>
+        <p>Manage your identity across the local network.</p>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="stats-section">
-    <h3>Local Statistics</h3>
-    <div class="stats-grid">
-      <div class="stat-card glass">
-        <span class="stat-label">Total Watch Time</span>
-        <span class="stat-value">{totalWatchTime}</span>
+  <section class="profile-card">
+    <div class="avatar-section">
+      <div class="avatar-large">
+        <!-- Reusing the squircle profile avatar from the topbar -->
+        <ProfileAvatar />
+        <button class="edit-avatar-btn">
+          <Icon name="edit" size={14} />
+        </button>
       </div>
-      <div class="stat-card glass">
-        <span class="stat-label">Top Genres</span>
-        <span class="stat-value genres">
-          {#each topGenres as genre}
-            <span class="genre-tag">{genre}</span>
-          {/each}
-        </span>
+      <div class="avatar-info">
+        <h3>{displayName}</h3>
+        <span class="os-name">OS Name: {computerName}</span>
       </div>
     </div>
-  </div>
+
+    <div class="form-group">
+      <label for="display-name">Display Name</label>
+      <input
+        type="text"
+        id="display-name"
+        bind:value={displayName}
+        placeholder="Enter your display name"
+      />
+      <span class="hint">This name will be visible if you cast to other devices.</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn-save" onclick={saveProfile}>Save Changes</button>
+    </div>
+  </section>
 </div>
 
 <style>
-  .settings-section {
+  .profile-settings {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    max-width: 800px;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--glass-border-low);
+  }
+
+  .header-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  :global(.header-icon) {
+    color: var(--secondary);
   }
 
   h2 {
-    color: var(--secondary);
+    font-family: var(--font-heading);
     font-size: 1.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--glass-border-low);
-    padding-bottom: 1rem;
+    margin: 0;
+    letter-spacing: 0.05em;
   }
 
-  h3 {
-    color: var(--text-main);
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
+  p {
+    color: var(--text-muted);
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
   }
 
   .profile-card {
-    display: flex;
-    gap: 2rem;
-    align-items: flex-start;
-    background: var(--glass-bg-mid);
-    padding: 2rem;
-    border-radius: 12px;
-    border: 1px solid var(--glass-border-low);
-  }
-
-  .avatar-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .avatar {
-    width: 128px;
-    height: 128px;
     background: var(--glass-bg-low);
-    clip-path: path('M 0,64 C 0,0 0,0 64,0 C 128,0 128,0 128,64 C 128,128 128,128 64,128 C 0,128 0,128 0,64 Z');
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    border: 1px solid var(--glass-border-mid);
-  }
-
-  .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .info-container {
-    flex: 1;
+    border: 1px solid var(--glass-border-low);
+    border-radius: 16px;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
+    max-width: 600px;
+  }
+
+  .avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .avatar-large {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    /* Scale up the existing squircle */
+    transform: scale(2.5);
+    transform-origin: top left;
+    margin-right: 40px; /* Compensate for scale */
+    margin-bottom: 40px;
+  }
+
+  .edit-avatar-btn {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border-mid);
+    color: var(--secondary);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    /* Scale down visually because parent is scaled up 2.5x */
+    transform: scale(0.4);
+    transition: all 0.2s ease;
+  }
+
+  .edit-avatar-btn:hover {
+    border-color: var(--secondary);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  }
+
+  .avatar-info h3 {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-main);
+  }
+
+  .os-name {
+    font-family: monospace;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    background: rgba(0,0,0,0.3);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border-low);
   }
 
   .form-group {
@@ -114,98 +191,62 @@
   }
 
   label {
-    font-weight: 500;
-    color: var(--text-main);
-  }
-
-  input[type="text"] {
-    background: var(--glass-bg-low);
-    border: 1px solid var(--glass-border-mid);
-    color: var(--text-main);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-family: var(--font-body);
-    font-size: 1rem;
-    outline: none;
-    transition: all 0.2s ease;
-  }
-
-  input[type="text"]:focus {
-    border-color: var(--secondary);
-    background: var(--glass-bg-mid);
-  }
-
-  .help-text {
     font-size: 0.85rem;
     color: var(--text-muted);
-  }
-
-  .btn-outline {
-    background: transparent;
-    color: var(--text-main);
-    border: 1px solid var(--glass-border-mid);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-  }
-
-  .btn-outline:hover {
-    border-color: var(--secondary);
-    background: rgba(0, 255, 255, 0.05);
-    color: var(--secondary);
-  }
-
-  .stats-section {
-    margin-top: 1rem;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-
-  .stat-card {
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--glass-border-low);
-    background: var(--glass-bg-mid);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .stat-label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
+  input {
+    background: var(--bg-base);
+    border: 1px solid var(--glass-border-mid);
     color: var(--text-main);
-    font-family: var(--font-heading);
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
   }
 
-  .genres {
+  input:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.1);
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    font-family: var(--font-body);
+    justify-content: flex-end;
+    margin-top: 1rem;
+    border-top: 1px solid var(--glass-border-low);
+    padding-top: 1.5rem;
   }
 
-  .genre-tag {
+  .btn-save {
     background: rgba(0, 255, 255, 0.1);
     color: var(--secondary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 100px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    border: 1px solid rgba(0, 255, 255, 0.2);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-save:hover {
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
