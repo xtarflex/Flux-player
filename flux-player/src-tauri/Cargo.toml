@@ -19,7 +19,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset", "image-ico"] }
 tauri-plugin-opener = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-store = "2"
@@ -34,4 +34,6 @@ walkdir = "2"
 regex = "1"
 rusqlite = { version = "0.32", features = ["bundled"] }
 tauri-plugin-dialog = "2"
+urlencoding = "2"
+tauri-plugin-fs = "2"
 

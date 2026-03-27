@@ -19,15 +19,22 @@ pub async fn get_tmdb_key<R: Runtime>(
     }
 
     let stores = app.store("settings.json").map_err(|e| e.to_string())?;
-    let used_count = stores.get("tmdb_shared_calls_used").and_then(|v| v.as_u64()).unwrap_or(0);
+    let used_count = stores
+        .get("tmdb_shared_calls_used")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
 
     if used_count >= 150 {
-        app.emit("flux-require-api-key", ()).map_err(|e| e.to_string())?;
+        app.emit("flux-require-api-key", ())
+            .map_err(|e| e.to_string())?;
         return Err("API_LIMIT_REACHED".to_string());
     }
 
-    stores.set("tmdb_shared_calls_used", serde_json::Value::from(used_count + 1));
-    
+    stores.set(
+        "tmdb_shared_calls_used",
+        serde_json::Value::from(used_count + 1),
+    );
+
     let idx = (state.rotation_index.fetch_add(1, Ordering::SeqCst) % 3) + 1;
     let key_var = format!("TMDB_KEY_{}", idx);
     std::env::var(key_var).map_err(|_| "API_KEY_NOT_FOUND".to_string())
@@ -49,31 +56,34 @@ pub fn get_computer_name() -> String {
 pub async fn save_setting<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     key: String,
-    value: String
+    value: String,
 ) -> Result<(), String> {
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path).map_err(|e| e.to_string())?;
-    
+
     conn.execute(
         "INSERT INTO settings (key, value) VALUES (?1, ?2)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
         (key, value),
-    ).map_err(|e| e.to_string())?;
-    
+    )
+    .map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
 #[tauri::command]
 pub async fn get_setting<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
-    key: String
+    key: String,
 ) -> Result<Option<String>, String> {
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path).map_err(|e| e.to_string())?;
-    
-    let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1").map_err(|e| e.to_string())?;
+
+    let mut stmt = conn
+        .prepare("SELECT value FROM settings WHERE key = ?1")
+        .map_err(|e| e.to_string())?;
     let mut rows = stmt.query((key,)).map_err(|e| e.to_string())?;
-    
+
     if let Some(row) = rows.next().map_err(|e| e.to_string())? {
         Ok(Some(row.get(0).map_err(|e| e.to_string())?))
     } else {

@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
-use std::path::Path;
+use serde::{Deserialize, Serialize};
+
 use lofty::prelude::*;
 use sha2::{Digest, Sha256};
 use std::io::Write;
@@ -28,7 +28,11 @@ pub fn is_audio(ext: &str) -> bool {
     matches!(ext, "mp3" | "flac" | "wav" | "ogg" | "m4a" | "aac")
 }
 
-pub fn process_video(path: &Path, added_at: u64) -> Option<MediaMetadata> {
+pub async fn process_video<R: Runtime>(
+    app: &AppHandle<R>,
+    path: &std::path::Path,
+    added_at: u64,
+) -> Option<MediaMetadata> {
     let file_stem = path.file_stem()?.to_str()?;
     let mut title = file_stem.to_string();
     let mut year = None;
@@ -36,11 +40,14 @@ pub fn process_video(path: &Path, added_at: u64) -> Option<MediaMetadata> {
     if let Some(caps) = regex::Regex::new(r"\((\d{4})\)").ok()?.captures(file_stem) {
         if let Some(y_str) = caps.get(1) {
             year = y_str.as_str().parse::<u32>().ok();
-            title = title.replace(&format!(" ({})", y_str.as_str()), "").trim().to_string();
+            title = title
+                .replace(&format!(" ({})", y_str.as_str()), "")
+                .trim()
+                .to_string();
         }
     }
 
-    Some(MediaMetadata {
+    let mut metadata = MediaMetadata {
         path: path.to_string_lossy().to_string(),
         title,
         year,
@@ -52,10 +59,68 @@ pub fn process_video(path: &Path, added_at: u64) -> Option<MediaMetadata> {
         duration: None,
         media_type: "video".to_string(),
         added_at,
-    })
+    };
+
+    // Attempt to extract embedded artwork from Video (similar to audio but limited formats) - This is our BACKUP
+    let mut embedded_art = None;
+    if let Ok(tagged_file) = lofty::read_from_path(path) {
+        if let Some(tag) = tagged_file
+            .primary_tag()
+            .or_else(|| tagged_file.first_tag())
+        {
+            if let Some(picture) = tag.pictures().first() {
+                embedded_art = cache_album_art(app, picture.data(), None, Some(&metadata.title));
+            }
+        }
+        metadata.duration = Some(tagged_file.properties().duration().as_secs() as u32);
+    }
+
+    // Attempt to enrich with TMDB - This is our MAIN
+    if let Some(tmdb_meta) = super::tmdb::search_metadata(app, &metadata.title, metadata.year).await
+    {
+        metadata.title = tmdb_meta.title.or(tmdb_meta.name).unwrap_or(metadata.title);
+
+        // Use TMDB Poster if available
+        if let Some(poster) = tmdb_meta.poster_path {
+            let poster_url = super::tmdb::get_image_url(&poster, "w500");
+            match crate::commands::library::cache_tmdb_image(
+                app.clone(),
+                poster_url,
+                "posters".to_string(),
+            )
+            .await
+            {
+                Ok(cached_path) => metadata.poster_path = Some(cached_path),
+                Err(_) => metadata.poster_path = embedded_art,
+            }
+        } else {
+            metadata.poster_path = embedded_art;
+        }
+
+        // Use TMDB Backdrop
+        if let Some(backdrop) = tmdb_meta.backdrop_path {
+            let backdrop_url = super::tmdb::get_image_url(&backdrop, "original");
+            metadata.backdrop_path = crate::commands::library::cache_tmdb_image(
+                app.clone(),
+                backdrop_url,
+                "backdrops".to_string(),
+            )
+            .await
+            .ok();
+        }
+    } else {
+        // Fallback to embedded art if TMDB search fails or returns nothing
+        metadata.poster_path = embedded_art;
+    }
+
+    Some(metadata)
 }
 
-pub fn process_audio<R: Runtime>(app: &AppHandle<R>, path: &Path, added_at: u64) -> Option<MediaMetadata> {
+pub async fn process_audio<R: Runtime>(
+    app: &AppHandle<R>,
+    path: &std::path::Path,
+    added_at: u64,
+) -> Option<MediaMetadata> {
     let mut metadata = MediaMetadata {
         path: path.to_string_lossy().to_string(),
         title: path.file_stem()?.to_string_lossy().to_string(),
@@ -71,15 +136,26 @@ pub fn process_audio<R: Runtime>(app: &AppHandle<R>, path: &Path, added_at: u64)
     };
 
     if let Ok(tagged_file) = lofty::read_from_path(path) {
-        if let Some(tag) = tagged_file.primary_tag().or_else(|| tagged_file.first_tag()) {
-            if let Some(t) = tag.title().map(|s| s.to_string()) { metadata.title = t; }
+        if let Some(tag) = tagged_file
+            .primary_tag()
+            .or_else(|| tagged_file.first_tag())
+        {
+            if let Some(t) = tag.title().map(|s| s.to_string()) {
+                metadata.title = t;
+            }
             metadata.artist = tag.artist().map(|s| s.to_string());
             metadata.album = tag.album().map(|s| s.to_string());
             metadata.year = tag.year();
-            
+
             if let Some(picture) = tag.pictures().first() {
-                if let Some(art_path) = cache_album_art(app, picture.data(), metadata.artist.as_deref(), metadata.album.as_deref()) {
-                    metadata.album_art_path = Some(art_path);
+                if let Some(art_path) = cache_album_art(
+                    app,
+                    picture.data(),
+                    metadata.artist.as_deref(),
+                    metadata.album.as_deref(),
+                ) {
+                    metadata.album_art_path = Some(art_path.clone());
+                    metadata.poster_path = Some(art_path);
                 }
             }
         }
@@ -89,34 +165,43 @@ pub fn process_audio<R: Runtime>(app: &AppHandle<R>, path: &Path, added_at: u64)
     Some(metadata)
 }
 
-fn cache_album_art<R: Runtime>(app: &AppHandle<R>, data: &[u8], artist: Option<&str>, album: Option<&str>) -> Option<String> {
+fn cache_album_art<R: Runtime>(
+    app: &AppHandle<R>,
+    data: &[u8],
+    artist: Option<&str>,
+    album: Option<&str>,
+) -> Option<String> {
     let artist = artist.unwrap_or("Unknown Artist").to_lowercase();
     let album = album.unwrap_or("Unknown Album").to_lowercase();
-    
+
     let mut hasher = Sha256::new();
     hasher.update(artist.as_bytes());
     hasher.update(album.as_bytes());
     let hash = format!("{:x}", hasher.finalize())[..16].to_string();
-    
+
     let app_dir = app.path().app_data_dir().ok()?;
     let art_dir = app_dir.join("cache").join("images").join("album-art");
     if !art_dir.exists() {
         let _ = std::fs::create_dir_all(&art_dir);
     }
-    
+
     let file_path = art_dir.join(format!("{}.jpg", hash));
     if !file_path.exists() {
         if let Ok(mut file) = std::fs::File::create(&file_path) {
             let _ = file.write_all(data);
         }
     }
-    
+
+    let encoded_path = file_path.to_string_lossy().replace("\\", "/");
     #[cfg(target_os = "windows")]
     {
-        Some(format!("asset://localhost/{}", file_path.to_string_lossy().replace("\\", "/")))
+        // Tauri 2.0 Asset Protocol format: https://asset.localhost/C%3A/...
+        // The colon must be escaped for some webview versions to resolve correctly.
+        let escaped_path = encoded_path.replace(":", "%3A");
+        Some(format!("https://asset.localhost/{}", escaped_path))
     }
     #[cfg(not(target_os = "windows"))]
     {
-        Some(format!("asset://localhost{}", file_path.to_string_lossy()))
+        Some(format!("https://asset.localhost{}", encoded_path))
     }
 }

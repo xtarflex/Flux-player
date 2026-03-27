@@ -89,7 +89,10 @@
       switch (sortOption) {
         case 'A-Z': return a.title.localeCompare(b.title);
         case 'Z-A': return b.title.localeCompare(a.title);
-        case 'Recently Added': return b.id.localeCompare(a.id); 
+        case 'Recently Added': 
+          return (b.added_at - a.added_at) || a.title.localeCompare(b.title);
+        case 'Release Date':
+          return ((b.year ?? 0) - (a.year ?? 0)) || a.title.localeCompare(b.title);
         default: return 0;
       }
     });

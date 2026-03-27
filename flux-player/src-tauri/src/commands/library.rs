@@ -1,12 +1,12 @@
+use crate::database;
 use crate::scanner;
 use crate::utils::os;
-use crate::database;
 use std::io::Write;
 use tauri::{AppHandle, Manager, Runtime};
 
 #[tauri::command]
 pub async fn start_library_scan<R: Runtime>(app: AppHandle<R>, dir: String) -> Result<(), String> {
-    let items = scanner::scan_directory(app.clone(), dir);
+    let items = scanner::scan_directory(app.clone(), dir).await;
     database::queries::save_media_items(&app, items)?;
     Ok(())
 }
@@ -26,7 +26,10 @@ pub async fn cache_tmdb_image<R: Runtime>(
         return Err("EMPTY_URL".to_string());
     }
 
-    let app_dir = app.path().app_data_dir().map_err(|e: tauri::Error| e.to_string())?;
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e: tauri::Error| e.to_string())?;
     let cache_dir = app_dir.join("cache").join("images").join(image_type);
 
     if !cache_dir.exists() {
@@ -48,12 +51,14 @@ pub async fn cache_tmdb_image<R: Runtime>(
         file.write_all(&bytes).map_err(|e| e.to_string())?;
     }
 
+    let encoded_path = target_path.to_string_lossy().replace("\\", "/");
     #[cfg(target_os = "windows")]
     {
-        Ok(format!("asset://localhost/{}", target_path.to_string_lossy().replace("\\", "/")))
+        let escaped_path = encoded_path.replace(":", "%3A");
+        Ok(format!("https://asset.localhost/{}", escaped_path))
     }
     #[cfg(not(target_os = "windows"))]
     {
-        Ok(format!("asset://localhost{}", target_path.to_string_lossy()))
+        Ok(format!("https://asset.localhost{}", encoded_path))
     }
 }

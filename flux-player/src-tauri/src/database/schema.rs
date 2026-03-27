@@ -58,6 +58,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 );
             ",
             kind: MigrationKind::Up,
-        }
+        },
+        Migration {
+            version: 3,
+            description: "added for protocol and metadata stabilization",
+            sql: "SELECT 1;", // Dummy migration to resolve version mismatch
+            kind: MigrationKind::Up,
+        },
     ]
 }
