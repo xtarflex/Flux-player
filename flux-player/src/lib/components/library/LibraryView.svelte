@@ -500,9 +500,20 @@
             <div class="grid-spinner"></div>
             <p>Loading library…</p>
           </div>
+        {:else if filteredItems.length === 0 && searchText}
+          <div class="grid-state">
+            <EmptyState
+              variant="search"
+              title="No matches found" 
+              description="We couldn't find any items matching '{searchText}'. Try a different keyword or check your filters."
+              actionLabel="Clear Search"
+              onAction={() => { searchText = ''; }}
+            />
+          </div>
         {:else if $mediaItems.length === 0}
           <div class="grid-state">
-            <EmptyState 
+            <EmptyState
+              variant="library"
               title="Your Library is Empty" 
               description="Flux Player hasn't found any media files yet. Connect a folder to begin scanning your collection."
               actionLabel="Add Media Folder"
@@ -511,9 +522,10 @@
           </div>
         {:else if filteredItems.length === 0}
           <div class="grid-state">
-            <EmptyState 
+            <EmptyState
+              variant="search"
               title="No matches found" 
-              description="We couldn't find any items matching your current filters or search terms."
+              description="We couldn't find any items matching your current filters."
               actionLabel="Reset Filters"
               onAction={() => { searchText = ''; mediaFilter = 'All Media'; }}
             />
