@@ -4,11 +4,26 @@
    * @description Library Detail Panel — displays metadata for the selected media item.
    */
   import { mediaItems, selectedMediaId, type MediaItem } from '$lib/stores/media';
+  import { convertFileSrc } from '@tauri-apps/api/core';
   import { derived } from 'svelte/store';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
 
   const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]: [MediaItem[], string | null]) => {
     return $items.find((item: MediaItem) => item.id === $id) || null;
+  });
+
+  const resolvedBackdrop = derived(selectedItem, ($item) => {
+    if (!$item || !$item.backdrop) return '/flux_backdrop.png';
+    return $item.backdrop.startsWith('/') || $item.backdrop.startsWith('http') || $item.backdrop.startsWith('data:') 
+      ? $item.backdrop 
+      : convertFileSrc($item.backdrop);
+  });
+
+  const resolvedPoster = derived(selectedItem, ($item) => {
+    if (!$item || !$item.poster) return null;
+    return $item.poster.startsWith('/') || $item.poster.startsWith('http') || $item.poster.startsWith('data:') 
+      ? $item.poster 
+      : convertFileSrc($item.poster);
   });
 
   let playingHovered = $state(false);
@@ -23,7 +38,7 @@
         <div class="backdrop-wrapper">
           <div 
             class="backdrop-image" 
-            style="background-image: url('{$selectedItem.backdrop || '/flux_backdrop.png'}')"
+            style="background-image: url('{$resolvedBackdrop}')"
           ></div>
           <div class="backdrop-overlay"></div>
         </div>
@@ -32,8 +47,8 @@
       <div class="hero-row">
         <!-- Poster -->
         <div class="poster">
-          {#if $selectedItem.poster && !$selectedItem.poster.includes('flux2d')}
-            <img src={$selectedItem.poster} alt={$selectedItem.title} class="poster-img" />
+          {#if $resolvedPoster && !$selectedItem.poster?.includes('flux2d')}
+            <img src={$resolvedPoster} alt={$selectedItem.title} class="poster-img" />
           {:else}
             <div class="poster-placeholder">
               <img src="/flux2d.png" alt="Flux" />
@@ -203,7 +218,7 @@
   .cinematic-header {
     position: relative;
     width: 100%;
-    min-height: 320px;
+    min-height: 360px;
     flex-shrink: 0;
     display: flex;
     align-items: flex-end; /* Push content back down slightly */
@@ -254,7 +269,7 @@
   }
 
   .poster {
-    width: 140px;
+    width: 170px;
     aspect-ratio: 2 / 3;
     border-radius: 10px;
     overflow: hidden;

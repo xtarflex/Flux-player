@@ -51,14 +51,5 @@ pub async fn cache_tmdb_image<R: Runtime>(
         file.write_all(&bytes).map_err(|e| e.to_string())?;
     }
 
-    let encoded_path = target_path.to_string_lossy().replace("\\", "/");
-    #[cfg(target_os = "windows")]
-    {
-        let escaped_path = encoded_path.replace(":", "%3A");
-        Ok(format!("https://asset.localhost/{}", escaped_path))
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        Ok(format!("https://asset.localhost{}", encoded_path))
-    }
+    Ok(target_path.to_string_lossy().to_string())
 }

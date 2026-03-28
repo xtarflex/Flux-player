@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { convertFileSrc } from '@tauri-apps/api/core';
   type QueueItem = { title: string; poster?: string };
   
   let { 
@@ -33,19 +34,19 @@
         <!-- Cases 2/3/4: Media Playing -->
         <div class="queue-card side-card prev-card">
           {#if queueHistory.length > 0 && queueHistory[queueHistory.length - 1].poster}
-            <img src={queueHistory[queueHistory.length - 1].poster} alt="Previous" class="card-image" />
+            <img src={convertFileSrc(queueHistory[queueHistory.length - 1].poster)} alt="Previous" class="card-image" />
           {/if}
         </div>
 
         <div class="queue-card side-card next-card">
           {#if queue.length > 0 && queue[0].poster}
-            <img src={queue[0].poster} alt="Next" class="card-image" />
+            <img src={convertFileSrc(queue[0].poster)} alt="Next" class="card-image" />
           {/if}
         </div>
 
         <div class="queue-card center-card">
           {#if currentMedia?.poster}
-            <img src={currentMedia.poster} alt="Current" class="card-image" />
+            <img src={convertFileSrc(currentMedia.poster)} alt="Current" class="card-image" />
           {/if}
         </div>
       {/if}

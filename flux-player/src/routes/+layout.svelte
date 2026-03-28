@@ -22,9 +22,7 @@
 
     if (selected && typeof selected === 'string') {
       isScanning.set(true);
-      window.dispatchEvent(new CustomEvent('flux-toast', { 
-        detail: { label: 'Scanning Library...', icon: 'refresh' } 
-      }));
+      // Global scanning state handles feedback
       
       try {
         await invoke('start_library_scan', { dir: selected });

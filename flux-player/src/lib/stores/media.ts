@@ -48,7 +48,7 @@ export async function loadLibraryFromDb(): Promise<void> {
   try {
     const db = await Database.load('sqlite:flux.db');
     const rows = await db.select<any[]>(
-      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at FROM media ORDER BY added_at DESC'
+      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, synopsis, rating, genres, director, starring FROM media ORDER BY added_at DESC'
     );
 
     const items: MediaItem[] = rows.map((row) => ({
@@ -65,6 +65,11 @@ export async function loadLibraryFromDb(): Promise<void> {
       type: (row.media_type as 'video' | 'audio' | 'mixed') ?? 'video',
       last_played: row.last_played ?? 0,
       added_at: row.added_at ?? 0,
+      synopsis: row.synopsis ?? null,
+      rating: row.rating ?? null,
+      genres: row.genres ? JSON.parse(row.genres) : [],
+      director: row.director ?? null,
+      starring: row.starring ?? null,
     }));
 
     mediaItems.set(items);

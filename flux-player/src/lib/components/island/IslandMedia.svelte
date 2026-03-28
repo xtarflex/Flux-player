@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { convertFileSrc } from '@tauri-apps/api/core';
   import { fade } from "svelte/transition";
 
   let { 
@@ -12,13 +13,14 @@
     videoTime?: string;
     posterSrc?: string;
   }>();
+  let resolvedPoster = $derived(posterSrc ? convertFileSrc(posterSrc) : '/flux2d.png');
 </script>
 
 <div class="island-layer" transition:fade={{ duration: 300 }}>
   {#if type === "audio"}
     <div class="audio-content">
       <div class="vinyl-container">
-        <img src={posterSrc} alt="Album Art" class="island-thumb vinyl-spin" />
+        <img src={resolvedPoster} alt="Album Art" class="island-thumb vinyl-spin" />
       </div>
       <div class="audio-info">
         <span class="track-title">NOW PLAYING</span>
@@ -44,7 +46,7 @@
   {:else}
     <div class="video-playing-content">
       <div class="mini-poster">
-        <img src={posterSrc} alt="Poster" class="poster-thumb" />
+        <img src={resolvedPoster} alt="Poster" class="poster-thumb" />
       </div>
       <div class="video-meta">
         <span class="video-title">{videoTitle}</span>

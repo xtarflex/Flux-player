@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { convertFileSrc } from '@tauri-apps/api/core';
   import { onMount } from "svelte";
   import { spring } from "svelte/motion";
   import IslandLogo from "./island/IslandLogo.svelte";
@@ -28,7 +29,7 @@
     if (!src) return;
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = src;
+    img.src = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : convertFileSrc(src);
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = 64;

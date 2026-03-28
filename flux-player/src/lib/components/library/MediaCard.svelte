@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
+  import { convertFileSrc } from '@tauri-apps/api/core';
 
   let { 
     item, 
@@ -40,6 +41,7 @@
   }
 
   let hasPoster = $derived(!!item.poster);
+  let resolvedPoster = $derived(item.poster ? convertFileSrc(item.poster) : null);
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -82,7 +84,7 @@
   {/if}
   <div class="poster-container">
     {#if hasPoster}
-      <img src={item.poster} alt={item.title} class="poster-image" />
+      <img src={resolvedPoster} alt={item.title} class="poster-image" />
     {:else}
       <div class="placeholder-logo">
         <img src="/flux2d.png" alt="Flux" />
@@ -351,7 +353,7 @@
     padding: 6px 10px;
     background: transparent;
     border-radius: 8px;
-    height: 48px;
+    height: 64px;
     border: 1px solid transparent;
   }
 
@@ -367,9 +369,9 @@
   }
 
   .media-card.list-mode .poster-container {
-    height: 36px;
-    width: 24px; /* Tiny 2:3 iconic representation */
-    min-width: 24px;
+    height: 52px;
+    width: 34px; /* Scaled 2:3 iconic representation */
+    min-width: 34px;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.1);

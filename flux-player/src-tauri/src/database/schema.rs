@@ -65,5 +65,17 @@ pub fn get_migrations() -> Vec<Migration> {
             sql: "SELECT 1;", // Dummy migration to resolve version mismatch
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "add rich metadata columns to media table",
+            sql: "
+                ALTER TABLE media ADD COLUMN synopsis TEXT;
+                ALTER TABLE media ADD COLUMN rating REAL;
+                ALTER TABLE media ADD COLUMN genres TEXT;
+                ALTER TABLE media ADD COLUMN director TEXT;
+                ALTER TABLE media ADD COLUMN starring TEXT;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

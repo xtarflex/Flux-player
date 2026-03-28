@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { convertFileSrc } from '@tauri-apps/api/core';
   let { 
     currentMedia, 
     hasMedia, 
@@ -12,15 +13,12 @@
   function toggleLike() {
     isLiked = !isLiked;
   }
+  let resolvedPoster = $derived(currentMedia?.poster ? convertFileSrc(currentMedia.poster) : '/flux2d.png');
 </script>
 
 <div class="left-section">
   <div class="thumbnail squircle">
-    {#if currentMedia?.poster}
-      <img src={currentMedia.poster} alt="Poster" />
-    {:else}
-      <img src="/flux2d.png" alt="Flux Logo" />
-    {/if}
+    <img src={resolvedPoster} alt="Poster" />
   </div>
   <div class="media-info">
     <div class="title">{currentMedia?.title || 'No media playing'}</div>

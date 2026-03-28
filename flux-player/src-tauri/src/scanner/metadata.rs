@@ -17,6 +17,11 @@ pub struct MediaMetadata {
     pub album_art_path: Option<String>,
     pub duration: Option<u32>,
     pub media_type: String, // "video", "audio", "mixed"
+    pub synopsis: Option<String>,
+    pub rating: Option<f32>,
+    pub genres: Vec<String>,
+    pub director: Option<String>,
+    pub starring: Option<String>,
     pub added_at: u64,
 }
 
@@ -58,6 +63,11 @@ pub async fn process_video<R: Runtime>(
         album_art_path: None,
         duration: None,
         media_type: "video".to_string(),
+        synopsis: None,
+        rating: None,
+        genres: Vec::new(),
+        director: None,
+        starring: None,
         added_at,
     };
 
@@ -108,6 +118,19 @@ pub async fn process_video<R: Runtime>(
             .await
             .ok();
         }
+
+        // Fetch Rich Details (Genres, Director, Starring)
+        let tmdb_id = tmdb_meta.id;
+        let tmdb_media_type = tmdb_meta.media_type.unwrap_or_else(|| "movie".to_string());
+        
+        if let Some(details) = super::tmdb::fetch_details(app, tmdb_id, &tmdb_media_type).await {
+            metadata.genres = details.genres;
+            metadata.director = details.director;
+            metadata.starring = details.starring;
+        }
+
+        metadata.synopsis = tmdb_meta.overview;
+        metadata.rating = tmdb_meta.vote_average;
     } else {
         // Fallback to embedded art if TMDB search fails or returns nothing
         metadata.poster_path = embedded_art;
@@ -132,6 +155,11 @@ pub async fn process_audio<R: Runtime>(
         album_art_path: None,
         duration: None,
         media_type: "audio".to_string(),
+        synopsis: Some("Audio track.".to_string()),
+        rating: None,
+        genres: Vec::new(),
+        director: None,
+        starring: None,
         added_at,
     };
 
@@ -192,16 +220,5 @@ fn cache_album_art<R: Runtime>(
         }
     }
 
-    let encoded_path = file_path.to_string_lossy().replace("\\", "/");
-    #[cfg(target_os = "windows")]
-    {
-        // Tauri 2.0 Asset Protocol format: https://asset.localhost/C%3A/...
-        // The colon must be escaped for some webview versions to resolve correctly.
-        let escaped_path = encoded_path.replace(":", "%3A");
-        Some(format!("https://asset.localhost/{}", escaped_path))
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        Some(format!("https://asset.localhost{}", encoded_path))
-    }
+    Some(file_path.to_string_lossy().to_string())
 }

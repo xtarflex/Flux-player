@@ -280,7 +280,7 @@
           }
           break;
         case 'r':
-          if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Refresh Info', icon: 'refresh' } })); }
+          if (isCardFocused) { e.preventDefault(); /* Global scanning state handles feedback */ }
           break;
         case 'i':
           if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Media Info', icon: 'library' } })); }

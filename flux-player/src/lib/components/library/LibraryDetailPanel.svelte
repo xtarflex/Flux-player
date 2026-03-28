@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { convertFileSrc } from '@tauri-apps/api/core';
   /**
    * @typedef {Object} Props
    * @property {any} item - The media item to display details for
@@ -20,8 +21,10 @@
     duration: '2h 15m',
     rating: '8.4',
     genres: ['Action', 'Sci-Fi', 'Thriller'],
-    backdrop: item.poster // Uses current item poster as backdrop
+    backdrop: item.poster ? convertFileSrc(item.poster) : null // Uses current item poster as backdrop
   });
+
+  let resolvedPoster = $derived(item.poster ? convertFileSrc(item.poster) : null);
 </script>
 
 <div class="detail-panel glass-dark">
@@ -39,7 +42,7 @@
     
     <div class="poster-overlay">
       {#if item.poster}
-        <img src={item.poster} alt={item.title} class="poster-image" />
+        <img src={resolvedPoster} alt={item.title} class="poster-image" />
       {:else}
         <div class="poster-placeholder">
           <img src="/flux2d.png" alt="Flux" />

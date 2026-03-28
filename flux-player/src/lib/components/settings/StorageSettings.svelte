@@ -40,9 +40,7 @@
         
         // Kick off the scan and refresh the library
         isScanning.set(true);
-        window.dispatchEvent(new CustomEvent('flux-toast', { 
-          detail: { label: 'Scanning folder…', icon: 'refresh' } 
-        }));
+        // Global scanning state handles feedback
 
         try {
           await invoke('start_library_scan', { dir: selected });
