@@ -9,7 +9,7 @@ pub fn get_migrations() -> Vec<Migration> {
     vec![
         Migration {
             version: 1,
-            description: "create media and playlists tables",
+            description: "create media table",
             sql: "
                 CREATE TABLE IF NOT EXISTS media (
                     path TEXT PRIMARY KEY,
@@ -25,6 +25,13 @@ pub fn get_migrations() -> Vec<Migration> {
                     last_played INTEGER DEFAULT 0,
                     added_at INTEGER NOT NULL
                 );
+            ",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "create playlists table",
+            sql: "
                 CREATE TABLE IF NOT EXISTS playlists (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -36,6 +43,13 @@ pub fn get_migrations() -> Vec<Migration> {
                     smart_criteria TEXT,
                     cover_image TEXT
                 );
+            ",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 3,
+            description: "create playlist_items table",
+            sql: "
                 CREATE TABLE IF NOT EXISTS playlist_items (
                     playlist_id TEXT NOT NULL,
                     media_path TEXT NOT NULL,
@@ -49,7 +63,7 @@ pub fn get_migrations() -> Vec<Migration> {
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 2,
+            version: 4,
             description: "create settings table",
             sql: "
                 CREATE TABLE IF NOT EXISTS settings (
@@ -60,37 +74,31 @@ pub fn get_migrations() -> Vec<Migration> {
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 3,
-            description: "added for protocol and metadata stabilization",
-            sql: "SELECT 1;", // Dummy migration to resolve version mismatch
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 4,
+            version: 5,
             description: "add synopsis column",
             sql: "ALTER TABLE media ADD COLUMN synopsis TEXT;",
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 5,
+            version: 6,
             description: "add rating column",
             sql: "ALTER TABLE media ADD COLUMN rating REAL;",
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 6,
+            version: 7,
             description: "add genres column",
             sql: "ALTER TABLE media ADD COLUMN genres TEXT;",
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 7,
+            version: 8,
             description: "add director column",
             sql: "ALTER TABLE media ADD COLUMN director TEXT;",
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 8,
+            version: 9,
             description: "add starring column",
             sql: "ALTER TABLE media ADD COLUMN starring TEXT;",
             kind: MigrationKind::Up,

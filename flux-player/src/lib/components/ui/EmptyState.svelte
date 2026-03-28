@@ -25,7 +25,7 @@
     onAction = () => {},
     illustration,
   } = $props<{
-    variant?: 'library' | 'search' | 'default';
+    variant?: 'library' | 'search' | 'player' | 'default';
     title: string;
     description: string;
     actionLabel?: string;
@@ -92,7 +92,12 @@
 >
   <div class="illustration-container">
     <!-- Atmospheric Aurora Glow -->
-    <div class="aurora" class:aurora-violet={variant === 'library'} class:aurora-cyan={variant === 'search'}></div>
+    <div 
+      class="aurora" 
+      class:aurora-violet={variant === 'library'} 
+      class:aurora-cyan={variant === 'search'}
+      class:aurora-full={variant === 'player'}
+    ></div>
 
     {#if illustration}
       {@render illustration()}
@@ -247,6 +252,73 @@
         </g>
       </svg>
 
+    {:else if variant === 'player'}
+      <!-- ==========================================
+           VARIANT: PLAYER — "The Flux Core"
+           ========================================== -->
+      <svg
+        class="illus-svg player-core-svg"
+        viewBox="0 0 240 240"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id="core-glow-filter">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          <radialGradient id="singularity-grad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="var(--secondary)" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="var(--primary)" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+
+        <!-- Layer 1 (Deepest Back) — Starfield -->
+        <g class="layer-back" style:transform="translate({parallaxX * 0.08}px, {parallaxY * 0.08}px)">
+          {#each Array(12) as _, i}
+            <circle 
+              cx={20 + (i * 17) % 200} 
+              cy={10 + (i * 23) % 220} 
+              r="1" 
+              fill="white" 
+              opacity="0.2"
+              class="star-blink"
+              style:animation-delay="{i * 0.4}s"
+            />
+          {/each}
+        </g>
+
+        <!-- Layer 2 (Back) — Perspective Grid Floor -->
+        <g class="layer-back" style:transform="translate({parallaxX * 0.15}px, {parallaxY * 0.15}px)" opacity="0.15">
+          <path d="M20 180 L220 180 M40 160 L200 160 M60 145 L180 145" stroke="var(--glass-border-high)" stroke-width="0.5" />
+          <path d="M120 140 L20 200 M120 140 L220 200 M120 140 L120 200" stroke="var(--glass-border-high)" stroke-width="0.5" />
+        </g>
+
+        <!-- Layer 3 (Mid) — HUD Rings -->
+        <g class="layer-mid" style:transform="translate({parallaxX * 0.3}px, {parallaxY * 0.3}px)">
+          <circle cx="120" cy="110" r="75" stroke="var(--glass-border-mid)" stroke-width="0.5" stroke-dasharray="10 20" class="ring-spin-slow" />
+          <circle cx="120" cy="110" r="55" stroke="var(--primary)" stroke-width="1" stroke-dasharray="2 4" opacity="0.4" class="ring-spin-rev" />
+          <!-- HUD Brackets -->
+          <path d="M70 80 L70 70 L80 70" stroke="var(--secondary)" stroke-width="1" opacity="0.6" />
+          <path d="M170 80 L170 70 L160 70" stroke="var(--secondary)" stroke-width="1" opacity="0.6" />
+          <path d="M70 140 L70 150 L80 150" stroke="var(--secondary)" stroke-width="1" opacity="0.6" />
+          <path d="M170 140 L170 150 L160 150" stroke="var(--secondary)" stroke-width="1" opacity="0.6" />
+        </g>
+
+        <!-- Layer 4 (Front) — The Singularity Core -->
+        <g class="layer-front" style:transform="translate({parallaxX * 0.5}px, {parallaxY * 0.5}px)" filter="url(#core-glow-filter)">
+          <!-- Core Pulse Outer -->
+          <path d="M120 70 L150 110 L120 150 L90 110 Z" fill="rgba(0, 255, 255, 0.05)" stroke="var(--secondary)" stroke-width="2" class="core-breathe" />
+          <!-- Inner Wireframe -->
+          <path d="M120 80 L140 110 L120 140 L100 110 Z" stroke="var(--primary)" stroke-width="1.5" class="core-breathe delay-1" />
+          <!-- Center Point -->
+          <circle cx="120" cy="110" r="4" fill="var(--secondary)" class="core-blink" />
+          <!-- Scanning line -->
+          <line x1="85" y1="110" x2="155" y2="110" stroke="var(--secondary)" stroke-width="0.5" opacity="0.8" class="scan-line" />
+        </g>
+      </svg>
+
     {:else}
       <!-- ==========================================
            VARIANT: DEFAULT — Simple geometric
@@ -339,6 +411,15 @@
   .aurora-cyan {
     background: radial-gradient(ellipse at center, rgba(0, 255, 255, 0.12) 0%, transparent 70%);
     box-shadow: 0 0 60px 20px rgba(0, 255, 255, 0.06);
+  }
+
+  .aurora-full {
+    background: 
+      radial-gradient(circle at 30% 30%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(0, 255, 255, 0.12) 0%, transparent 50%);
+    inset: -50%;
+    filter: blur(40px);
+    opacity: 0.8;
   }
 
   .aurora:not(.aurora-violet):not(.aurora-cyan) {
@@ -532,6 +613,34 @@
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ==========================================
+     Animation: Player — Flux Core
+     ========================================== */
+  .ring-spin-slow {
+    animation: spin 30s linear infinite;
+    transform-origin: 120px 110px;
+  }
+  .ring-spin-rev {
+    animation: spin 15s linear infinite reverse;
+    transform-origin: 120px 110px;
+  }
+  .star-blink {
+    animation: dot-blink 3s ease-in-out infinite;
+  }
+  .core-blink {
+    animation: dot-blink 1.5s ease-in-out infinite;
+  }
+  .scan-line {
+    animation: scan-move 4s ease-in-out infinite;
+    transform-origin: 120px 110px;
+  }
+  @keyframes scan-move {
+    0%, 100% { transform: translateY(-30px) scaleX(0.5); opacity: 0; }
+    50%      { transform: translateY(0) scaleX(1); opacity: 0.8; }
+    51%      { transform: translateY(0) scaleX(1); opacity: 0.8; }
+    100%    { transform: translateY(30px) scaleX(0.5); opacity: 0; }
   }
 
   /* ==========================================

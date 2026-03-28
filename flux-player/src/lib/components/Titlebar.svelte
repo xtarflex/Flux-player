@@ -17,10 +17,12 @@
   async function loadProfile() {
     try {
       pcName = await invoke('get_computer_name');
+      displayName = pcName; // Set OS Name as first fallback
+      
       const saved = await invoke<string | null>('get_setting', { key: 'display_name' });
-      displayName = saved || pcName;
+      if (saved) displayName = saved;
     } catch (e) {
-      console.error("Flux Titlebar: Failed to fetch profile:", e);
+      console.warn("Flux Titlebar: Failed to fetch DB profile (expected on clean boot):", e);
     }
   }
 
