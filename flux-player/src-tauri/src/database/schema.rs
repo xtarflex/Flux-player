@@ -67,14 +67,32 @@ pub fn get_migrations() -> Vec<Migration> {
         },
         Migration {
             version: 4,
-            description: "add rich metadata columns to media table",
-            sql: "
-                ALTER TABLE media ADD COLUMN synopsis TEXT;
-                ALTER TABLE media ADD COLUMN rating REAL;
-                ALTER TABLE media ADD COLUMN genres TEXT;
-                ALTER TABLE media ADD COLUMN director TEXT;
-                ALTER TABLE media ADD COLUMN starring TEXT;
-            ",
+            description: "add synopsis column",
+            sql: "ALTER TABLE media ADD COLUMN synopsis TEXT;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "add rating column",
+            sql: "ALTER TABLE media ADD COLUMN rating REAL;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "add genres column",
+            sql: "ALTER TABLE media ADD COLUMN genres TEXT;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 7,
+            description: "add director column",
+            sql: "ALTER TABLE media ADD COLUMN director TEXT;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 8,
+            description: "add starring column",
+            sql: "ALTER TABLE media ADD COLUMN starring TEXT;",
             kind: MigrationKind::Up,
         },
     ]

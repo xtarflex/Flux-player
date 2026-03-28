@@ -86,7 +86,7 @@ pub async fn process_video<R: Runtime>(
     }
 
     // Attempt to enrich with TMDB - This is our MAIN
-    if let Some(tmdb_meta) = super::tmdb::search_metadata(app, &metadata.title, metadata.year).await
+    if let Some((tmdb_meta, api_key)) = super::tmdb::search_metadata(app, &metadata.title, metadata.year).await
     {
         metadata.title = tmdb_meta.title.or(tmdb_meta.name).unwrap_or(metadata.title);
 
@@ -119,11 +119,11 @@ pub async fn process_video<R: Runtime>(
             .ok();
         }
 
-        // Fetch Rich Details (Genres, Director, Starring)
+        // Fetch Rich Details (Genres, Director, Starring) — reuse same api_key, no extra quota spend
         let tmdb_id = tmdb_meta.id;
         let tmdb_media_type = tmdb_meta.media_type.unwrap_or_else(|| "movie".to_string());
         
-        if let Some(details) = super::tmdb::fetch_details(app, tmdb_id, &tmdb_media_type).await {
+        if let Some(details) = super::tmdb::fetch_details(&api_key, tmdb_id, &tmdb_media_type).await {
             metadata.genres = details.genres;
             metadata.director = details.director;
             metadata.starring = details.starring;

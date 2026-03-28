@@ -61,7 +61,7 @@ pub async fn search_metadata<R: Runtime>(
     app: &AppHandle<R>,
     query: &str,
     year: Option<u32>,
-) -> Option<TmdbSearchResult> {
+) -> Option<(TmdbSearchResult, String)> {
     let state = app.state::<settings::TmdbState>();
     let api_key = settings::get_tmdb_key(app.clone(), state, None)
         .await
@@ -81,19 +81,15 @@ pub async fn search_metadata<R: Runtime>(
     let response = client.get(url).send().await.ok()?;
     let search_data: TmdbSearchResponse = response.json().await.ok()?;
 
-    search_data.results.into_iter().next() // Return the first match
+    let result = search_data.results.into_iter().next()?;
+    Some((result, api_key))
 }
 
-pub async fn fetch_details<R: Runtime>(
-    app: &AppHandle<R>,
+pub async fn fetch_details(
+    api_key: &str,
     tmdb_id: u32,
     media_type: &str, // "movie" or "tv"
 ) -> Option<TmdbDetails> {
-    let state = app.state::<settings::TmdbState>();
-    let api_key = settings::get_tmdb_key(app.clone(), state, None)
-        .await
-        .ok()?;
-
     let client = Client::new();
     let url = format!(
         "https://api.themoviedb.org/3/{}/{}?api_key={}&append_to_response=credits",
