@@ -8,6 +8,8 @@
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
   import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState } from '$lib/stores/media';
+  import { playMedia, setMedia } from '$lib/stores/playback';
+  import { goto } from '$app/navigation';
 
   type ViewMode = 'grid' | 'list' | 'detail';
   let viewMode = $state<ViewMode>('grid');
@@ -58,29 +60,37 @@
   let isFilterOpen = $state(false);
   let isSortOpen = $state(false);
 
-  const mediaOptions = ['All Media', 'Movies', 'Music', 'Series'];
-  const sortOptions = ['Recently Added', 'A-Z', 'Z-A', 'Release Date'];
+  const mediaOptions = ['All Media', 'Movies', 'Series', 'Music', 'Watched', 'Unwatched'];
+  const sortOptions = ['Recently Added', 'A-Z', 'Z-A', 'Release Date', 'Rating', 'Duration'];
 
   let searchText = $state('');
 
   let filteredItems = $derived.by(() => {
     let result = [...$mediaItems];
 
-    // Filter by type
+    // Filter by type or status
     if (mediaFilter !== 'All Media') {
-      const typeMap: Record<string, string> = {
-        'Movies': 'video',
-        'Series': 'video', // Series would ideally have its own type but for now maps to video
-        'Music': 'audio'
-      };
-      result = result.filter(item => item.type === typeMap[mediaFilter]);
+      if (mediaFilter === 'Movies') {
+        result = result.filter(item => item.type === 'video' && !item.series_tag);
+      } else if (mediaFilter === 'Series') {
+        result = result.filter(item => item.type === 'video' && item.series_tag);
+      } else if (mediaFilter === 'Music') {
+        result = result.filter(item => item.type === 'audio');
+      } else if (mediaFilter === 'Watched') {
+        result = result.filter(item => item.is_watched);
+      } else if (mediaFilter === 'Unwatched') {
+        result = result.filter(item => !item.is_watched);
+      }
     }
 
-    // Filter by text
+    // Smart Global Search (0ms Latency)
     if (searchText.trim()) {
       const query = searchText.toLowerCase();
       result = result.filter(item => 
-        item.title.toLowerCase().includes(query)
+        item.title.toLowerCase().includes(query) ||
+        (item.artist && item.artist.toLowerCase().includes(query)) ||
+        (item.album && item.album.toLowerCase().includes(query)) ||
+        (item.series_tag && item.series_tag.toLowerCase().includes(query))
       );
     }
 
@@ -93,6 +103,10 @@
           return (b.added_at - a.added_at) || a.title.localeCompare(b.title);
         case 'Release Date':
           return ((b.year ?? 0) - (a.year ?? 0)) || a.title.localeCompare(b.title);
+        case 'Rating':
+          return ((b.rating ?? 0) - (a.rating ?? 0)) || a.title.localeCompare(b.title);
+        case 'Duration':
+          return ((b.duration ?? 0) - (a.duration ?? 0)) || a.title.localeCompare(b.title);
         default: return 0;
       }
     });
@@ -123,8 +137,26 @@
       $selectedMediaId = id;
     }
     
+    // Play audio immediately on single click
+    const item = filteredItems[idx];
+    if (item && item.type === 'audio') {
+      playMedia(item);
+    } else if (item && item.type === 'video') {
+      // Highlight/Focus video AND hydrate the footer silently
+      setMedia(item);
+    }
+    
     // CRITICAL: Always update lastSelectedIndex so Shift+Click knows the start point
     lastSelectedIndex = idx;
+  }
+
+  function handleDoubleClick(id: string) {
+    // Only matters for video (audio played on single click)
+    const item = filteredItems.find(i => i.id === id);
+    if (item && item.type === 'video') {
+      playMedia(item);
+      goto('/playing');
+    }
   }
 
   function toggleSelection(id: string, event?: MouseEvent) {
@@ -539,6 +571,7 @@
               selectionMode={isSelectionMode}
               batchSelected={selectedBatchIds.includes(item.id)}
               onclick={(e: MouseEvent) => selectItem(item.id, e)}
+              ondblclick={() => handleDoubleClick(item.id)}
               onmenu={(e: MouseEvent) => openMenu(e, item)}
               onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
             />
@@ -553,6 +586,7 @@
               selectionMode={isSelectionMode}
               batchSelected={selectedBatchIds.includes(item.id)}
               onclick={(e: MouseEvent) => selectItem(item.id, e)}
+              ondblclick={() => handleDoubleClick(item.id)}
               onmenu={(e: MouseEvent) => openMenu(e, item)}
               onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
             />

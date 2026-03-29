@@ -17,14 +17,14 @@ pub fn save_media_items<R: Runtime>(
         tx.execute(
             "INSERT OR REPLACE INTO media (
                 path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, added_at,
-                synopsis, rating, genres, director, starring
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
-            (
+                synopsis, rating, genres, director, starring, series_tag, is_watched
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+            rusqlite::params![
                 &item.path, &item.title, item.year, &item.artist, &item.album,
                 &item.poster_path, &item.backdrop_path, &item.album_art_path,
                 item.duration, &item.media_type, item.added_at,
-                &item.synopsis, item.rating, &genres_json, &item.director, &item.starring
-            ),
+                &item.synopsis, item.rating, &genres_json, &item.director, &item.starring, &item.series_tag, item.is_watched
+            ],
         ).map_err(|e| e.to_string())?;
     }
 

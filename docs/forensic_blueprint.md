@@ -649,3 +649,46 @@ This allows subtitles to be bound dynamically WITHOUT reloading the video player
 ---
 
 These implementations complete the technical foundations for Flux's playlist, queue, volume control, subtitle, and audio caching systems.
+
+---
+
+## 19. Format Detection & Transcoding Logic (FFmpeg/FFprobe)
+
+**Goal:** Transparently handle unsupported containers and codecs while maintaining UI performance.
+
+### The "Sleight of Hand": Instant Detection
+
+When a file is added to the library or clicked, Flux doesn't just check the extension. It uses **FFprobe** to look inside the container:
+
+```rust
+// ffprobe -v quiet -print_format json -show_format -show_streams [PATH]
+```
+
+- **Logic:** We check the `codec_name` and `format_name` fields.
+- **Trigger:** If `format_name` contains `matroska` (MKV) or `avi`, or if the video codec isn't `h264`/`h265`, the UI immediately attaches the **⚠️ MKV** orange badge.
+- **Zero-Latency:** This detection happens during the initial backend scan (Milestone 1.4) and is stored in SQLite, so the UI never lags during render.
+
+### The "Magic": Stream-Optimized Transcoding
+
+Flux uses a specific set of FFmpeg flags to ensure the converted file is optimized for the Video.js player:
+
+- **`-c:v libx264`**: Ensures the video is in H.264, the most compatible web codec.
+- **`-preset fast`**: Balances conversion speed with file size.
+- **`-crf 23`**: Maintained high-quality visual parity with the original.
+- **`-movflags +faststart`**: **CRITICAL.** This moves the "moov atom" to the beginning of the file, allowing playback to start before the file is fully downloaded/converted (pseudo-streaming).
+
+### The Asset Mapping
+
+Converted files are served via the same `asset://` protocol as local media. The frontend simply swaps the source:
+
+```javascript
+// Before conversion
+src: "asset://localhost/C:/Movies/Matrix.mkv" (Unsupported)
+
+// After conversion
+src: "asset://localhost/C:/Users/User/AppData/Roaming/flux-player/cache/converted/Matrix.mp4"
+```
+
+### Background Queue (V3)
+
+To prevent CPU thermal throttling, the background queue (Option B) executes one job at a time. The Rust backend manages a `VecDeque` of tracks and uses a crossbeam channel to signal completion and start the next job.

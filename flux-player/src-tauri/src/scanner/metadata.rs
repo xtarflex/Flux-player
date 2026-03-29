@@ -22,6 +22,8 @@ pub struct MediaMetadata {
     pub genres: Vec<String>,
     pub director: Option<String>,
     pub starring: Option<String>,
+    pub series_tag: Option<String>,
+    pub is_watched: bool,
     pub added_at: u64,
 }
 
@@ -37,20 +39,13 @@ pub async fn process_video<R: Runtime>(
     app: &AppHandle<R>,
     path: &std::path::Path,
     added_at: u64,
+    existing_title: Option<String>,
 ) -> Option<MediaMetadata> {
     let file_stem = path.file_stem()?.to_str()?;
-    let mut title = file_stem.to_string();
-    let mut year = None;
-
-    if let Some(caps) = regex::Regex::new(r"\((\d{4})\)").ok()?.captures(file_stem) {
-        if let Some(y_str) = caps.get(1) {
-            year = y_str.as_str().parse::<u32>().ok();
-            title = title
-                .replace(&format!(" ({})", y_str.as_str()), "")
-                .trim()
-                .to_string();
-        }
-    }
+    
+    let (cleaned_title, extracted_year, extracted_series) = clean_media_title(file_stem);
+    let title = existing_title.unwrap_or(cleaned_title);
+    let year = extracted_year;
 
     let mut metadata = MediaMetadata {
         path: path.to_string_lossy().to_string(),
@@ -68,6 +63,8 @@ pub async fn process_video<R: Runtime>(
         genres: Vec::new(),
         director: None,
         starring: None,
+        series_tag: extracted_series.clone(),
+        is_watched: false,
         added_at,
     };
 
@@ -88,7 +85,14 @@ pub async fn process_video<R: Runtime>(
     // Attempt to enrich with TMDB - This is our MAIN
     if let Some((tmdb_meta, api_key)) = super::tmdb::search_metadata(app, &metadata.title, metadata.year).await
     {
-        metadata.title = tmdb_meta.title.or(tmdb_meta.name).unwrap_or(metadata.title);
+        let tmdb_title = tmdb_meta.title.or(tmdb_meta.name).unwrap_or(metadata.title.clone());
+        
+        // If this was a TV episode, append the Season/Episode tag back to the premium TMDB title!
+        if let Some(series_tag) = extracted_series {
+            metadata.title = format!("{} - {}", tmdb_title, series_tag);
+        } else {
+            metadata.title = tmdb_title;
+        }
 
         // Use TMDB Poster if available
         if let Some(poster) = tmdb_meta.poster_path {
@@ -131,6 +135,15 @@ pub async fn process_video<R: Runtime>(
 
         metadata.synopsis = tmdb_meta.overview;
         metadata.rating = tmdb_meta.vote_average;
+
+        // Parse Year from TMDB release_date / first_air_date (e.g., "2024-03-28")
+        if let Some(date_str) = tmdb_meta.release_date.or(tmdb_meta.first_air_date) {
+            if date_str.len() >= 4 {
+                if let Ok(y) = date_str[0..4].parse::<u32>() {
+                    metadata.year = Some(y);
+                }
+            }
+        }
     } else {
         // Fallback to embedded art if TMDB search fails or returns nothing
         metadata.poster_path = embedded_art;
@@ -143,13 +156,16 @@ pub async fn process_audio<R: Runtime>(
     app: &AppHandle<R>,
     path: &std::path::Path,
     added_at: u64,
+    existing_title: Option<String>,
+    existing_artist: Option<String>,
+    existing_album: Option<String>,
 ) -> Option<MediaMetadata> {
     let mut metadata = MediaMetadata {
         path: path.to_string_lossy().to_string(),
-        title: path.file_stem()?.to_string_lossy().to_string(),
+        title: existing_title.unwrap_or_else(|| path.file_stem().unwrap_or_default().to_string_lossy().to_string()),
         year: None,
-        artist: None,
-        album: None,
+        artist: existing_artist,
+        album: existing_album,
         poster_path: None,
         backdrop_path: None,
         album_art_path: None,
@@ -160,6 +176,8 @@ pub async fn process_audio<R: Runtime>(
         genres: Vec::new(),
         director: None,
         starring: None,
+        series_tag: None,
+        is_watched: false,
         added_at,
     };
 
@@ -168,11 +186,17 @@ pub async fn process_audio<R: Runtime>(
             .primary_tag()
             .or_else(|| tagged_file.first_tag())
         {
-            if let Some(t) = tag.title().map(|s| s.to_string()) {
-                metadata.title = t;
+            if metadata.title.is_empty() {
+                if let Some(t) = tag.title().map(|s| s.to_string()) {
+                    metadata.title = t;
+                }
             }
-            metadata.artist = tag.artist().map(|s| s.to_string());
-            metadata.album = tag.album().map(|s| s.to_string());
+            if metadata.artist.is_none() {
+                metadata.artist = tag.artist().map(|s| s.to_string());
+            }
+            if metadata.album.is_none() {
+                metadata.album = tag.album().map(|s| s.to_string());
+            }
             metadata.year = tag.year();
 
             if let Some(picture) = tag.pictures().first() {
@@ -221,4 +245,57 @@ fn cache_album_art<R: Runtime>(
     }
 
     Some(file_path.to_string_lossy().to_string())
+}
+
+/// A highly optimized multi-stage string cleaner targeting standard "Scene Release" video naming.
+/// Returns: (Cleaned Title, Extracted Year, Extracted Series Tag e.g. "S01E01")
+fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String>) {
+    use std::sync::OnceLock;
+
+    // Stage 1: Separators
+    let mut title = raw_title.replace('.', " ").replace('_', " ");
+
+    // Stage 2: Year Pivot (Golden Rule)
+    static YEAR_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let year_re = YEAR_RE.get_or_init(|| {
+        regex::Regex::new(r"^(.*?)(?:[\s\-_]+[\(\[]?((?:19|20)\d{2})[\)\]]?(?:[\s\-_]+|$))").unwrap()
+    });
+
+    if let Some(caps) = year_re.captures(&title) {
+        if let (Some(t_match), Some(y_match)) = (caps.get(1), caps.get(2)) {
+            let extracted_year = y_match.as_str().parse::<u32>().ok();
+            return (t_match.as_str().trim().to_string(), extracted_year, None);
+        }
+    }
+
+    // Stage 3: Series Pivot
+    static SERIES_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let series_re = SERIES_RE.get_or_init(|| {
+        regex::Regex::new(r"(?i)^(.*?)(?:[\s\-_]+((?:S\d{1,2}E\d{1,4}|\d{1,2}x\d{1,4}|Season\s*\d+)))").unwrap()
+    });
+
+    if let Some(caps) = series_re.captures(&title) {
+        if let (Some(t_match), Some(s_match)) = (caps.get(1), caps.get(2)) {
+            return (t_match.as_str().trim().to_string(), None, Some(s_match.as_str().trim().to_uppercase()));
+        }
+    }
+
+    // Stage 4: Tag Purging
+    static TAG_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let tag_re = TAG_RE.get_or_init(|| {
+        regex::Regex::new(r"(?i)\b(1080p|720p|2160p|4k|8k|x264|h264|x265|h265|hevc|bluray|web-dl|webrip|hdrip|cam|ts|aac|dts|ac3|dd5\.1|ddp5\.1|truehd|atmos|extended|unrated|remastered|proper|repack|directors\s*cut)\b").unwrap()
+    });
+    title = tag_re.replace_all(&title, "").to_string();
+
+    // Stage 5: Release Group Drop
+    static GROUP_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let group_re = GROUP_RE.get_or_init(|| regex::Regex::new(r"-[A-Za-z0-9]+$").unwrap());
+    title = group_re.replace(&title, "").to_string();
+
+    // Final clean space crunch
+    static SPACE_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let space_re = SPACE_RE.get_or_init(|| regex::Regex::new(r"\s{2,}").unwrap());
+    title = space_re.replace_all(&title, " ").to_string();
+
+    (title.trim().to_string(), None, None)
 }

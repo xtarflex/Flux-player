@@ -10,7 +10,8 @@
     batchSelected = false,
     onclick, 
     onmenu,
-    onrightclick
+    onrightclick,
+    ondblclick
   } = $props<{
     item: {
       id: string;
@@ -25,6 +26,7 @@
     onclick?: (e: MouseEvent) => void;
     onmenu?: (e: MouseEvent) => void;
     onrightclick?: (e: MouseEvent) => void;
+    ondblclick?: (e: MouseEvent) => void;
   }>();
 
   let isFavorited = $state(false);
@@ -47,7 +49,7 @@
       e.preventDefault();
       if (e.ctrlKey) {
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Playing ${item.title}`, icon: 'playing' } }));
-        console.log(`Action: Play ${item.title} now`);
+        ondblclick?.(e as any);
       } else {
         onclick?.(e as any);
       }
@@ -68,6 +70,10 @@
   onclick={(e) => {
     e.stopPropagation();
     onclick?.(e);
+  }}
+  ondblclick={(e) => {
+    e.stopPropagation();
+    ondblclick?.(e);
   }}
   onkeydown={handleKeydown}
   oncontextmenu={(e) => {

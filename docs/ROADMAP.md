@@ -186,7 +186,19 @@ This roadmap breaks down Flux Player development into **3 major phases** with cl
 | Implement 500ms debounced search | 🟢 Low | `deep_logic_supplement.md` (Section 1) |
 | Add horizontal scroll logic | 🟢 Low | `PROJECT_CHARTER.md` (Section 3) |
 
-**Phase 2 Total:** ~14 weeks
+### Milestone 2.8: Audio Device Integration
+**Duration:** 2 weeks | **Complexity:** 🔴 High
+
+| Task | Complexity | Reference Document |
+|------|-----------|-------------------|
+| Implement cpal audio device enumeration | 🟡 Medium | `SETTINGS_SPEC.md` (Section 1.F) |
+| Build titlebar audio device indicator | 🟢 Low | `forensic_blueprint.md` (Section 10) |
+| Create quick device switcher dropdown | 🟢 Low | New component |
+| Add Bluetooth device scanning (Windows) | 🔴 High | `SETTINGS_SPEC.md` (Section 1.F) |
+| Build Settings → Audio & Devices tab | 🟡 Medium | `SETTINGS_SPEC.md` (Section 1.F) |
+| Implement auto-switch on Bluetooth connect | 🟡 Medium | `forensic_blueprint.md` (Section 14) |
+
+**Phase 2 Total:** ~16 weeks
 
 ---
 
@@ -220,10 +232,12 @@ This roadmap breaks down Flux Player development into **3 major phases** with cl
 
 | Task | Complexity | Reference Document |
 |------|-----------|-------------------|
-| Integrate FFmpeg binary | 🟡 Medium | `workflow_reconstruct.md` (Target 4) |
-| Build .mkv/.avi transcoder | 🔴 High | `PROJECT_CHARTER.md` (Section 4, V2) |
-| Create format detection logic | 🟡 Medium | `PROJECT_CHARTER.md` (Section 4, V2) |
-| Add progress indicator | 🟢 Low | `deep_logic_supplement.md` (Section 1) |
+| FFmpeg/FFprobe binary sidecar integration | 🟡 Medium | `workflow_reconstruct.md` (Target 4) |
+| Format detection logic (ffprobe JSON parsing) | 🟡 Medium | `forensic_blueprint.md` (Section 19) |
+| MKV/AVI/Audio transcoder implementation | 🔴 High | `deep_logic_supplement.md` (Section 8) |
+| Real-time progress indicator (Dynamic Island) | 🟢 Low | `deep_logic_supplement.md` (Section 8) |
+| Conversion cache management & auto-cleanup | 🟡 Medium | `SETTINGS_SPEC.md` (Section 1.B) |
+| Background conversion queue system (V3) | 🔴 High | `deep_logic_supplement.md` (Section 8) |
 
 ### Milestone 3.4: Network Casting
 **Duration:** 2 weeks | **Complexity:** 🔴 High

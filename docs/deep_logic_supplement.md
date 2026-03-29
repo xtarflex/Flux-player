@@ -501,6 +501,94 @@ pub async fn refresh_audio_metadata(path: &Path) -> Result<(), Error> {
     
     Ok(())
 }
+
+---
+
+## Section 8 (NEW): File Format & Conversion Strategy
+
+### Part 1: Flux Native Playback Support
+
+| Type | Formats | Codecs |
+|------|---------|--------|
+| **Video** | MP4, WebM, OGG | H.264, H.265 (HEVC), VP8, VP9, Theora |
+| **Audio** | MP3, M4A, OGG, WAV | MP3, AAC, Vorbis, PCM |
+
+### Part 2: Formats Requiring Conversion (FFmpeg)
+
+| Type | Formats | Converts To |
+|------|---------|-------------|
+| **Video** | MKV, AVI, FLV, MOV, WMV | MP4 (H.264) |
+| **Audio** | FLAC, ALAC, WMA, APE | MP3 or AAC |
+
+### Part 3: Conversion Workflows
+
+#### Option A: On-Demand (Blocking)
+- **Trigger:** User clicks "Play" on unsupported media.
+- **UX:** Blocking modal with progress indicator.
+- **Cache:** Converted file saved to `%APPDATA%/flux-player/cache/converted/`.
+- **Playback:** Starts immediately upon completion.
+
+#### Option B: Background Batch (V3 Feature)
+- **Trigger:** Manual "Convert All" in Settings or during library scan.
+- **UX:** Non-blocking background workers.
+- **Queue:** Managed in Settings history view.
+- **Status:** Shown on media grid via "Converting..." badge.
+
+### Part 4: Rust Implementation (FFmpeg Integration)
+
+```rust
+// src-tauri/src/ffmpeg_converter.rs
+
+#[tauri::command]
+pub async fn convert_video(
+    input_path: String,
+    output_format: String,
+    app_handle: tauri::AppHandle
+) -> Result<String, String> {
+    let output_path = generate_output_path(&input_path, &output_format);
+    
+    let mut child = Command::new("ffmpeg")
+        .args(&[
+            "-i", &input_path,
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-preset", "fast",
+            "-crf", "23",
+            "-movflags", "+faststart",
+            &output_path
+        ])
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    
+    // Parse FFmpeg progress
+    let stderr = child.stderr.take().unwrap();
+    let reader = BufReader::new(stderr);
+    
+    for line in reader.lines() {
+        if let Ok(line) = line {
+             if let Some(progress) = parse_ffmpeg_progress(&line) {
+                 app_handle.emit_all("conversion-progress", progress)?;
+             }
+        }
+    }
+    
+    let status = child.wait().map_err(|e| e.to_string())?;
+    Ok(output_path)
+}
+
+fn generate_output_path(input: &str, format: &str) -> String {
+    let filename = Path::new(input).file_stem().unwrap().to_str().unwrap();
+    format!("{}/converted/{}.{}", get_cache_dir(), filename, format)
+}
+```
+
+### Part 5: Library Grid Badge System
+
+- **⚠️ MKV (Orange):** Format badge indicating conversion is required before playback.
+- **✓ MP4 (Green):** Converted badge indicating a play-ready cache file exists.
+- **🔄 % (Cyan):** Animated badge showing real-time background conversion progress.
+
 ```
 
 ---

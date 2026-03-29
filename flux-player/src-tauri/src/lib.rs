@@ -33,6 +33,10 @@ pub fn run() {
             commands::library::cache_tmdb_image,
             commands::library::get_file_oshash,
             commands::library::start_library_scan,
+            commands::library::refresh_media_metadata,
+            commands::library::update_media_field,
+            commands::library::save_playback_progress,
+            commands::library::get_playback_progress,
             utils::folders::get_default_media_folders
         ])
         .run(tauri::generate_context!())

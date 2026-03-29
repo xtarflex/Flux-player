@@ -3,10 +3,17 @@
    * @file DetailPanel.svelte
    * @description Library Detail Panel — displays metadata for the selected media item.
    */
-  import { mediaItems, selectedMediaId, type MediaItem } from '$lib/stores/media';
-  import { convertFileSrc } from '@tauri-apps/api/core';
+  import { mediaItems, selectedMediaId, type MediaItem, loadLibraryFromDb } from '$lib/stores/media';
+  import { convertFileSrc, invoke } from '@tauri-apps/api/core';
   import { derived } from 'svelte/store';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
+
+  /**
+   * Action to focus an element on mount
+   */
+  function focus(node: HTMLInputElement) {
+    node.focus();
+  }
 
   const selectedItem = derived([mediaItems, selectedMediaId], ([$items, $id]: [MediaItem[], string | null]) => {
     return $items.find((item: MediaItem) => item.id === $id) || null;
@@ -27,6 +34,59 @@
   });
 
   let playingHovered = $state(false);
+  let isRefreshing = $state(false);
+  let editingField = $state<string | null>(null);
+  let editValue = $state("");
+
+  /**
+   * Formats duration in seconds to "X min"
+   */
+  function formatDuration(seconds: number | null): string {
+    if (!seconds || seconds <= 0) return '0 min';
+    const mins = Math.round(seconds / 60);
+    return `${mins} min`;
+  }
+
+  async function handleRefresh() {
+    if (!$selectedMediaId || isRefreshing) return;
+    isRefreshing = true;
+    try {
+      await invoke('refresh_media_metadata', { path: $selectedMediaId });
+      await loadLibraryFromDb(); // Refresh store
+    } catch (e) {
+      console.error("Flux DetailPanel: Refresh failed:", e);
+    } finally {
+      isRefreshing = false;
+    }
+  }
+
+  function startEdit(field: string, initialValue: string) {
+    editingField = field;
+    editValue = initialValue;
+  }
+
+  async function saveEdit() {
+    if (!editingField || !$selectedMediaId) return;
+    const field = editingField;
+    const value = editValue;
+    editingField = null;
+
+    try {
+      await invoke('update_media_field', { 
+        path: $selectedMediaId, 
+        field, 
+        value 
+      });
+      await loadLibraryFromDb(); // Refresh store
+    } catch (e) {
+      console.error("Flux DetailPanel: Update failed:", e);
+    }
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') saveEdit();
+    if (e.key === 'Escape') editingField = null;
+  }
 </script>
 
 <aside class="detail-panel">
@@ -75,8 +135,10 @@
           {:else}
             <!-- Video Badges/Genres beside poster -->
             <div class="badges">
-              <span class="badge">{$selectedItem.year || 'N/A'}</span>
-              <span class="badge">{$selectedItem.duration || '0m'}</span>
+              <span class="badge">
+                {($selectedItem.year && !isNaN($selectedItem.year)) ? $selectedItem.year : 'N/A'}
+              </span>
+              <span class="badge">{formatDuration($selectedItem.duration)}</span>
               {#if $selectedItem.rating && $selectedItem.rating > 0}
                 <span class="badge badge--rating">★ {$selectedItem.rating.toFixed(1)}</span>
               {/if}
@@ -134,20 +196,54 @@
 
       <!-- === Metadata Table === -->
       <div class="meta-table">
-        <div class="meta-row">
+        <div class="meta-row" class:is-editing={editingField === 'title'}>
           <span class="meta-key">TITLE</span>
-          <span class="meta-val">{$selectedItem.title}</span>
+          {#if editingField === 'title'}
+            <input 
+              type="text" 
+              class="edit-input" 
+              bind:value={editValue} 
+              onkeydown={handleKeydown}
+              use:focus 
+            />
+          {:else}
+            <span class="meta-val">{$selectedItem.title}</span>
+          {/if}
+          
           <div class="meta-actions">
-            <button class="icon-action" title="Edit">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-            {#if $selectedItem.type !== 'audio'}
-              <button class="icon-action" title="Reset">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+            {#if editingField === 'title'}
+              <button class="icon-action save" onclick={saveEdit} title="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
                 </svg>
+              </button>
+            {:else}
+              <button class="icon-action" onclick={() => startEdit('title', $selectedItem.title)} title="Edit Title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            {/if}
+
+            {#if $selectedItem.type !== 'audio'}
+              <button 
+                class="icon-action" 
+                class:is-spinning={isRefreshing}
+                onclick={handleRefresh} 
+                title="Refresh Metadata"
+              >
+                {#if isRefreshing}
+                  <div class="spinner-box">
+                    <svg class="flux-spinner" viewBox="0 0 24 24" fill="none">
+                      <path class="flux-spin-cyan" d="M12 22 A10 10 0 0 1 12 2 A5 5 0 0 1 12 12 A5 5 0 0 0 12 22 Z" fill="var(--secondary)"/>
+                      <path class="flux-spin-violet" d="M12 2 A10 10 0 0 1 12 22 A5 5 0 0 1 12 12 A5 5 0 0 0 12 2 Z" fill="var(--primary)"/>
+                    </svg>
+                  </div>
+                {:else}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                  </svg>
+                {/if}
               </button>
             {/if}
           </div>
@@ -155,15 +251,35 @@
 
         {#if $selectedItem.type === 'audio'}
           <!-- Audio Table -->
-          <div class="meta-row">
+          <div class="meta-row" class:is-editing={editingField === 'artist'}>
             <span class="meta-key">ARTIST</span>
-            <span class="meta-val">{$selectedItem.artist || 'Unknown'}</span>
-            <div class="meta-actions"><button class="icon-action" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+            {#if editingField === 'artist'}
+              <input type="text" class="edit-input" bind:value={editValue} onkeydown={handleKeydown} use:focus />
+            {:else}
+              <span class="meta-val">{$selectedItem.artist || 'Unknown'}</span>
+            {/if}
+            <div class="meta-actions">
+               {#if editingField === 'artist'}
+                <button class="icon-action save" onclick={saveEdit} title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
+              {:else}
+                <button class="icon-action" onclick={() => startEdit('artist', $selectedItem.artist || '')} title="Edit Artist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+              {/if}
+            </div>
           </div>
-          <div class="meta-row">
+          <div class="meta-row" class:is-editing={editingField === 'album'}>
             <span class="meta-key">ALBUM</span>
-            <span class="meta-val">{$selectedItem.album || 'Unknown'}</span>
-            <div class="meta-actions"><button class="icon-action" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+            {#if editingField === 'album'}
+              <input type="text" class="edit-input" bind:value={editValue} onkeydown={handleKeydown} use:focus />
+            {:else}
+              <span class="meta-val">{$selectedItem.album || 'Unknown'}</span>
+            {/if}
+            <div class="meta-actions">
+              {#if editingField === 'album'}
+                <button class="icon-action save" onclick={saveEdit} title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
+              {:else}
+                <button class="icon-action" onclick={() => startEdit('album', $selectedItem.album || '')} title="Edit Album"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+              {/if}
+            </div>
           </div>
         {:else}
           <!-- Video Table -->
@@ -240,7 +356,7 @@
     background-position: center 20%;
     filter: brightness(0.6) contrast(1.15);
     /* Balanced 8s cinematic loop */
-    animation: kenBurns 8s infinite alternate cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    animation: kenBurns 16s infinite alternate cubic-bezier(0.445, 0.05, 0.55, 0.95);
   }
 
   @keyframes kenBurns {
@@ -576,5 +692,57 @@
   .empty-state p {
     font-size: 13px;
     color: var(--text-muted);
+  }
+
+  /* ===================== Edit Mode ===================== */
+  .edit-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--secondary);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .icon-action.save {
+    color: var(--secondary);
+  }
+
+  /* ===================== Unified Island Spinner ===================== */
+  .spinner-box {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes flux-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes flux-breathe-cyan {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+    50% { transform: translate(-1px, -1px) scale(0.9); opacity: 1; }
+  }
+  @keyframes flux-breathe-violet {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+    50% { transform: translate(1px, 1px) scale(0.9); opacity: 1; }
+  }
+
+  .flux-spinner {
+    width: 100%;
+    height: 100%;
+    animation: flux-spin 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  }
+  .flux-spin-cyan {
+    animation: flux-breathe-cyan 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    transform-origin: center;
+  }
+  .flux-spin-violet {
+    animation: flux-breathe-violet 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    transform-origin: center;
   }
 </style>

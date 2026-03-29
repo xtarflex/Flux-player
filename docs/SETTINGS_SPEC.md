@@ -4,7 +4,7 @@ This document outlines the architecture, default values, and customization limit
 
 ## 1. Hub Structure
 
-The Settings Hub is organized into five primary functional vertical tabs to maintain a clean, high-performance UI.
+The Settings Hub is organized into six primary functional vertical tabs to maintain a clean, high-performance UI.
 
 ### A. My Profile (Identity)
 
@@ -43,6 +43,28 @@ The Settings Hub is organized into five primary functional vertical tabs to main
   * *Default:* OFF (Standard recursive scan).
 
   * *Customization:* Toggle to "Experimental Native Search".
+
+* **File Conversion:**
+
+  * **Conversion Strategy:**
+    * *Options:* On-Demand (Default), Background Batch.
+    * *Description:* Choose between converting files only when requested for playback or automatically in the background.
+
+  * **Default Video Format:** MP4 (H.264) (Fixed for V2 compatibility).
+
+  * **Default Audio Format:**
+    * *Options:* MP3 (Default), AAC, OGG.
+
+  * **Audio Bitrate:**
+    * *Options:* 128, 192, 256 (Default), 320 kbps.
+
+  * **Conversion Cache Location:**
+    * *Default:* `%APPDATA%/flux-player/cache/converted/`.
+    * *Customization:* User-selectable path.
+
+  * **Cache Management:**
+    * *Default:* Auto-delete after 30 days; Keep original files.
+    * *Customization:* Toggle "Keep Originals"; Slider for retention days; "Clear Cache" button.
 
 ### C. Playback & Performance (The Muscle)
 
@@ -104,6 +126,31 @@ The Settings Hub is organized into five primary functional vertical tabs to main
 
   * *Customization:* Manual caps (720p, 1080p, 4K).
 
+### F. Audio & Devices (The Ears)
+
+* **Output Device Selection:**
+
+  * *Default:* System's default output device.
+
+  * *Customization:* A radio list showing all active audio outputs (system speakers, USB DACs, Bluetooth, HDMI). Features live switching without restart.
+
+* **Bluetooth Management:**
+
+  * *Features:* Integrated Bluetooth scanning and pairing UI. Connect, disconnect, and "forget" devices directly from Flux.
+
+  * *Auto-Switch:* Toggle to automatically switch to newly connected Bluetooth audio devices.
+
+* **Advanced Audio Settings:**
+
+  * **Sample Rate:** Selectable (44.1kHz, 48kHz, 96kHz, 192kHz).
+
+  * **Bit Depth:** Selectable (16-bit, 24-bit, 32-bit).
+
+  * **Exclusive Mode (WASAPI):** Toggle for Windows exclusive audio access (bypasses system mixer).
+
+  * **Pause on Disconnect:** Auto-pause playback when an active audio device is unplugged or disconnected.
+
+
 ## 2. Immutable vs. Mutable Features
 
 | Feature Category | Customizable? | Reason for Lock | 
@@ -115,6 +162,7 @@ The Settings Hub is organized into five primary functional vertical tabs to main
 | **User Identity** | YES | Name and Avatar personalize the local experience. | 
 | **File Paths** | YES | Users must have total control over media locations. | 
 | **Performance** | YES | Essential for running Flux on varying hardware. | 
+| **Audio Settings** | YES | Crucial for cross-device support and Hi-Fi listening. |
 
 ## 3. Configuration Persistence
 

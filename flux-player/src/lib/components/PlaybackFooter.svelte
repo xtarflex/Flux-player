@@ -4,23 +4,31 @@
   import PlaybackControls from './footer/PlaybackControls.svelte';
   import QueueStack from './footer/QueueStack.svelte';
   import RightActions from './footer/RightActions.svelte';
-  // Playback State
-  let volume = $state(0.7);
-  let progress = $state(0.35);
-  let isPlaying = $state(false);
+  import { activeMedia, playbackState } from '$lib/stores/playback';
+
   
   // Media Info
-  let currentMedia = $state<{
-    type: 'video' | 'audio' | null;
-    title: string;
-    duration: string;
-    currentTime: string;
-    poster?: string;
-  }>({
-    type: null, 
-    title: '',
-    duration: '',
-    currentTime: ''
+  let currentMedia = $derived.by(() => {
+    if (!$activeMedia) return { type: null, title: '', duration: '', currentTime: '' };
+    
+    const formatTime = (secs: number) => {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = Math.floor(secs % 60);
+      if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const durationStr = $activeMedia.duration ? formatTime($activeMedia.duration) : '--:--';
+    const currentStr = $activeMedia.duration ? formatTime($activeMedia.duration * $playbackState.progress) : '0:00';
+
+    return {
+      type: $activeMedia.type === 'mixed' ? 'video' : $activeMedia.type,
+      title: $activeMedia.title,
+      duration: durationStr,
+      currentTime: currentStr,
+      poster: $activeMedia.poster || $activeMedia.backdrop || undefined
+    };
   });
   
   // Control States
@@ -78,7 +86,7 @@
     // 0-9: Jump to 0%-90%
     if (e.key >= '0' && e.key <= '9') {
       e.preventDefault();
-      progress = parseInt(e.key) / 10;
+      playbackState.update(s => ({ ...s, progress: parseInt(e.key) / 10 }));
       window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Jump to ${e.key}0%`, icon: 'playing' } }));
       return;
     }
@@ -88,13 +96,13 @@
       case 'k':
       case 'K':
         e.preventDefault();
-        isPlaying = !isPlaying;
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isPlaying ? 'Play' : 'Pause', icon: isPlaying ? 'play' : 'pause' } }));
+        playbackState.update(s => ({ ...s, isPlaying: !s.isPlaying }));
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: !$playbackState.isPlaying ? 'Play' : 'Pause', icon: !$playbackState.isPlaying ? 'play' : 'pause' } }));
         break;
       case 'm':
       case 'M':
         e.preventDefault();
-        isMuted = !isMuted;
+        playbackState.update(s => ({ ...s, isMuted: !s.isMuted }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isMuted ? 'Muted' : 'Unmuted', icon: isMuted ? 'volume-mute' : 'volume-up' } }));
         break;
       case 'f':
@@ -116,43 +124,47 @@
       case 'j':
       case 'J':
         e.preventDefault();
-        progress = Math.max(0, progress - 0.1);
+        playbackState.update(s => ({ ...s, progress: Math.max(0, s.progress - 0.1) }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Rewind 10%', icon: 'seek-backward' } }));
         break;
       case 'l':
       case 'L':
         e.preventDefault();
-        progress = Math.min(1, progress + 0.1);
+        playbackState.update(s => ({ ...s, progress: Math.min(1, s.progress + 0.1) }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Forward 10%', icon: 'seek-forward' } }));
         break;
       case 'Home':
         e.preventDefault();
-        progress = 0;
+        playbackState.update(s => ({ ...s, progress: 0 }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to Start', icon: 'skip-previous' } }));
         break;
       case 'End':
         e.preventDefault();
-        progress = 1;
+        playbackState.update(s => ({ ...s, progress: 1 }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to End', icon: 'skip-next' } }));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        volume = Math.min(1, volume + 0.1);
-        if (volume > 0) isMuted = false;
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume ${Math.round(volume * 100)}%`, icon: 'volume-up' } }));
+        playbackState.update(s => {
+          const newVol = Math.min(1, s.volume + 0.1);
+          return { ...s, volume: newVol, isMuted: newVol > 0 ? false : s.isMuted };
+        });
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Up`, icon: 'volume-up' } }));
         break;
       case 'ArrowDown':
         e.preventDefault();
-        volume = Math.max(0, volume - 0.1);
-        if (volume === 0) isMuted = true;
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume ${Math.round(volume * 100)}%`, icon: 'volume-down' } }));
+        playbackState.update(s => {
+          const newVol = Math.max(0, s.volume - 0.1);
+          return { ...s, volume: newVol, isMuted: newVol === 0 ? true : s.isMuted };
+        });
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Down`, icon: 'volume-down' } }));
         break;
       case 'ArrowRight':
         e.preventDefault();
         if (e.shiftKey) {
           nextTrack();
         } else {
-          progress = Math.min(1, progress + 0.05);
+          playbackState.update(s => ({ ...s, progress: Math.min(1, s.progress + 0.05) }));
           window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Forward', icon: 'seek-forward' } }));
         }
         break;
@@ -161,7 +173,7 @@
         if (e.shiftKey) {
           prevTrack();
         } else {
-          progress = Math.max(0, progress - 0.05);
+          playbackState.update(s => ({ ...s, progress: Math.max(0, s.progress - 0.05) }));
           window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Backward', icon: 'seek-backward' } }));
         }
         break;
@@ -175,11 +187,11 @@
   class="playback-footer" 
   role="contentinfo"
 >
-  <Scrubber bind:progress disabled={!hasMedia} />
+  <Scrubber bind:progress={$playbackState.progress} disabled={!hasMedia} />
 
   <div class="footer-content">
     <MediaInfo {currentMedia} {hasMedia} bind:isLiked={isLiked} />
-    <PlaybackControls {controlsEnabled} bind:shuffleState bind:repeatMode bind:isPlaying />
+    <PlaybackControls {controlsEnabled} bind:shuffleState bind:repeatMode bind:isPlaying={$playbackState.isPlaying} />
     <QueueStack {hasMedia} {queueHistory} {queue} {currentMedia} />
     <RightActions 
       {controlsEnabled} 
@@ -189,8 +201,8 @@
       showVisualizer={isAudio}
       bind:isPiPActive 
       bind:isFullscreen 
-      bind:volume 
-      bind:isMuted 
+      bind:volume={$playbackState.volume} 
+      bind:isMuted={$playbackState.isMuted} 
     />
   </div>
 </div>

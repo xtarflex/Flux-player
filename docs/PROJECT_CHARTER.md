@@ -68,7 +68,7 @@ Flux Player is a blazing-fast, cross-platform desktop media player built using T
 
 * **Streaming Pathways (Scraper Cascade):** Integration with redundant APIs (VidSrc, VidLink, Consumet) to guarantee successful "Click and Stream" movie scraping. Combined with a background subtitle fetcher and clipboard interception for `yt-dlp` extraction via the Dynamic Island.
 
-* **The Format Breaker:** FFmpeg sidecar for `.mkv` and `.avi` transcoding.
+* **The Format Breaker:** FFmpeg/FFprobe sidecar for `.mkv` and `.avi` transcoding. Includes intelligent on-demand conversion with progress tracking, background batch processing for V3, and automatic codec detection.
 
 * **Advanced Library Brain:** SQLite integration (tracking Watched status, generating User Stats, and caching metadata).
 

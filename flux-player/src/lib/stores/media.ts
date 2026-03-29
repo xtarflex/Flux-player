@@ -30,6 +30,10 @@ export interface MediaItem {
   director?: string;
   starring?: string;
   subtitle?: string;
+  series_tag?: string | null;
+  is_watched?: boolean;
+  /** Last playback position in seconds (0 = unwatched / from start) */
+  last_position?: number;
 }
 
 export type LibraryLoadState = 'idle' | 'loading' | 'done' | 'error';
@@ -48,7 +52,7 @@ export async function loadLibraryFromDb(): Promise<void> {
   try {
     const db = await Database.load('sqlite:flux.db');
     const rows = await db.select<any[]>(
-      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, synopsis, rating, genres, director, starring FROM media ORDER BY added_at DESC'
+      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, synopsis, rating, genres, director, starring, series_tag, is_watched, last_position FROM media ORDER BY added_at DESC'
     );
 
     const items: MediaItem[] = rows.map((row) => ({
@@ -70,6 +74,9 @@ export async function loadLibraryFromDb(): Promise<void> {
       genres: row.genres ? JSON.parse(row.genres) : [],
       director: row.director ?? null,
       starring: row.starring ?? null,
+      series_tag: row.series_tag ?? null,
+      is_watched: row.is_watched === 1 || row.is_watched === true,
+      last_position: row.last_position ?? 0,
     }));
 
     mediaItems.set(items);

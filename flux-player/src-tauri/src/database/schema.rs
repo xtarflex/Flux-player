@@ -103,5 +103,20 @@ pub fn get_migrations() -> Vec<Migration> {
             sql: "ALTER TABLE media ADD COLUMN starring TEXT;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 10,
+            description: "add series and watched tracking",
+            sql: "
+                ALTER TABLE media ADD COLUMN series_tag TEXT;
+                ALTER TABLE media ADD COLUMN is_watched BOOLEAN DEFAULT 0;
+            ",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 11,
+            description: "add playback persistence",
+            sql: "ALTER TABLE media ADD COLUMN last_position INTEGER DEFAULT 0;",
+            kind: MigrationKind::Up,
+        },
     ]
 }

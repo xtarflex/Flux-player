@@ -15,7 +15,6 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    border: 1px solid var(--glass-border-low);
     transition: all 0.2s ease;
   }
 
@@ -28,14 +27,13 @@
   
   .avatar-container:hover {
     transform: scale(1.05);
-    border-color: var(--secondary);
     background: var(--glass-bg-mid);
   }
 
   .avatar-img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    padding: 2px;
+    object-fit: cover;
+    padding: 0;
   }
 </style>

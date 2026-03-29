@@ -412,9 +412,9 @@
      Illustration Container
      ========================================== */
   .illustration-container {
-    width: 260px;
-    height: 260px;
-    margin-bottom: 36px;
+    width: 380px;
+    height: 380px;
+    margin-bottom: 48px;
     position: relative;
     display: flex;
     align-items: center;
@@ -422,8 +422,8 @@
   }
 
   .illus-svg {
-    width: 90%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
     position: relative;
     z-index: 1;
     overflow: visible;
