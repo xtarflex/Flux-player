@@ -37,3 +37,45 @@
 - **AX**: Achieved a 100% mouse-free workflow for library management and app configuration.
 
 *End of Universal Keyboard System Phase. Preparing for Now Playing precision controls.*
+
+---
+
+## [2026-03-29] - Milestone 1.6: Player Engine, Theater Mode & Persistence
+
+- **VIDEO ENGINE**: Integrated Video.js via `PlayerEngine.svelte` (headless, Flux provides its own controls). Dual-instance pre-loading architecture is scaffolded per Blueprint §14.
+- **PERSISTENCE**: Added SQLite migration #11 (`last_position INTEGER`). Two new Tauri commands—`save_playback_progress` (debounced 3s, auto-sets `is_watched` at 90%) and `get_playback_progress`—wired into the `invoke_handler`.
+- **STORE**: Upgraded `playback.ts` with `isTheaterMode`, `isMiniPlayer`, `seekTo`, `playerEngineRef`, and `playMediaFromItem()`. Removed old `playMedia` export; `LibraryView` updated to use `playMediaFromItem` (which handles routing internally).
+- **THEATER MODE**: `.player-mode` CSS class transforms the app grid—main area expands `1/1/-1/-1`, sidebar/footer become `position: fixed` glass overlays that slide in on edge-hover (L: 50px, B: 50px) and auto-hide after 3s idle.
+- **MINI-PLAYER**: `MiniPlayer.svelte` overlay (320×80px, draggable, glass). `beforeNavigate` in `+layout.svelte` activates it when navigating away from `/playing` with an active video.
+- **VINYL MODE**: `/playing` now shows rotating album art disc with concentric groove rings, adaptive tint backdrop, and kinetic animations. Disc pauses when playback is paused.
+- **RESUME BUTTON**: `DetailPanel.svelte` derives `lastPosition` from `$selectedItem.last_position`. Button renders "Resume from MM:SS" (amber gradient) or "Play Movie/Video" depending on saved progress.
+- **ARCH NOTE**: `display: contents` on titlebar/sidebar/footer slot wrappers preserves CSS Grid layout while data attributes let `:global([data-*])` selectors apply theater mode transforms without touching component internals.
+
+*KI: Video.js must be lazy-imported (`await import('video.js')`) inside a non-async `onMount` IIFE to avoid SSR issues and keep Svelte's cleanup return synchronous.*
+
+# UI Polish: Tooltip Migration & Media Card Contrast
+
+## Work Summary
+- **MediaCard.svelte**: 
+    - Migrated from native `title` tooltips to high-fidelity `use:tooltip` implementation.
+    - **Contrast Enhancement**: Engineered localized `::before` radial gradients (22% spread, 0.8 opacity) at the top corners. This creates a subtle "anchor vignette" that guarantees legibility for action buttons on high-key (white) posters without impacting the cinematic visual of the artwork.
+- **PlaybackControls.svelte**:
+    - Complete migration of the playback pill to custom tooltips.
+    - Integrated keyboard shortcut mapping into the tooltip metadata (Shuffle: `S`, Play: `Space`, Seek: `Left`/`Right`, etc.) to accelerate user onboarding.
+- **LibraryView.svelte**:
+    - Unified look for Zoom controls and Batch Operation bars.
+- **Sidebar.svelte**:
+    - Corrected Sidebar Collapse shortcut mapping and applied global tooltips to the navigation rail.
+
+## Bug Fixes & Refinements
+- **State-Sync Hijacking**: Resolved a critical race condition in `tooltip.ts`. Previously, the global `update` hook would allow any re-rendering component to "steal" an active tooltip. Introduced a **local scout pattern** (`isCurrentlyHovered` flag) to ensure that only the actively hovered node can modify the global tooltip store.
+
+## Technical Debt & Strategic Direction
+- **Accessibility vs. UX**: While custom tooltips provide a superior aesthetic, ensure `aria-label` remains synced with tooltip content to maintain screen-reader compatibility.
+- **Titlebar Controls**: Window controls (Min/Max/Close) currently lack tooltips to align with OS defaults, but a future "Total Immersion" toggle could bring them into the Flux design system.
+- **Dynamic Content**: Tooltips on Shuffle/Repeat now accurately reflect the *result* of the next click (e.g., "Repeat One" vs "Repeat All") based on reactive state updates.
+
+## Verification
+- **Visual Integrity**: "Cyber Dark" aesthetic is now consistent across all hovering interactions.
+- **High-Key Contrast**: Verified button visibility on pure white test posters.
+- **State Stability**: Tooltips remain perfectly anchored during high-frequency playback store updates.
