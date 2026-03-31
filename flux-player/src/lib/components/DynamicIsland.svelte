@@ -7,18 +7,43 @@
   import IslandStatus from "./island/IslandStatus.svelte";
   import IslandMedia from "./island/IslandMedia.svelte";
   import { isScanning } from "$lib/stores/media";
+  import { activeMedia, playbackState } from "$lib/stores/playback";
 
   // ── Island State ────────────────────────────────────────────────────
   let currentState = $state("idle"); // idle | status | audio | playing | hover
   let previousState = $state("idle");
 
-  // ── Media State Props (Mocked for now) ────────────────────────────────
-  let mediaState = $state("idle"); // idle | loading | playing | buffering | paused
-  let mediaType = $state("video"); // video | audio
+  // ── Derive from real playback stores ────────────────────────────────
+  let mediaState = $derived.by(() => {
+    if (!$activeMedia) return "idle";
+    if ($playbackState.isPlaying) return "playing";
+    return "paused";
+  });
+
+  let mediaType = $derived($activeMedia?.type === 'audio' ? 'audio' : 'video');
+
   let bufferingProgress = $state(45);
-  let videoTitle = $state("WATCHING...");
-  let videoTime = $state("12:34 / 1:45:20");
-  let posterSrc = $state("/flux2d.png");
+
+  // Real title and time for video playing state
+  let videoTitle = $derived($activeMedia?.title?.toUpperCase() ?? "WATCHING...");
+  let videoTime = $derived.by(() => {
+    const d = $activeMedia?.duration ?? 0;
+    const pos = d * $playbackState.progress;
+    const fmt = (s: number) => {
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${m}:${sec.toString().padStart(2, '0')}`;
+    };
+    return d > 0 ? `${fmt(pos)} / ${fmt(d)}` : "";
+  });
+
+  // Real album art / poster for the island thumbnail
+  let posterSrc = $derived.by(() => {
+    if (!$activeMedia) return "/flux2d.png";
+    const src = $activeMedia.album_art || $activeMedia.poster || "/flux2d.png";
+    if (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:')) return src;
+    return convertFileSrc(src);
+  });
 
   // ── Adaptive Border & Offline State ──────────────────────────────────
   let isOffline = $state(false);
@@ -26,10 +51,10 @@
   let borderColor = $derived(isOffline ? "#ff0000" : adaptiveTint);
 
   async function updateAdaptiveTint(src: string) {
-    if (!src) return;
+    if (!src || src === '/flux2d.png') return;
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : convertFileSrc(src);
+    img.src = src;
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = 64;
@@ -48,6 +73,8 @@
         count++;
       }
       adaptiveTint = `rgb(${Math.floor(r/count)}, ${Math.floor(g/count)}, ${Math.floor(b/count)})`;
+      // Also propagate to CSS token for vinyl backdrop etc.
+      document.documentElement.style.setProperty('--island-adaptive-tint', adaptiveTint);
     };
   }
 
@@ -65,7 +92,6 @@
   onMount(() => {
     const handleToast = (e: any) => {
       currentToast = e.detail;
-      // If we are in "playing" or something, save it
       if (currentState !== "status") previousState = currentState;
       currentState = "status";
       
@@ -81,23 +107,35 @@
   });
 
   $effect(() => {
-    if ($isScanning) {
-      if (currentState !== "status") previousState = currentState;
-      currentState = "status";
+    // Priority 1: Scanning or Toast Activity (Status state)
+    if ($isScanning || currentToast) {
+      if (currentState !== "status" && currentState !== "hover") {
+        previousState = currentState;
+        currentState = "status";
+      }
       return;
     }
 
+    // Priority 2: Hover behavior
+    if (currentState === "hover") return;
+
+    // Priority 3: Playback State
+    let targetState = "idle";
     switch (mediaState) {
-      case "loading":   currentState = "status"; break;
-      case "buffering": currentState = "status"; break;
       case "playing":
-        currentState = mediaType === "video" ? "playing" : "audio";
+        targetState = mediaType === "video" ? "playing" : "audio";
         break;
-      case "paused":
-      case "idle":
+      case "loading":
+      case "buffering":
+        targetState = "status";
+        break;
       default:
-        currentState = "idle";
+        targetState = "idle";
         break;
+    }
+
+    if (currentState !== targetState) {
+      currentState = targetState;
     }
   });
 
@@ -161,8 +199,9 @@
     <IslandMedia 
       type={currentState} 
       {videoTitle} 
-      {videoTime} 
-      {posterSrc} 
+      {videoTime}
+      artistName={$activeMedia?.artist ?? $activeMedia?.album ?? ''}
+      {posterSrc}
     />
   {/if}
 </div>

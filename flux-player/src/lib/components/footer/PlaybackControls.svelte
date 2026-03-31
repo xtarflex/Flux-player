@@ -1,23 +1,30 @@
 <script lang="ts">
+  import { tooltip } from '$lib/actions/tooltip';
   let { 
     controlsEnabled, 
-    shuffleState = $bindable(false), 
-    repeatMode = $bindable(0),
-    isPlaying = $bindable(false)
+    shuffleState = false, 
+    repeatMode = 0,
+    isPlaying = false,
+    onToggleShuffle,
+    onToggleRepeat,
+    onTogglePlay,
+    onSeekForward,
+    onSeekBackward
   } = $props<{
     controlsEnabled: boolean;
     shuffleState?: boolean;
     repeatMode?: number;
     isPlaying?: boolean;
+    onToggleShuffle: () => void;
+    onToggleRepeat: () => void;
+    onTogglePlay: () => void;
+    onSeekForward: () => void;
+    onSeekBackward: () => void;
   }>();
-
-  function toggleRepeat() {
-    repeatMode = (repeatMode + 1) % 3;
-  }
 
   function togglePlay() {
     if (!controlsEnabled) return;
-    isPlaying = !isPlaying;
+    onTogglePlay();
   }
 </script>
 
@@ -28,7 +35,8 @@
       class:disabled={!controlsEnabled}
       aria-label="Shuffle"
       disabled={!controlsEnabled}
-      onclick={() => shuffleState = !shuffleState}
+      onclick={() => onToggleShuffle()}
+      use:tooltip={{ content: shuffleState ? 'Shuffle On' : 'Shuffle Off', shortcut: 'S', placement: 'top' }}
     >
       <svg viewBox="0 0 24 24" fill="none" class:is-active={shuffleState} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l4.1-6.1C11.6 9 12.8 8.4 14.1 8.4H22" />
@@ -40,18 +48,18 @@
     </button>
 
     <div class="control-pill">
-      <button class="pill-btn" aria-label="Previous" disabled={!controlsEnabled}>
+      <button class="pill-btn" aria-label="Previous" disabled={!controlsEnabled} use:tooltip={{ content: 'Previous', shortcut: 'P', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="6" x2="5" y2="18" />
           <path d="M19,7.5 V16.5 C19,18 17.5,19 16.5,18.2 L10,13.7 C8.8,12.9 8.8,11.1 10,10.3 L16.5,5.8 C17.5,5 19,6 19,7.5Z" />
         </svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn seek-btn" aria-label="Seek Backward" disabled={!controlsEnabled}>
+      <button class="pill-btn seek-btn" aria-label="Seek Backward" disabled={!controlsEnabled} onclick={onSeekBackward} use:tooltip={{ content: 'Seek Backward', shortcut: 'Left', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn play-btn" aria-label={isPlaying ? 'Pause' : 'Play'} disabled={!controlsEnabled} onclick={togglePlay}>
+      <button class="pill-btn play-btn" aria-label={isPlaying ? 'Pause' : 'Play'} disabled={!controlsEnabled} onclick={togglePlay} use:tooltip={{ content: isPlaying ? 'Pause' : 'Play', shortcut: 'Space', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           {#if isPlaying}
             <rect x="6" y="4" width="4" height="16" />
@@ -63,11 +71,11 @@
         </svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn seek-btn" aria-label="Seek Forward" disabled={!controlsEnabled}>
+      <button class="pill-btn seek-btn" aria-label="Seek Forward" disabled={!controlsEnabled} onclick={onSeekForward} use:tooltip={{ content: 'Seek Forward', shortcut: 'Right', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V9a4 4 0 0 0-4-4H3"/><polyline points="17 23 21 19 17 15"/><path d="M3 13v2a4 4 0 0 0 4 4h14"/></svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn" aria-label="Next" disabled={!controlsEnabled}>
+      <button class="pill-btn" aria-label="Next" disabled={!controlsEnabled} use:tooltip={{ content: 'Next', shortcut: 'N', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5,7.5 V16.5 C5,18 6.5,19 7.5,18.2 L14,13.7 C15.2,12.9 15.2,11.1 14,10.3 L7.5,5.8 C6.5,5 5,6 5,7.5Z" />
           <line x1="19" y1="6" x2="19" y2="18" />
@@ -80,7 +88,8 @@
       class:disabled={!controlsEnabled}
       aria-label="Repeat"
       disabled={!controlsEnabled}
-      onclick={toggleRepeat}
+      onclick={() => onToggleRepeat()}
+      use:tooltip={{ content: repeatMode === 2 ? 'Repeat One' : repeatMode === 1 ? 'Repeat All' : 'Repeat Off', shortcut: 'R', placement: 'top' }}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M17 2l4 4-4 4"/>
@@ -99,13 +108,33 @@
   .center-section {
     display: flex;
     justify-content: center;
-    flex: 1;
+    flex: 0 0 auto;
+    margin: 0 16px;
   }
 
   .main-controls {
     display: flex;
     align-items: center;
     gap: 16px;
+    transition: gap 0.3s ease;
+  }
+
+  @media (max-width: 1000px) {
+    .main-controls {
+      gap: 8px;
+    }
+    .center-section {
+      margin: 0 8px;
+    }
+  }
+
+  @media (max-width: 850px) {
+    .main-controls {
+      gap: 4px;
+    }
+    .icon-btn.shuffle, .icon-btn.repeat {
+      padding: 4px;
+    }
   }
 
   .control-pill {

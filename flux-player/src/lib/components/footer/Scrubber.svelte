@@ -1,10 +1,12 @@
 <script lang="ts">
   let { 
     progress = $bindable(0),
-    disabled = false
+    disabled = false,
+    onSeek
   } = $props<{ 
     progress?: number,
-    disabled?: boolean
+    disabled?: boolean,
+    onSeek?: (p: number) => void
   }>();
   let isDragging = $state(false);
 
@@ -14,6 +16,7 @@
     let newProgress = (e.clientX - rect.left) / rect.width;
     newProgress = Math.max(0, Math.min(1, newProgress));
     progress = newProgress;
+    if (onSeek) onSeek(newProgress);
   }
 
   function onPointerDown(e: PointerEvent) {
@@ -63,6 +66,7 @@
     cursor: pointer;
     transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
+    margin-top: 2px;
     margin-bottom: 8px;
   }
 

@@ -4,6 +4,7 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { goto } from '$app/navigation';
   import ProfileAvatar from './ProfileAvatar.svelte';
+  import { tooltip } from '$lib/actions/tooltip';
   
   let appWindow: any;
   if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window)) {
@@ -55,13 +56,13 @@
 
   <div class="right-section">
     <div class="action-group">
-      <button class="refresh-btn" onclick={refresh} title="Global Refresh">
+      <button class="refresh-btn" onclick={refresh} aria-label="Refresh Library" use:tooltip={{ content: 'Refresh Library', shortcut: 'Ctrl R', placement: 'bottom' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6m12-4a9 9 0 0 1-15 6.7L3 16" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
       
-      <div class="connectivity-wrapper" class:offline={!isOnline} title={isOnline ? "Online" : "Offline"}>
+      <div class="connectivity-wrapper" class:offline={!isOnline} aria-label={isOnline ? "Online" : "Offline"} use:tooltip={{ content: isOnline ? 'Online' : 'Offline', placement: 'bottom' }}>
         <div class="signal-bars">
           <div class="bar bar-1"></div>
           <div class="bar bar-2"></div>
@@ -70,7 +71,7 @@
         </div>
       </div>
 
-      <button class="audio-device-btn" title="System Speakers (Realtek HD Audio)">
+      <button class="audio-device-btn" aria-label="System Speakers" use:tooltip={{ content: 'System Speakers (Realtek HD Audio)', placement: 'bottom' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="var(--secondary)" />
           <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="var(--primary)" opacity="0.8" />
@@ -78,7 +79,7 @@
         </svg>
       </button>
 
-      <button class="settings-btn" title="Settings Hub" onclick={openSettings}>
+      <button class="settings-btn" onclick={openSettings} aria-label="Settings Hub" use:tooltip={{ content: 'Settings Hub', shortcut: 'Ctrl ,', placement: 'bottom' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />

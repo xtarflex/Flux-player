@@ -1,17 +1,66 @@
 <script lang="ts">
   import '../app.css';
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { goto, beforeNavigate } from '$app/navigation';
+  import { page } from '$app/stores';
   import Titlebar from '$lib/components/Titlebar.svelte';
   import DynamicIsland from '$lib/components/DynamicIsland.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import PlaybackFooter from '$lib/components/PlaybackFooter.svelte';
+  import MiniPlayer from '$lib/components/player/MiniPlayer.svelte';
+  import AudioEngine from '$lib/components/player/AudioEngine.svelte';
+  import { activeMedia, playbackState, activateMiniPlayer } from '$lib/stores/playback';
+  import { isScanning } from '$lib/stores/media';
+  import { activeMenu, closeMenu, isSidebarCollapsed } from '$lib/stores/ui';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { invoke } from '@tauri-apps/api/core';
+  import Tooltip from '$lib/components/ui/Tooltip.svelte';
+  import ContextMenu from '$lib/components/ui/ContextMenu.svelte';
+
   let { children } = $props();
   let showShortcutsRef = $state(false);
 
-  import { open } from '@tauri-apps/plugin-dialog';
-  import { invoke } from '@tauri-apps/api/core';
-  import { isScanning } from '$lib/stores/media';
+
+  // ── Theater Mode State ────────────────────────────────────────────────────
+  let isTheaterMode = $derived($playbackState.isTheaterMode);
+  let sidebarReveal = $state(false);
+  let footerReveal = $state(false);
+  let uiIdle = $derived($playbackState.isIdle);
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // ── beforeNavigate: intercept leaving /playing ──────────
+  beforeNavigate(({ to }) => {
+    const leavingPlayer = $page.url.pathname === '/playing';
+    const hasActiveVideo = !!$activeMedia && $activeMedia.type !== 'audio';
+    const goingToPlayer = to?.url.pathname === '/playing';
+    
+    if (leavingPlayer && !goingToPlayer) {
+      if (hasActiveVideo) {
+        activateMiniPlayer();
+      } else {
+        // Just turn off theater mode for audio
+        playbackState.update(s => ({ ...s, isTheaterMode: false }));
+      }
+    }
+  });
+
+  /**
+   * Handles edge-hover for theater mode UI reveal (Blueprint §2).
+   * @param e - Mouse move event from the app-container.
+   */
+  function handleTheaterMouseMove(e: MouseEvent) {
+    if (!isTheaterMode) return;
+    const { clientX, clientY } = e;
+    sidebarReveal = clientX < Math.max(260, window.innerWidth * 0.2); // 20% or physical sidebar width
+    footerReveal = clientY > Math.min(window.innerHeight - 100, window.innerHeight * 0.7); // 30% or physical footer height
+    playbackState.update(s => ({ ...s, isIdle: false }));
+    if (idleTimer) clearTimeout(idleTimer);
+    if ($playbackState.isPlaying) {
+      idleTimer = setTimeout(() => { 
+        playbackState.update(s => ({ ...s, isIdle: true }));
+      }, 1000);
+    }
+  }
 
   async function importFolder() {
     const selected = await open({
@@ -77,6 +126,7 @@
           if (e.shiftKey) { dispatchToast('Captured Screenshot', 'screenshot'); }
           else { dispatchToast('Saved Queue as Playlist', 'save'); }
           break;
+        case 'b': e.preventDefault(); isSidebarCollapsed.update(v => !v); break;
         case 'w': e.preventDefault(); try { (window as any).__TAURI__?.window.getCurrent().close(); } catch(e) {} break;
         case '/': e.preventDefault(); showShortcutsRef = !showShortcutsRef; break;
       }
@@ -103,18 +153,31 @@
     return () => {
       window.removeEventListener('keydown', handleGlobalKeydown);
       window.removeEventListener('flux-import-folder', handleImportEvent);
+      if (idleTimer) clearTimeout(idleTimer);
     };
   });
 </script>
 
-<div class="app-container">
-  <Titlebar />
-  <Sidebar />
+<div 
+  class="app-container"
+  class:player-mode={isTheaterMode}
+  class:sidebar-reveal={sidebarReveal && isTheaterMode}
+  class:footer-reveal={footerReveal && isTheaterMode}
+  class:ui-idle={uiIdle && isTheaterMode}
+  onmousemove={handleTheaterMouseMove}
+  role="presentation"
+>
+  <div data-titlebar class="titlebar-slot"><Titlebar /></div>
+  <div data-sidebar class="sidebar-slot"><Sidebar /></div>
   <DynamicIsland />
   <main class="main-content">
     {@render children()}
   </main>
-  <PlaybackFooter />
+  <div data-footer class="footer-slot"><PlaybackFooter /></div>
+  <MiniPlayer />
+  <!-- Persistent audio engine — survives all route changes -->
+  <AudioEngine />
+  <Tooltip />
 
   <!-- Shortcuts Reference Modal -->
   {#if showShortcutsRef}
@@ -145,6 +208,7 @@
             <div class="row"><span>Ctrl + N</span> New Playlist</div>
             <div class="row"><span>Ctrl + O</span> Import Folder</div>
             <div class="row"><span>Ctrl + S</span> Save Queue</div>
+            <div class="row"><span>Ctrl + B</span> Toggle Sidebar</div>
           </div>
           <div class="col">
             <h3>Library Mode</h3>
@@ -174,7 +238,21 @@
   {/if}
 </div>
 
+{#if $activeMenu}
+  <ContextMenu 
+    x={$activeMenu.x} 
+    y={$activeMenu.y} 
+    items={$activeMenu.items} 
+    onclose={closeMenu} 
+  />
+{/if}
+
 <style>
+  /* Theater Mode slot wrappers — transparent to grid layout */
+  .titlebar-slot, .sidebar-slot, .footer-slot {
+    display: contents;
+  }
+
   .main-content {
     grid-area: main;
     overflow-y: auto;

@@ -1,6 +1,8 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { tooltip } from '$lib/actions/tooltip';
+  import { toggleFavorite as toggleFavoriteAction } from '$lib/stores/media';
 
   let { 
     item, 
@@ -18,6 +20,7 @@
       title: string;
       poster?: string | null;
       type: 'video' | 'audio' | 'mixed' | 'unknown';
+      is_favorite?: boolean;
     };
     viewMode?: 'grid' | 'list' | 'detail';
     selected?: boolean;
@@ -29,17 +32,9 @@
     ondblclick?: (e: MouseEvent) => void;
   }>();
 
-  let isFavorited = $state(false);
-
   function toggleFavorite(e?: Event) {
     if (e) e.stopPropagation();
-    isFavorited = !isFavorited;
-    window.dispatchEvent(new CustomEvent('flux-toast', { 
-      detail: { 
-        label: isFavorited ? 'Added to Favorites' : 'Removed from Favorites', 
-        icon: 'star'
-      } 
-    }));
+    toggleFavoriteAction(item.id);
   }
 
   let hasPoster = $derived(!!item.poster);
@@ -99,25 +94,25 @@
   </div>
 
   <div class="metadata">
-    <span class="title" title={item.title}>{item.title}</span>
+    <span class="title" use:tooltip={{ content: item.title, placement: 'top' }}>{item.title}</span>
   </div>
 
   <!-- Favorite Button (Top Left) -->
   {#if !selectionMode}
     <button 
       class="favorite-btn" 
-      class:is-favorited={isFavorited}
+      class:is-favorited={item.is_favorite}
       aria-label="Toggle Favorite"
-      title={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
+      use:tooltip={{ content: item.is_favorite ? 'Remove from Favorites' : 'Add to Favorites', placement: 'top' }}
       onclick={toggleFavorite}
     >
-      <Icon name="star" fill={isFavorited ? "var(--secondary)" : "none"} strokeWidth={2.5} size={18} />
+      <Icon name="star" fill={item.is_favorite ? "var(--secondary)" : "none"} strokeWidth={2.5} size={18} />
     </button>
 
     <button 
       class="menu-btn" 
       aria-label="Media Options"
-      title="Options"
+      use:tooltip={{ content: 'Options', placement: 'top' }}
       onclick={(e) => {
         e.stopPropagation();
         onmenu?.(e);
@@ -297,6 +292,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  
+  .poster-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at top left, rgba(0,0,0,0.8) 0%, transparent 22%),
+      radial-gradient(circle at top right, rgba(0,0,0,0.8) 0%, transparent 22%);
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .media-card:hover .poster-container::before {
+    opacity: 1;
   }
 
   .poster-container::after {

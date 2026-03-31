@@ -1,29 +1,30 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { isScanning } from '$lib/stores/media';
+  import { activeMedia, playbackState } from '$lib/stores/playback';
   import AnimatedDiscovery from './ui/animated-icons/AnimatedDiscovery.svelte';
   import AnimatedLibrary from './ui/animated-icons/AnimatedLibrary.svelte';
   import AnimatedPlaying from './ui/animated-icons/AnimatedPlaying.svelte';
   import AnimatedPlaylists from './ui/animated-icons/AnimatedPlaylists.svelte';
   import AnimatedSettings from './ui/animated-icons/AnimatedSettings.svelte';
   import Icon from "./ui/Icon.svelte";
-
-  let isCollapsed = $state(false);
+  import { tooltip } from '$lib/actions/tooltip';
+  import { isSidebarCollapsed } from '$lib/stores/ui';
 
   function triggerImport() {
     window.dispatchEvent(new CustomEvent('flux-import-folder'));
   }
 
   const navItems = [
-    { id: 'discovery', label: 'Discovery', Icon: AnimatedDiscovery },
-    { id: 'library', label: 'Library', Icon: AnimatedLibrary },
-    { id: 'playing', label: 'Now Playing', Icon: AnimatedPlaying },
-    { id: 'playlists', label: 'Playlists', Icon: AnimatedPlaylists },
-    { id: 'settings', label: 'Settings', Icon: AnimatedSettings }
+    { id: 'discovery', label: 'Discovery', shortcut: 'Ctrl D', Icon: AnimatedDiscovery },
+    { id: 'library', label: 'Library', shortcut: 'Ctrl L', Icon: AnimatedLibrary },
+    { id: 'playing', label: 'Now Playing', shortcut: 'Ctrl Q', Icon: AnimatedPlaying },
+    { id: 'playlists', label: 'Playlists', shortcut: 'Ctrl P', Icon: AnimatedPlaylists },
+    { id: 'settings', label: 'Settings', shortcut: 'Ctrl ,', Icon: AnimatedSettings }
   ];
 </script>
 
-<aside class="sidebar" class:collapsed={isCollapsed}>
+<aside class="sidebar" class:collapsed={$isSidebarCollapsed}>
   <div class="sidebar-header">
     <div class="header-main">
       <img src="/flux.png" alt="Flux Logo" class="brand-logo" />
@@ -32,7 +33,7 @@
         <span class="version">V0.1.0</span>
       </div>
     </div>
-    <button class="menu-toggle" onclick={() => isCollapsed = !isCollapsed} aria-label="Toggle Sidebar">
+    <button class="menu-toggle" onclick={() => isSidebarCollapsed.update(v => !v)} aria-label="Toggle Sidebar" use:tooltip={{ content: $isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar', placement: 'right' }}>
       <Icon name="menu" strokeWidth={2.5} />
     </button>
   </div>
@@ -43,15 +44,14 @@
         href="/{item.id}"
         class="nav-item" 
         class:active={$page.url.pathname.startsWith('/' + item.id)}
-        onmouseenter={() => { if (isCollapsed) return; /* could trigger hover state here */ }}
-        title={isCollapsed ? item.label : ''}
+        use:tooltip={{ content: item.label, shortcut: item.shortcut, placement: 'right' }}
       >
         <div class="nav-icon">
           <item.Icon 
             active={$page.url.pathname.startsWith('/' + item.id)} 
           />
         </div>
-        {#if !isCollapsed}
+        {#if !$isSidebarCollapsed}
           <span class="nav-label">{item.label}</span>
         {/if}
       </a>
@@ -65,8 +65,9 @@
       class="add-folder-btn" 
       onclick={triggerImport} 
       disabled={$isScanning}
-      class:collapsed={isCollapsed} 
+      class:collapsed={$isSidebarCollapsed} 
       aria-label="Add Media Folder"
+      use:tooltip={{ content: 'Add Media Folder', shortcut: 'Ctrl O', placement: 'right' }}
     >
       {#if $isScanning}
         <div class="btn-spinner"></div>
@@ -76,7 +77,7 @@
       <span class="btn-text">{$isScanning ? 'Scanning...' : 'Add Folder'}</span>
     </button>
     
-    <div class="tmdb-credit" class:collapsed={isCollapsed}>
+    <div class="tmdb-credit" class:collapsed={$isSidebarCollapsed}>
       <img src="/tmdb.svg" alt="TMDB" class="tmdb-logo" />
       <p class="credit-text">
         This product uses the TMDB API but is not endorsed or certified by TMDB.
@@ -88,6 +89,7 @@
 <style>
   .sidebar {
     grid-area: sidebar;
+    height: 100%;
     background: var(--glass-bg-low);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);

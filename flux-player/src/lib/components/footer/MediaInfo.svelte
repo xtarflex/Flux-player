@@ -3,15 +3,17 @@
   let { 
     currentMedia, 
     hasMedia, 
-    isLiked = $bindable(false) 
+    isLiked = false,
+    onToggleLike
   } = $props<{
     currentMedia: { title: string; duration: string; currentTime: string; poster?: string } | null;
     hasMedia: boolean;
     isLiked?: boolean;
+    onToggleLike?: () => void;
   }>();
 
   function toggleLike() {
-    isLiked = !isLiked;
+    onToggleLike?.();
   }
   let resolvedPoster = $derived(currentMedia?.poster ? convertFileSrc(currentMedia.poster) : '/flux2d.png');
 </script>
@@ -50,7 +52,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
   }
 
@@ -60,7 +62,7 @@
     background: var(--bg-surface);
     overflow: hidden;
     flex-shrink: 0;
-    border: 1px solid var(--glass-border-mid);
+    transition: all 0.3s ease;
   }
 
   .thumbnail img {
@@ -74,6 +76,7 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .title {
@@ -100,6 +103,31 @@
     display: flex;
     align-items: center;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  /* Responsive Display Logic */
+  @media (max-width: 1000px) {
+    .thumbnail {
+      width: 48px;
+      height: 48px;
+    }
+    .left-section {
+      gap: 12px;
+    }
+  }
+
+  @media (max-width: 850px) {
+    .thumbnail {
+      width: 40px;
+      height: 40px;
+    }
+    .left-section {
+      gap: 8px;
+    }
+    .title {
+      font-size: 13px;
+    }
   }
 
   .icon-btn:not(:disabled):hover {

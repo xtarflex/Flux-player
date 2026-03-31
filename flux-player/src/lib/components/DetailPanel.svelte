@@ -7,6 +7,8 @@
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
   import { derived } from 'svelte/store';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
+  import { playMediaFromItem } from '$lib/stores/playback';
+  import { tooltip } from '$lib/actions/tooltip';
 
   /**
    * Action to focus an element on mount
@@ -46,6 +48,25 @@
     const mins = Math.round(seconds / 60);
     return `${mins} min`;
   }
+
+  /**
+   * Formats a playback position in seconds to "MM:SS" for the Resume button.
+   * @param seconds - Position in seconds.
+   * @returns Formatted string like "1:23" or "14:07".
+   */
+  function formatPosition(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  /** The resume timestamp from the DB (0 = start from beginning) */
+  const lastPosition = derived(selectedItem, ($item) => $item?.last_position ?? 0);
+
+  /** Dynamic label for the primary action button */
+  const resumeLabel = derived(lastPosition, ($pos) =>
+    $pos > 0 ? `Resume from ${formatPosition($pos)}` : null
+  );
 
   async function handleRefresh() {
     if (!$selectedMediaId || isRefreshing) return;
@@ -161,14 +182,15 @@
     <div class="body-content">
       
       {#if $selectedItem.type === 'audio'}
-        <!-- Visualizer Button -->
+        <!-- Visualiser / Audio play button -->
         <button 
           class="btn-play"
           onmouseenter={() => playingHovered = true}
           onmouseleave={() => playingHovered = false}
+          onclick={() => $selectedItem && playMediaFromItem($selectedItem, $lastPosition)}
         >
           <AnimatedPlayPause isPlaying={playingHovered} size={14} />
-          Visualizer
+          {$resumeLabel ?? 'Play Audio'}
         </button>
       {:else}
         <!-- Video Specific Synopsis -->
@@ -176,14 +198,16 @@
           <p class="synopsis">{$selectedItem.synopsis}</p>
         {/if}
 
-        <!-- Play Button -->
+        <!-- Play / Resume Button -->
         <button 
           class="btn-play"
+          class:btn-resume={!!$resumeLabel}
           onmouseenter={() => playingHovered = true}
           onmouseleave={() => playingHovered = false}
+          onclick={() => $selectedItem && playMediaFromItem($selectedItem, $lastPosition)}
         >
           <AnimatedPlayPause isPlaying={playingHovered} size={14} />
-          Play {$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}
+          {$resumeLabel ?? `Play ${$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}`}
         </button>
       {/if}
 
@@ -212,13 +236,13 @@
           
           <div class="meta-actions">
             {#if editingField === 'title'}
-              <button class="icon-action save" onclick={saveEdit} title="Save">
+              <button class="icon-action save" onclick={saveEdit} aria-label="Save" use:tooltip={{ content: 'Save', shortcut: 'Enter', placement: 'top' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               </button>
             {:else}
-              <button class="icon-action" onclick={() => startEdit('title', $selectedItem.title)} title="Edit Title">
+              <button class="icon-action" onclick={() => startEdit('title', $selectedItem.title)} aria-label="Edit Title" use:tooltip={{ content: 'Edit Title', placement: 'top' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
@@ -230,7 +254,8 @@
                 class="icon-action" 
                 class:is-spinning={isRefreshing}
                 onclick={handleRefresh} 
-                title="Refresh Metadata"
+                aria-label="Refresh Metadata"
+                use:tooltip={{ content: 'Refresh Metadata', placement: 'top' }}
               >
                 {#if isRefreshing}
                   <div class="spinner-box">
@@ -260,9 +285,9 @@
             {/if}
             <div class="meta-actions">
                {#if editingField === 'artist'}
-                <button class="icon-action save" onclick={saveEdit} title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
+                <button class="icon-action save" onclick={saveEdit} aria-label="Save" use:tooltip={{ content: 'Save', shortcut: 'Enter', placement: 'top' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
               {:else}
-                <button class="icon-action" onclick={() => startEdit('artist', $selectedItem.artist || '')} title="Edit Artist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="icon-action" onclick={() => startEdit('artist', $selectedItem.artist || '')} aria-label="Edit Artist" use:tooltip={{ content: 'Edit Artist', placement: 'top' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
               {/if}
             </div>
           </div>
@@ -275,9 +300,9 @@
             {/if}
             <div class="meta-actions">
               {#if editingField === 'album'}
-                <button class="icon-action save" onclick={saveEdit} title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
+                <button class="icon-action save" onclick={saveEdit} aria-label="Save" use:tooltip={{ content: 'Save', shortcut: 'Enter', placement: 'top' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
               {:else}
-                <button class="icon-action" onclick={() => startEdit('album', $selectedItem.album || '')} title="Edit Album"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="icon-action" onclick={() => startEdit('album', $selectedItem.album || '')} aria-label="Edit Album" use:tooltip={{ content: 'Edit Album', placement: 'top' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
               {/if}
             </div>
           </div>
@@ -580,6 +605,15 @@
   .btn-play:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
+  }
+
+  /* Resume variant: warm amber gradient to visually distinguish from plain Play */
+  .btn-resume {
+    background: linear-gradient(90deg, #c47f17, #e8a020);
+  }
+
+  .btn-resume:hover {
+    filter: brightness(1.15);
   }
 
   /* ===================== Subtitle Row ===================== */

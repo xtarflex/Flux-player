@@ -20,6 +20,20 @@
         "minHeight": 600,
         "decorations": false,
         "transparent": true
+      },
+      {
+        "label": "hud",
+        "title": "Flux HUD",
+        "url": "/hud",
+        "width": 380,
+        "height": 100,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "resizable": false,
+        "fullscreen": false,
+        "shadow": false
       }
     ],
     "security": {

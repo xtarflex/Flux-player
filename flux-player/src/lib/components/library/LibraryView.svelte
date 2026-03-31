@@ -7,9 +7,10 @@
   import EmptyState from '../ui/EmptyState.svelte';
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
-  import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState } from '$lib/stores/media';
-  import { playMedia, setMedia } from '$lib/stores/playback';
+  import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState, toggleFavorite } from '$lib/stores/media';
+  import { playMediaFromItem, setMedia } from '$lib/stores/playback';
   import { goto } from '$app/navigation';
+  import { tooltip } from '$lib/actions/tooltip';
 
   type ViewMode = 'grid' | 'list' | 'detail';
   let viewMode = $state<ViewMode>('grid');
@@ -140,7 +141,7 @@
     // Play audio immediately on single click
     const item = filteredItems[idx];
     if (item && item.type === 'audio') {
-      playMedia(item);
+      playMediaFromItem(item);
     } else if (item && item.type === 'video') {
       // Highlight/Focus video AND hydrate the footer silently
       setMedia(item);
@@ -151,10 +152,12 @@
   }
 
   function handleDoubleClick(id: string) {
-    // Only matters for video (audio played on single click)
     const item = filteredItems.find(i => i.id === id);
-    if (item && item.type === 'video') {
-      playMedia(item);
+    if (!item) return;
+
+    // Fix 11.4: Double-click always routes to player regardless of media type
+    playMediaFromItem(item);
+    if (item.type === 'audio') {
       goto('/playing');
     }
   }
@@ -388,14 +391,29 @@
   }
 
   function handleMenuAction(action: string) {
-    console.log(`Action: ${action} on ${menuTarget?.title}`);
-    // Future: Connect to PlaylistStore and PlayerEngine
+    if (!menuTarget) return;
+
+    switch (action) {
+      case 'play':
+        playMediaFromItem(menuTarget);
+        break;
+      case 'favorite':
+        toggleFavorite(menuTarget.id);
+        break;
+      case 'details':
+        $selectedMediaId = menuTarget.id;
+        viewMode = 'detail';
+        break;
+    }
     menuVisible = false;
   }
 
   let menuItems = $derived.by(() => {
     if (!menuTarget) return [] as MenuItem[];
     
+    const currentItem = $mediaItems.find(i => i.id === menuTarget.id);
+    const favoriteLabel = currentItem?.is_favorite ? 'Remove from Favorite' : 'Add to Favorite';
+
     return [
       { label: 'Play Now', action: () => handleMenuAction('play') },
       { label: 'Add to Queue', action: () => handleMenuAction('queue') },
@@ -410,7 +428,7 @@
           { label: '+ New Playlist', action: () => handleMenuAction('playlist-new') },
         ]
       },
-      { label: 'Add to Favorite', action: () => handleMenuAction('favorite') },
+      { label: favoriteLabel, action: () => handleMenuAction('favorite') },
       { label: 'Get Subtitles', action: () => handleMenuAction('subtitles') },
       { label: 'Remove from Library', danger: true, action: () => handleMenuAction('remove') },
       { separator: true },
@@ -459,11 +477,11 @@
 
       <!-- Zoom Controls -->
       <div class="zoom-controls" style:opacity={disableZoom ? 0.3 : 1} style:pointer-events={disableZoom ? 'none' : 'auto'}>
-        <button class="icon-btn" onclick={zoomOut} aria-label="Zoom Out" title="Smaller Grid" disabled={disableZoom}>
+        <button class="icon-btn" onclick={zoomOut} aria-label="Zoom Out" use:tooltip={{ content: 'Smaller Grid', shortcut: 'Ctrl -', placement: 'bottom' }} disabled={disableZoom}>
           <Icon name="zoom-out" size={16} />
         </button>
         <div class="v-divider"></div>
-        <button class="icon-btn" onclick={zoomIn} aria-label="Zoom In" title="Larger Grid" disabled={disableZoom}>
+        <button class="icon-btn" onclick={zoomIn} aria-label="Zoom In" use:tooltip={{ content: 'Larger Grid', shortcut: 'Ctrl +', placement: 'bottom' }} disabled={disableZoom}>
           <Icon name="zoom-in" size={16} />
         </button>
       </div>
@@ -495,32 +513,32 @@
           <div class="action-divider"></div>
 
           <div class="batch-actions">
-            <button class="action-btn" onclick={() => console.log('Playing Batch', selectedBatchIds)} title="Play Selection">
+            <button class="action-btn" onclick={() => console.log('Playing Batch', selectedBatchIds)} use:tooltip={{ content: 'Play Selection', placement: 'bottom' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
               <span>Play All</span>
             </button>
-            <button class="action-btn" onclick={() => console.log('Queueing Batch', selectedBatchIds)} title="Add to Queue">
+            <button class="action-btn" onclick={() => console.log('Queueing Batch', selectedBatchIds)} use:tooltip={{ content: 'Add to Queue', placement: 'bottom' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
               <span>Queue</span>
             </button>
             
             <div class="action-divider"></div>
             
-            <button class="action-btn" onclick={() => console.log('Playlist Batch', selectedBatchIds)} title="Add to Playlist">
+            <button class="action-btn" onclick={() => console.log('Playlist Batch', selectedBatchIds)} use:tooltip={{ content: 'Add to Playlist', placement: 'bottom' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
               <span>Playlist</span>
             </button>
-            <button class="action-btn" onclick={() => console.log('Favorite Batch', selectedBatchIds)} title="Toggle Favorites">
+            <button class="action-btn" onclick={() => console.log('Favorite Batch', selectedBatchIds)} use:tooltip={{ content: 'Toggle Favorites', placement: 'bottom' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               <span>Favorite</span>
             </button>
-            <button class="action-btn danger" onclick={() => console.log('Remove Batch', selectedBatchIds)} title="Remove Selection">
+            <button class="action-btn danger" onclick={() => console.log('Remove Batch', selectedBatchIds)} use:tooltip={{ content: 'Remove Selection', placement: 'bottom' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               <span>Remove</span>
             </button>
           </div>
 
-          <button class="exit-btn" onclick={exitSelectionMode} title="Cancel Selection">
+          <button class="exit-btn" onclick={exitSelectionMode} aria-label="Cancel Selection" use:tooltip={{ content: 'Cancel Selection', shortcut: 'Esc', placement: 'bottom' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>

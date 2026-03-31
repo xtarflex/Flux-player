@@ -5,6 +5,7 @@
   import QueueStack from './footer/QueueStack.svelte';
   import RightActions from './footer/RightActions.svelte';
   import { activeMedia, playbackState } from '$lib/stores/playback';
+  import { mediaItems, toggleFavorite } from '$lib/stores/media';
 
   
   // Media Info
@@ -32,11 +33,8 @@
   });
   
   // Control States
-  let isLiked = $state(false);
-  let shuffleState = $state(false);
-  let repeatMode = $state(0); // 0: off, 1: all, 2: one
+  let isLiked = $derived($mediaItems.find(i => i.path === $activeMedia?.path)?.is_favorite ?? false);
   let isMuted = $state(false);
-  let playbackSpeed = $state(1);
   let isPiPActive = $state(false);
   let isFullscreen = $state(false);
 
@@ -82,6 +80,13 @@
     }
 
     const key = e.key.toLowerCase();
+    const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
+
+    // Ignore single-letter shortcuts if a modifier (Ctrl/Cmd/Alt) is held
+    // to prevent conflicts with global navigation like Ctrl+L
+    if (hasModifier && e.key.length === 1 && !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      return;
+    }
 
     // 0-9: Jump to 0%-90%
     if (e.key >= '0' && e.key <= '9') {
@@ -97,7 +102,7 @@
       case 'K':
         e.preventDefault();
         playbackState.update(s => ({ ...s, isPlaying: !s.isPlaying }));
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: !$playbackState.isPlaying ? 'Play' : 'Pause', icon: !$playbackState.isPlaying ? 'play' : 'pause' } }));
+        // No toast — the Dynamic Island morph is the feedback channel for audio
         break;
       case 'm':
       case 'M':
@@ -124,23 +129,23 @@
       case 'j':
       case 'J':
         e.preventDefault();
-        playbackState.update(s => ({ ...s, progress: Math.max(0, s.progress - 0.1) }));
+        playbackState.update(s => ({ ...s, seekProgressRequest: Math.max(0, s.progress - 0.1) }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Rewind 10%', icon: 'seek-backward' } }));
         break;
       case 'l':
       case 'L':
         e.preventDefault();
-        playbackState.update(s => ({ ...s, progress: Math.min(1, s.progress + 0.1) }));
+        playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.1) }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Forward 10%', icon: 'seek-forward' } }));
         break;
       case 'Home':
         e.preventDefault();
-        playbackState.update(s => ({ ...s, progress: 0 }));
+        playbackState.update(s => ({ ...s, seekProgressRequest: 0 }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to Start', icon: 'skip-previous' } }));
         break;
       case 'End':
         e.preventDefault();
-        playbackState.update(s => ({ ...s, progress: 1 }));
+        playbackState.update(s => ({ ...s, seekProgressRequest: 1 }));
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to End', icon: 'skip-next' } }));
         break;
       case 'ArrowUp':
@@ -164,7 +169,7 @@
         if (e.shiftKey) {
           nextTrack();
         } else {
-          playbackState.update(s => ({ ...s, progress: Math.min(1, s.progress + 0.05) }));
+          playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.05) }));
           window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Forward', icon: 'seek-forward' } }));
         }
         break;
@@ -173,7 +178,7 @@
         if (e.shiftKey) {
           prevTrack();
         } else {
-          playbackState.update(s => ({ ...s, progress: Math.max(0, s.progress - 0.05) }));
+          playbackState.update(s => ({ ...s, seekProgressRequest: Math.max(0, s.progress - 0.05) }));
           window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Backward', icon: 'seek-backward' } }));
         }
         break;
@@ -187,23 +192,51 @@
   class="playback-footer" 
   role="contentinfo"
 >
-  <Scrubber bind:progress={$playbackState.progress} disabled={!hasMedia} />
+  <Scrubber 
+    bind:progress={$playbackState.progress} 
+    disabled={!hasMedia} 
+    onSeek={(p) => playbackState.update(s => ({ ...s, seekProgressRequest: p }))} 
+  />
 
   <div class="footer-content">
-    <MediaInfo {currentMedia} {hasMedia} bind:isLiked={isLiked} />
-    <PlaybackControls {controlsEnabled} bind:shuffleState bind:repeatMode bind:isPlaying={$playbackState.isPlaying} />
-    <QueueStack {hasMedia} {queueHistory} {queue} {currentMedia} />
-    <RightActions 
-      {controlsEnabled} 
-      bind:playbackSpeed 
-      {showSubtitles} 
-      {showPiP} 
-      showVisualizer={isAudio}
-      bind:isPiPActive 
-      bind:isFullscreen 
-      bind:volume={$playbackState.volume} 
-      bind:isMuted={$playbackState.isMuted} 
-    />
+    <div class="footer-left-group">
+      <MediaInfo 
+        {currentMedia} 
+        {hasMedia} 
+        {isLiked} 
+        onToggleLike={() => $activeMedia && toggleFavorite($activeMedia.path)} 
+      />
+    </div>
+
+    <div class="footer-center-group">
+      <PlaybackControls 
+        {controlsEnabled} 
+        shuffleState={$playbackState.shuffleState}
+        repeatMode={$playbackState.repeatMode}
+        onToggleShuffle={() => playbackState.update(s => ({ ...s, shuffleState: !s.shuffleState }))}
+        onToggleRepeat={() => playbackState.update(s => ({ ...s, repeatMode: (s.repeatMode + 1) % 3 }))}
+        onTogglePlay={() => playbackState.update(s => ({ ...s, isPlaying: !s.isPlaying }))}
+        onSeekForward={() => playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.05) }))}
+        onSeekBackward={() => playbackState.update(s => ({ ...s, seekProgressRequest: Math.max(0, s.progress - 0.05) }))}
+        isPlaying={$playbackState.isPlaying} 
+      />
+    </div>
+
+    <div class="footer-right-group">
+      <QueueStack {hasMedia} {queueHistory} {queue} {currentMedia} />
+      <RightActions 
+        {controlsEnabled} 
+        playbackSpeed={$playbackState.speed}
+        onSpeedChange={(s: number) => playbackState.update(state => ({ ...state, speed: s }))} 
+        {showSubtitles} 
+        {showPiP} 
+        showVisualizer={isAudio}
+        bind:isPiPActive 
+        bind:isFullscreen 
+        bind:volume={$playbackState.volume} 
+        bind:isMuted={$playbackState.isMuted} 
+      />
+    </div>
   </div>
 </div>
 
@@ -230,6 +263,37 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    height: 100%;
     padding-top: 4px;
+    gap: 16px;
+  }
+
+  .footer-left-group {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .footer-center-group {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    /* This ensures a true center even if left/right have different contents */
+  }
+
+  .footer-right-group {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+  }
+
+  @media (max-width: 1000px) {
+    .footer-right-group {
+      gap: 12px;
+    }
   }
 </style>

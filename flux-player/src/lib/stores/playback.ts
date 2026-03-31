@@ -35,6 +35,22 @@ export interface PlaybackState {
    * PlayerEngine reads this once on load then nulls it out.
    */
   seekTo: number | null;
+  /**
+   * manual seek request by percentage (0 to 1) from the UI scrubber.
+   */
+  seekProgressRequest: number | null;
+  /**
+   * 0: off, 1: all, 2: one
+   */
+  repeatMode: number;
+  /**
+   * Whether sequence should play randomly
+   */
+  shuffleState: boolean;
+  /**
+   * Whether the user is currently idle (mouse hasn't moved)
+   */
+  isIdle: boolean;
 }
 
 // ── Stores ───────────────────────────────────────────────────────────────────
@@ -53,6 +69,10 @@ export const playbackState = writable<PlaybackState>({
   isTheaterMode: false,
   isMiniPlayer: false,
   seekTo: null,
+  seekProgressRequest: null,
+  repeatMode: 0,
+  shuffleState: false,
+  isIdle: false,
 });
 
 /**
@@ -74,8 +94,8 @@ export function setMedia(item: MediaItem) {
 
 /**
  * Initiates full playback of a media item.
- * Routes to /playing and passes an optional start position (seconds).
- * Theater mode is enabled automatically for video items.
+ * — Audio: plays in background, user stays on current route (UX Journey §5).
+ * — Video: routes to /playing in theater mode.
  *
  * @param item - The MediaItem to play.
  * @param startSeconds - Optional resume position in seconds (default: 0).
@@ -93,7 +113,11 @@ export function playMediaFromItem(item: MediaItem, startSeconds: number = 0) {
     isMiniPlayer: false,
   }));
 
-  goto('/playing');
+  // Audio: DO NOT navigate — user stays in the Library.
+  // The persistent AudioEngine in +layout.svelte handles playback.
+  if (isVideo) {
+    goto('/playing');
+  }
 }
 
 /**

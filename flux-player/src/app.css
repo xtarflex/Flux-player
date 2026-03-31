@@ -126,3 +126,70 @@ h1, h2, h3, h4, h5, h6, .heading {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
+
+/* ════════════════════════════════════════════════════════
+   Theater Mode (active during /playing with video)
+   .player-mode is toggled on .app-container by +layout.svelte
+   ════════════════════════════════════════════════════════ */
+
+/* Main content fills the entire grid in theater mode */
+.app-container.player-mode .main-content {
+  grid-area: 1 / 1 / -1 / -1;
+  z-index: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Sidebar becomes a floating glass overlay */
+.app-container.player-mode [data-sidebar] {
+  display: block !important;
+  position: fixed;
+  top: var(--titlebar-height);
+  left: 0;
+  bottom: 0;
+  z-index: 9996;
+  transform: translateX(calc(-100% - 8px));
+  transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.35s ease;
+  opacity: 0;
+  box-shadow: 8px 0 48px rgba(0, 0, 0, 0.7);
+}
+
+/* Footer becomes a floating glass overlay */
+.app-container.player-mode [data-footer] {
+  display: block !important;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9997;
+  transform: translateY(calc(100% + 8px));
+  transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.35s ease;
+  opacity: 0;
+}
+
+/* Titlebar stays visible in theater mode */
+.app-container.player-mode [data-titlebar] {
+  display: block !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+}
+
+/* Reveal states — driven by edge hover events */
+.app-container.player-mode.sidebar-reveal [data-sidebar] {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Hide footer on idle even if revealed */
+.app-container.player-mode.footer-reveal:not(.ui-idle) [data-footer] {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* UI-idle: hide cursor during video playback */
+.app-container.player-mode.ui-idle {
+  cursor: none;
+}

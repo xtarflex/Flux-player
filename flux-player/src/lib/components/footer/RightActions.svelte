@@ -1,7 +1,12 @@
 <script lang="ts">
+  import ContextMenu from '../ui/ContextMenu.svelte';
+  import type { MenuItem } from '../ui/context-menu';
+  import { openMenu, activeMenu } from '../../stores/ui';
+
   let { 
     controlsEnabled, 
-    playbackSpeed = $bindable(1), 
+    playbackSpeed = 1, 
+    onSpeedChange,
     showSubtitles, 
     showPiP,
     showVisualizer = false, 
@@ -9,9 +14,10 @@
     isFullscreen = $bindable(false), 
     volume = $bindable(0.7), 
     isMuted = $bindable(false) 
-  } = $props<{
+  }: {
     controlsEnabled: boolean;
     playbackSpeed?: number;
+    onSpeedChange?: (speed: number) => void;
     showSubtitles: boolean;
     showPiP: boolean;
     showVisualizer?: boolean;
@@ -19,14 +25,22 @@
     isFullscreen?: boolean;
     volume?: number;
     isMuted?: boolean;
-  }>();
+  } = $props();
 
-  function cycleSpeed() {
+  function openSpeedMenu(e: MouseEvent) {
     if (!controlsEnabled) return;
-    const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
-    const currentIndex = speeds.indexOf(playbackSpeed);
-    playbackSpeed = speeds[(currentIndex + 1) % speeds.length];
+    e.stopPropagation(); // Prevent global mousedown listener from closing it immediately
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    openMenu(rect.left, rect.top, speedMenuItems);
   }
+
+  const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+  let speedMenuItems = $derived(
+    speeds.map(s => ({
+      label: s === 1 ? 'Normal (1x)' : `${s}x`,
+      action: () => onSpeedChange?.(s)
+    } as MenuItem)).reverse() // Put fastest at the top
+  );
 
   function togglePiP() {
     if (!showPiP) return;
@@ -79,10 +93,10 @@
   <!-- Speed Control -->
   <button 
     class="speed-badge"
-    class:active={playbackSpeed !== 1}
+    class:active={playbackSpeed !== 1 || $activeMenu}
     class:disabled={!controlsEnabled}
     disabled={!controlsEnabled}
-    onclick={cycleSpeed}
+    onclick={openSpeedMenu}
     aria-label="Playback speed"
   >
     {playbackSpeed}x
@@ -201,7 +215,8 @@
     align-items: center;
     justify-content: flex-end;
     gap: 16px;
-    flex: 1;
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   .speed-badge {
@@ -327,5 +342,21 @@
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
     pointer-events: none;
     z-index: 2;
+  }
+
+  /* Responsive Display Logic */
+  @media (max-width: 1000px) {
+    .speed-badge, .subtitles-btn, .visualizer-btn {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 850px) {
+    .pip-btn, .fullscreen-btn {
+      display: none !important;
+    }
+    .right-section {
+      gap: 8px;
+    }
   }
 </style>

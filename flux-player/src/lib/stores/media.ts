@@ -34,6 +34,7 @@ export interface MediaItem {
   is_watched?: boolean;
   /** Last playback position in seconds (0 = unwatched / from start) */
   last_position?: number;
+  is_favorite?: boolean;
 }
 
 export type LibraryLoadState = 'idle' | 'loading' | 'done' | 'error';
@@ -52,7 +53,7 @@ export async function loadLibraryFromDb(): Promise<void> {
   try {
     const db = await Database.load('sqlite:flux.db');
     const rows = await db.select<any[]>(
-      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, synopsis, rating, genres, director, starring, series_tag, is_watched, last_position FROM media ORDER BY added_at DESC'
+      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, synopsis, rating, genres, director, starring, series_tag, is_watched, last_position, is_favorite FROM media ORDER BY added_at DESC'
     );
 
     const items: MediaItem[] = rows.map((row) => ({
@@ -77,6 +78,7 @@ export async function loadLibraryFromDb(): Promise<void> {
       series_tag: row.series_tag ?? null,
       is_watched: row.is_watched === 1 || row.is_watched === true,
       last_position: row.last_position ?? 0,
+      is_favorite: row.is_favorite === 1 || row.is_favorite === true,
     }));
 
     mediaItems.set(items);
@@ -85,4 +87,53 @@ export async function loadLibraryFromDb(): Promise<void> {
     console.error('[MediaStore] Failed to load library from DB:', e);
     libraryLoadState.set('error');
   }
+}
+
+/**
+ * Toggles favorite status for a media item.
+ * Optimistically updates the store first, then persists to DB.
+ */
+export async function toggleFavorite(path: string) {
+  const items = get(mediaItems);
+  const index = items.findIndex(i => i.path === path);
+  if (index === -1) return;
+
+  const newState = !items[index].is_favorite;
+  
+  // 1. Optimistic Update
+  items[index] = { ...items[index], is_favorite: newState };
+  mediaItems.set([...items]);
+
+  // 2. Persist
+  try {
+    const db = await Database.load('sqlite:flux.db');
+    await db.execute('UPDATE media SET is_favorite = ? WHERE path = ?', [newState ? 1 : 0, path]);
+    
+    // Toast for feedback
+    window.dispatchEvent(new CustomEvent('flux-toast', { 
+      detail: { 
+        label: newState ? 'Added to Favorites' : 'Removed from Favorites', 
+        icon: 'star' 
+      } 
+    }));
+  } catch (e) {
+    console.error('[MediaStore] Failed to update favorite in DB:', e);
+    // Back out optimistic update on fail
+    items[index] = { ...items[index], is_favorite: !newState };
+    mediaItems.set([...items]);
+  }
+}
+
+/**
+ * Updates the playback position locally in the store.
+ * Used for optimistic UI updates (e.g., progress bars) in the library.
+ */
+export function updateLocalProgress(path: string, position: number) {
+  mediaItems.update(items => {
+    const item = items.find(i => i.path === path);
+    if (item) {
+      item.last_position = position;
+    }
+    return [...items];
+  });
 }

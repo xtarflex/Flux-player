@@ -154,10 +154,15 @@ pub fn save_playback_progress<R: Runtime>(
 
     // Calculate watched status: 90% completion rule
     let is_watched = duration > 0 && (seconds as f64 / duration as f64) >= 0.9;
+    
+    // Smart Progress: If it's already watched (near end), reset next start position to 0
+    let last_position = if is_watched { 0 } else { seconds };
+
+    println!("[PlaybackSave] Path: {}, Position: {}s (is_watched: {})", path, last_position, is_watched);
 
     conn.execute(
         "UPDATE media SET last_position = ?1, is_watched = ?2 WHERE path = ?3",
-        rusqlite::params![seconds, is_watched as i64, &path],
+        rusqlite::params![last_position, is_watched as i64, &path],
     )
     .map_err(|e| e.to_string())?;
 

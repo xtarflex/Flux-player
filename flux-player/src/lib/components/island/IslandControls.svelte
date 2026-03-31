@@ -1,12 +1,25 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { playbackState } from "$lib/stores/playback";
 
   let { mediaState } = $props<{ mediaState: string }>();
+
+  function togglePlay() {
+    playbackState.update(s => ({ ...s, isPlaying: !s.isPlaying }));
+  }
+
+  function nextTrack() {
+    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Next Track', icon: 'skip-next' } }));
+  }
+
+  function prevTrack() {
+    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Previous Track', icon: 'skip-previous' } }));
+  }
 </script>
 
 <div class="island-layer" transition:fade={{ duration: 200 }}>
   <div class="controls-content">
-    <button class="control-btn" aria-label="Previous">
+    <button class="control-btn" aria-label="Previous" onclick={prevTrack}>
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -20,7 +33,7 @@
       </svg>
     </button>
 
-    <button class="control-btn main-btn" aria-label="Play/Pause">
+    <button class="control-btn main-btn" aria-label="Play/Pause" onclick={togglePlay}>
       {#if mediaState === "playing"}
         <svg
           viewBox="0 0 24 24"
@@ -48,7 +61,7 @@
       {/if}
     </button>
 
-    <button class="control-btn" aria-label="Next">
+    <button class="control-btn" aria-label="Next" onclick={nextTrack}>
       <svg
         viewBox="0 0 24 24"
         fill="none"

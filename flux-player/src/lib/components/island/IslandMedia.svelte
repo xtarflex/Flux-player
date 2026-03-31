@@ -1,30 +1,30 @@
 <script lang="ts">
-  import { convertFileSrc } from '@tauri-apps/api/core';
   import { fade } from "svelte/transition";
 
   let { 
     type, 
     videoTitle, 
-    videoTime, 
+    videoTime,
+    artistName = "",
     posterSrc = "/flux2d.png"
   } = $props<{ 
     type: "audio" | "playing";
     videoTitle?: string;
     videoTime?: string;
+    artistName?: string;
     posterSrc?: string;
   }>();
-  let resolvedPoster = $derived(posterSrc ? convertFileSrc(posterSrc) : '/flux2d.png');
 </script>
 
 <div class="island-layer" transition:fade={{ duration: 300 }}>
   {#if type === "audio"}
     <div class="audio-content">
       <div class="vinyl-container">
-        <img src={resolvedPoster} alt="Album Art" class="island-thumb vinyl-spin" />
+        <img src={posterSrc} alt="Album Art" class="island-thumb vinyl-spin" />
       </div>
       <div class="audio-info">
-        <span class="track-title">NOW PLAYING</span>
-        <span class="artist-name">FLUX PLAYER</span>
+        <span class="track-title">{videoTitle ?? 'NOW PLAYING'}</span>
+        <span class="artist-name">{artistName || 'FLUX PLAYER'}</span>
       </div>
       <div class="eq-container">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="eq-svg">
@@ -46,7 +46,7 @@
   {:else}
     <div class="video-playing-content">
       <div class="mini-poster">
-        <img src={resolvedPoster} alt="Poster" class="poster-thumb" />
+        <img src={posterSrc} alt="Poster" class="poster-thumb" />
       </div>
       <div class="video-meta">
         <span class="video-title">{videoTitle}</span>
@@ -93,7 +93,7 @@
 
   .video-playing-content {
     gap: 8px;
-    padding: 0 8px;
+    padding: 0 10px 0 0;
     height: 100%;
   }
 
@@ -103,12 +103,10 @@
     border-radius: 50%;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    background: var(--glass-bg-low);
-    border: 1px solid var(--glass-border-low);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-shrink: 0;
+    margin-left: -2px;
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.6);
+    background: #111;
   }
 
   .mini-poster {
@@ -143,6 +141,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    flex: 1;
     min-width: 0;
   }
 
@@ -175,6 +174,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   .eq-svg {

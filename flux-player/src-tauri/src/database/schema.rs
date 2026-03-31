@@ -118,5 +118,11 @@ pub fn get_migrations() -> Vec<Migration> {
             sql: "ALTER TABLE media ADD COLUMN last_position INTEGER DEFAULT 0;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 12,
+            description: "add favorite status",
+            sql: "ALTER TABLE media ADD COLUMN is_favorite BOOLEAN DEFAULT 0;",
+            kind: MigrationKind::Up,
+        },
     ]
 }
