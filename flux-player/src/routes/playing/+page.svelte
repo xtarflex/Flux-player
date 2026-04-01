@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { goto } from '$app/navigation';
   import PlayerEngine from '$lib/components/player/PlayerEngine.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -21,12 +22,7 @@
   let isAudio = $derived(media?.type === 'audio');
 
   /** The album art URL resolved to asset:// for the vinyl disc */
-  let albumArtSrc = $derived.by(() => {
-    if (!media) return null;
-    const src = media.album_art || media.poster;
-    if (!src) return null;
-    return src.startsWith('http') || src.startsWith('data:') ? src : convertFileSrc(src);
-  });
+  let albumArtSrc = $derived(resolveResource(media?.album_art || media?.poster));
 
   /** Vinyl rotation pauses when player is paused */
   let vinylSpinning = $derived($playbackState.isPlaying && isAudio);

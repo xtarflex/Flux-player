@@ -21,6 +21,7 @@
     "core:event:allow-emit",
     "core:event:allow-listen",
     "core:image:allow-from-path",
+    "core:window:allow-set-title",
     "dialog:default",
     "dialog:allow-open"
   ]

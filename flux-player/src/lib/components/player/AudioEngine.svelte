@@ -9,6 +9,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -87,7 +88,7 @@
         artist: item.artist || 'Flux Player',
         album: item.album || '',
         artwork: [
-          { src: convertFileSrc(artSrc), sizes: '512x512', type: 'image/png' }
+          { src: resolveResource(artSrc), sizes: '512x512', type: 'image/png' }
         ]
       });
 
@@ -120,7 +121,7 @@
         audioEl?.pause();
         return;
       }
-      const src = convertFileSrc(item.path);
+      const src = resolveResource(item.path);
       if (audioEl.src !== src) {
         audioEl.src = src;
         audioEl.load();
@@ -188,6 +189,12 @@
         }
         // Clear from store after successfully seeking
         playbackState.update(s => ({ ...s, seekProgressRequest: null }));
+      }
+
+      // Handle time-based seeking (Fix 12.1)
+      if (state.seekTo !== null && state.seekTo !== undefined) {
+        audioEl.currentTime = state.seekTo;
+        playbackState.update(s => ({ ...s, seekTo: null }));
       }
     });
 

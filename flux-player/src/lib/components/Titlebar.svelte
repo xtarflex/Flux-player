@@ -14,6 +14,15 @@
   let isOnline = $state(true);
   let pcName = $state("FLUX-DEVICE");
   let displayName = $state("");
+  let isMuted = $state(false);
+
+  async function checkMuteStatus() {
+    try {
+      isMuted = await invoke('get_system_mute_status');
+    } catch (e) {
+      // Silence errors to prevent console spamming if command fails
+    }
+  }
 
   async function loadProfile() {
     try {
@@ -29,10 +38,16 @@
 
   onMount(() => {
     loadProfile();
+    checkMuteStatus();
     console.log("Flux Titlebar: Initialized");
 
+    const muteInterval = setInterval(checkMuteStatus, 5000);
+
     window.addEventListener('flux-settings-updated', loadProfile);
-    return () => window.removeEventListener('flux-settings-updated', loadProfile);
+    return () => {
+      clearInterval(muteInterval);
+      window.removeEventListener('flux-settings-updated', loadProfile);
+    };
   });
 
   const minimize = async () => appWindow.minimize();
@@ -56,7 +71,18 @@
 
   <div class="right-section">
     <div class="action-group">
-      <button class="refresh-btn" onclick={refresh} aria-label="Refresh Library" use:tooltip={{ content: 'Refresh Library', shortcut: 'Ctrl R', placement: 'bottom' }}>
+      <button 
+        class="refresh-btn" 
+        onclick={refresh} 
+        aria-label="Refresh" 
+        use:tooltip={{ 
+          content: 'Refresh Context (Library/Discovery)', 
+          shortcut: 'Ctrl R',
+          secondaryShortcut: 'Ctrl Shift R',
+          secondaryContent: 'Global Reload',
+          placement: 'bottom' 
+        }}
+      >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6m12-4a9 9 0 0 1-15 6.7L3 16" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -71,11 +97,17 @@
         </div>
       </div>
 
-      <button class="audio-device-btn" aria-label="System Speakers" use:tooltip={{ content: 'System Speakers (Realtek HD Audio)', placement: 'bottom' }}>
+      <button class="audio-device-btn" aria-label="System Speakers" use:tooltip={{ content: isMuted ? 'System Muted' : 'System Speakers (Realtek HD Audio)', placement: 'bottom' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="var(--secondary)" />
-          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="var(--primary)" opacity="0.8" />
-          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke="var(--primary)" opacity="0.4" />
+          {#if isMuted}
+            <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="#ff4444" />
+            <line x1="23" y1="9" x2="17" y2="15" stroke="#ff4444" />
+            <line x1="17" y1="9" x2="23" y2="15" stroke="#ff4444" />
+          {:else}
+            <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="var(--secondary)" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="var(--primary)" opacity="0.8" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke="var(--primary)" opacity="0.4" />
+          {/if}
         </svg>
       </button>
 

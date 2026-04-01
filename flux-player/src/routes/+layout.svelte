@@ -1,7 +1,8 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto, beforeNavigate } from '$app/navigation';
+  import { get } from 'svelte/store';
   import { page } from '$app/stores';
   import Titlebar from '$lib/components/Titlebar.svelte';
   import DynamicIsland from '$lib/components/DynamicIsland.svelte';
@@ -53,14 +54,38 @@
     const { clientX, clientY } = e;
     sidebarReveal = clientX < Math.max(260, window.innerWidth * 0.2); // 20% or physical sidebar width
     footerReveal = clientY > Math.min(window.innerHeight - 100, window.innerHeight * 0.7); // 30% or physical footer height
-    playbackState.update(s => ({ ...s, isIdle: false }));
-    if (idleTimer) clearTimeout(idleTimer);
-    if ($playbackState.isPlaying) {
-      idleTimer = setTimeout(() => { 
-        playbackState.update(s => ({ ...s, isIdle: true }));
-      }, 1000);
+    
+    // Reset idle state on movement
+    if ($playbackState.isIdle) {
+      playbackState.update(s => ({ ...s, isIdle: false }));
     }
+    
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      // Only go idle if we are still playing and in theater mode
+      const currentState = get(playbackState);
+      if (currentState.isPlaying && currentState.isTheaterMode) {
+        playbackState.update(s => ({ ...s, isIdle: true }));
+      }
+    }, 3000); // 3-second delay, more relaxed than 1.5s
   }
+
+  // ── Pause Reveal: ensure UI shows when playback stops ──────────────────────
+  $effect(() => {
+    // Accessing $playbackState.isPlaying and isTheaterMode makes this effect 
+    // rerun when they change.
+    if (!$playbackState.isPlaying && isTheaterMode) {
+      // 1. Guard check: only update if we are currently idle
+      // 2. Use untrack to prevent the update itself from registering as a dependency
+      untrack(() => {
+        if ($playbackState.isIdle) {
+          playbackState.update(s => ({ ...s, isIdle: false }));
+        }
+        footerReveal = true;
+        if (idleTimer) clearTimeout(idleTimer);
+      });
+    }
+  });
 
   async function importFolder() {
     const selected = await open({
@@ -110,7 +135,16 @@
         case 'p': e.preventDefault(); goto('/playlists'); dispatchToast('Playlists', 'playlists'); break;
         case 'q': e.preventDefault(); goto('/playing'); dispatchToast('Now Playing', 'playing'); break;
         case ',': e.preventDefault(); goto('/settings'); dispatchToast('Settings', 'settings'); break;
-        case 'r': e.preventDefault(); dispatchToast('Refreshing Library', 'refresh'); break;
+        case 'r':
+          e.preventDefault();
+          if (e.shiftKey) {
+            dispatchToast('Global Reload', 'refresh');
+            setTimeout(() => window.location.reload(), 500);
+          } else {
+            dispatchToast('Refreshing Section', 'refresh');
+            window.dispatchEvent(new CustomEvent('flux-refresh-context'));
+          }
+          break;
         case 'f': e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-search-focus')); break;
         case 'n': 
           e.preventDefault();
@@ -203,7 +237,8 @@
             <div class="row"><span>Ctrl + P</span> Playlists</div>
             <div class="row"><span>Ctrl + Q</span> Queue</div>
             <div class="row"><span>Ctrl + ,</span> Settings</div>
-            <div class="row"><span>Ctrl + R</span> Refresh</div>
+            <div class="row"><span>Ctrl + R</span> Refresh Context</div>
+            <div class="row"><span>Ctrl+Shift+R</span> Global Reload</div>
             <div class="row"><span>Ctrl + F</span> Search</div>
             <div class="row"><span>Ctrl + N</span> New Playlist</div>
             <div class="row"><span>Ctrl + O</span> Import Folder</div>
@@ -248,9 +283,20 @@
 {/if}
 
 <style>
-  /* Theater Mode slot wrappers — transparent to grid layout */
+  /* Theater Mode slot wrappers — transparent to grid layout in normal mode */
   .titlebar-slot, .sidebar-slot, .footer-slot {
     display: contents;
+  }
+
+  /* 
+    Theater Mode Breakout: 
+    Override display: contents because it prevents fixed positioning 
+    and transforms from working correctly on these wrappers.
+  */
+  :global(.app-container.player-mode) .titlebar-slot,
+  :global(.app-container.player-mode) .sidebar-slot,
+  :global(.app-container.player-mode) .footer-slot {
+    display: block;
   }
 
   .main-content {

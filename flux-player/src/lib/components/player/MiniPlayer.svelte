@@ -9,6 +9,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { activeMedia, playbackState, playerEngineRef, deactivateMiniPlayer } from '$lib/stores/playback';
+  import { resolveResource } from '$lib/utils/media';
 
   // ── Reactive ───────────────────────────────────────────────────────────────
   let media = $derived($activeMedia);
@@ -82,8 +83,8 @@
   >
     <!-- Thumbnail (poster or album art) -->
     <div class="mini-thumb">
-      {#if media?.poster}
-        <img src={media.poster} alt={media?.title} />
+      {#if media?.poster || media?.album_art}
+        <img src={resolveResource(media.album_art || media.poster)} alt={media?.title} />
       {:else}
         <div class="mini-thumb--fallback">
           <img src="/flux2d.png" alt="Flux" />
@@ -141,7 +142,7 @@
     right: 16px;
     bottom: 108px; /* Above the footer */
     width: 320px;
-    height: 80px;
+    height: 100px;
     background: rgba(14, 14, 16, 0.92);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -181,8 +182,8 @@
 
   /* ── Thumbnail ── */
   .mini-thumb {
-    width: 56px;
-    height: 56px;
+    width: 76px;
+    height: 76px;
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;

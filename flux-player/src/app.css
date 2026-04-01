@@ -132,12 +132,12 @@ h1, h2, h3, h4, h5, h6, .heading {
    .player-mode is toggled on .app-container by +layout.svelte
    ════════════════════════════════════════════════════════ */
 
-/* Main content fills the entire grid in theater mode */
 .app-container.player-mode .main-content {
   grid-area: 1 / 1 / -1 / -1;
   z-index: 0;
   padding: 0;
   overflow: hidden;
+  background: #000; /* Robust fallback */
 }
 
 /* Sidebar becomes a floating glass overlay */
@@ -177,13 +177,13 @@ h1, h2, h3, h4, h5, h6, .heading {
   z-index: 9999;
 }
 
-/* Reveal states — driven by edge hover events */
-.app-container.player-mode.sidebar-reveal [data-sidebar] {
+/* Reveal states — driven by edge hover events OR playback status */
+.app-container.player-mode.sidebar-reveal:not(.ui-idle) [data-sidebar] {
   transform: translateX(0);
   opacity: 1;
 }
 
-/* Hide footer on idle even if revealed */
+/* Hide footer/sidebar on-idle even if revealed via hover */
 .app-container.player-mode.footer-reveal:not(.ui-idle) [data-footer] {
   transform: translateY(0);
   opacity: 1;

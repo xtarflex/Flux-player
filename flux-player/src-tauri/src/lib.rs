@@ -37,7 +37,8 @@ pub fn run() {
             commands::library::update_media_field,
             commands::library::save_playback_progress,
             commands::library::get_playback_progress,
-            utils::folders::get_default_media_folders
+            utils::folders::get_default_media_folders,
+            commands::audio::get_system_mute_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

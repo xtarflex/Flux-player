@@ -55,7 +55,7 @@
         </svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn seek-btn" aria-label="Seek Backward" disabled={!controlsEnabled} onclick={onSeekBackward} use:tooltip={{ content: 'Seek Backward', shortcut: 'Left', placement: 'top' }}>
+      <button class="pill-btn seek-btn" aria-label="Seek Backward" disabled={!controlsEnabled} onclick={onSeekBackward} use:tooltip={{ content: 'Seek Backward 5s', shortcut: 'Left', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
       </button>
       <div class="separator"></div>
@@ -71,7 +71,7 @@
         </svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn seek-btn" aria-label="Seek Forward" disabled={!controlsEnabled} onclick={onSeekForward} use:tooltip={{ content: 'Seek Forward', shortcut: 'Right', placement: 'top' }}>
+      <button class="pill-btn seek-btn" aria-label="Seek Forward" disabled={!controlsEnabled} onclick={onSeekForward} use:tooltip={{ content: 'Seek Forward 5s', shortcut: 'Right', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V9a4 4 0 0 0-4-4H3"/><polyline points="17 23 21 19 17 15"/><path d="M3 13v2a4 4 0 0 0 4 4h14"/></svg>
       </button>
       <div class="separator"></div>

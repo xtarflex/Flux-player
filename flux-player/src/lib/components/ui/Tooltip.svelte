@@ -6,6 +6,8 @@
   let visible = $derived($tooltipState.visible);
   let content = $derived($tooltipState.content);
   let shortcut = $derived($tooltipState.shortcut);
+  let secondaryContent = $derived($tooltipState.secondaryContent);
+  let secondaryShortcut = $derived($tooltipState.secondaryShortcut);
   let baseX = $derived($tooltipState.x);
   let baseY = $derived($tooltipState.y);
   let basePlacement = $derived($tooltipState.placement);
@@ -94,11 +96,24 @@
     style:top="{finalY}px"
     role="tooltip"
   >
-    <span class="content">{content}</span>
-    {#if shortcut}
-      <span class="divider"></span>
-      <span class="shortcut">{shortcut}</span>
-    {/if}
+    <div class="tooltip-rows">
+      <div class="tooltip-row">
+        <span class="content">{content}</span>
+        {#if shortcut}
+          <span class="divider"></span>
+          <span class="shortcut">{shortcut}</span>
+        {/if}
+      </div>
+      {#if secondaryContent || secondaryShortcut}
+        <div class="tooltip-row secondary">
+          <span class="content">{secondaryContent}</span>
+          {#if secondaryShortcut}
+            <span class="divider"></span>
+            <span class="shortcut">{secondaryShortcut}</span>
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 {/if}
 
@@ -126,8 +141,28 @@
     transform-origin: center;
     
     /* Max width logic */
-    max-width: 250px;
+    max-width: 320px;
     width: max-content;
+  }
+
+  .tooltip-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tooltip-row.secondary {
+    border-top: 1px solid var(--glass-border-low);
+    padding-top: 4px;
+    opacity: 0.7;
+    font-size: 11px;
   }
 
   @keyframes fadeScale {

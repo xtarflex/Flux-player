@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { getCurrentWindow, LogicalPosition, LogicalSize, primaryMonitor } from '@tauri-apps/api/window';
   import { fly, fade } from 'svelte/transition';
   import type { MediaItem } from '$lib/stores/playback';
@@ -71,7 +72,7 @@
     <!-- Layer 1: Blurred Background Image -->
     <div 
       class="blurred-bg" 
-      style:background-image="url({convertFileSrc(currentMedia.album_art || currentMedia.poster || '/flux2d.png')})"
+      style:background-image="url({resolveResource(currentMedia.album_art || currentMedia.poster)})"
     ></div>
 
     <!-- Layer 2: Slanted Gradient Overlay (Transparent left, Colored right) -->
@@ -86,7 +87,7 @@
 
       <div class="artwork-section">
         <img 
-          src={convertFileSrc(currentMedia.album_art || currentMedia.poster || '/flux2d.png')} 
+          src={resolveResource(currentMedia.album_art || currentMedia.poster)} 
           alt="Artwork" 
           class="sharp-artwork"
         />

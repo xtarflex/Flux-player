@@ -1,14 +1,15 @@
-/**
+<script lang="ts">
+  /**
  * @file PlayerEngine.svelte
  * @description Headless Video.js engine for Flux Player.
  * Manages dual-instance pre-loading for gapless transitions (Blueprint §14).
  * Translates $playbackState store changes → Video.js API calls.
  * Translates Video.js events → store updates.
  * Handles the 90% watched rule and debounced progress saving via Tauri.
- */
-<script lang="ts">
+   */
   import { onMount, onDestroy } from 'svelte';
   import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import {
@@ -36,8 +37,7 @@
   // ── Debounce timer for progress saving ─────────────────────────────────────
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // ── Inactivity timer for auto-hide (Blueprint §8) ──────────────────────────
-  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
 
   // ── Adaptive tint extraction (Blueprint §1) ─────────────────────────────────
   /**
@@ -117,19 +117,7 @@
     }
   }
 
-  /** Resets the idle timer for auto-hide UI (Blueprint §8). */
-  function resetIdleTimer() {
-    playbackState.update(s => ({ ...s, isIdle: false }));
-    if (idleTimer) clearTimeout(idleTimer);
-    // Only auto-hide during active video playback
-    const state = get(playbackState);
-    const media = get(activeMedia);
-    if (state.isPlaying && media?.type !== 'audio') {
-      idleTimer = setTimeout(() => { 
-        playbackState.update(s => ({ ...s, isIdle: true }));
-      }, 1000);
-    }
-  }
+
 
   /**
    * Binds a MediaItem to the given Video.js player instance.
@@ -138,55 +126,17 @@
    * @param item - The MediaItem to load.
    */
   function loadItemIntoPlayer(p: any, item: MediaItem) {
-    const src = convertFileSrc(item.path);
-    p.src({ src, type: 'video/mp4' }); // Video.js handles type detection
-    p.load();
-  }
-
-  /**
-   * Configures all Video.js event listeners for the current player.
-   * @param p - Video.js player instance.
-   * @param item - The active MediaItem.
-   */
-  function bindPlayerEvents(p: any, item: MediaItem) {
-    // Sync progress to store
-    p.on('timeupdate', () => {
-      const t = p.currentTime() ?? 0;
-      const d = p.duration() ?? 0;
-      if (d > 0) {
-        playbackState.update(s => ({ ...s, progress: t / d }));
-        scheduleSave(item.path, t, d);
+    const src = resolveResource(item.path);
+    if (p.src() !== src) {
+      p.src({ src, type: 'video/mp4' });
+      const artSrc = item.album_art || item.poster;
+      if (artSrc) {
+        const resolvedArt = resolveResource(artSrc);
+        p.poster(resolvedArt);
+        extractDominantColor(resolvedArt);
       }
-      resetIdleTimer();
-    });
-
-    // Sync play/pause state
-    p.on('play', () => playbackState.update(s => ({ ...s, isPlaying: true })));
-    p.on('pause', () => {
-      // If we are in Repeat One mode, ignore the native pause event triggered 
-      // by the loop transition. This prevents UI flickering.
-      if (get(playbackState).repeatMode === 2) return;
-      saveNow(item.path, p.currentTime(), p.duration());
-      playbackState.update(s => ({ ...s, isPlaying: false }));
-    });
-
-    // Handle end of media
-    p.on('ended', () => {
-      saveNow(item.path, 0, p.duration()); // Reset to 0 for Smart Progress (Fix 11.2)
-      
-      // If we are in Repeat One mode, the native loop handles the reset.
-      // We ignore this event to maintain the 'Playing' state in the UI.
-      if (get(playbackState).repeatMode === 2) return;
-
-      playbackState.update(s => ({ ...s, isPlaying: false, progress: 0, isTheaterMode: false, isMiniPlayer: false }));
-      activeMedia.set(null);
-      goto('/library');
-    });
-
-    // Error handling
-    p.on('error', () => {
-      console.error('[PlayerEngine] Video.js error:', p.error());
-    });
+    }
+    p.load();
   }
 
   // ── Teardown refs (populated by the async setup IIFE) ────────────────────
@@ -215,17 +165,45 @@
       playerEngineRef.set(player);
       onReady?.();
 
-      // ── Load the active media if one is already set ──────────────────────
+      // ── One-Time Event Binding ───────────────────────────────────────────
+      // We bind these once. They use get(activeMedia) to stay context-aware.
+      player.on('timeupdate', () => {
+        const item = get(activeMedia);
+        if (!item || item.type !== 'video') return;
+        const t = player.currentTime() ?? 0;
+        const d = player.duration() ?? 0;
+        if (d > 0) {
+          playbackState.update(s => ({ ...s, progress: t / d }));
+          scheduleSave(item.path, t, d);
+        }
+      });
+
+      player.on('play', () => playbackState.update(s => ({ ...s, isPlaying: true })));
+
+      player.on('pause', () => {
+        const item = get(activeMedia);
+        if (get(playbackState).repeatMode === 2) return;
+        if (item) saveNow(item.path, player.currentTime(), player.duration());
+        playbackState.update(s => ({ ...s, isPlaying: false }));
+      });
+
+      player.on('ended', () => {
+        const item = get(activeMedia);
+        if (item) saveNow(item.path, 0, player.duration());
+        if (get(playbackState).repeatMode === 2) return;
+        playbackState.update(s => ({ ...s, isPlaying: false, progress: 0, isTheaterMode: false, isMiniPlayer: false }));
+        activeMedia.set(null);
+        goto('/library');
+      });
+
+      player.on('error', () => console.error('[PlayerEngine] Video.js error:', player.error()));
+
+      // ── Initial State Sync ────────────────────────────────────────────────
       const media = get(activeMedia);
       const state = get(playbackState);
 
-      if (media) {
+      if (media && media.type === 'video') {
         loadItemIntoPlayer(player, media);
-        bindPlayerEvents(player, media);
-
-        // Extract adaptive tint from poster/album art
-        const artSrc = media.album_art || media.poster;
-        if (artSrc) extractDominantColor(convertFileSrc(artSrc));
 
         // Resume from last saved position or seekTo target
         player.ready(async () => {
@@ -241,18 +219,13 @@
             }
           }
           
-          console.log(`[PlayerEngine] Play initiated for: ${media.title}`);
-          console.log(`[PlayerEngine] DB saved position: ${dbSessionProgress}s`);
-          console.log(`[PlayerEngine] Final seek target: ${seekTarget ?? 0}s`);
-
           if (seekTarget && seekTarget > 0) player.currentTime(seekTarget);
-          // Clear seekTo after consuming it
           playbackState.update(s => ({ ...s, seekTo: null }));
           if (state.isPlaying) player.play().catch(() => {});
         });
       }
 
-      // ── Subscribe: react to store-driven state changes ─────────────────
+      // ── Subscriptions ───────────────────────────────────────────────────
       unsubState = playbackState.subscribe(st => {
         if (!player) return;
         if (st.isPlaying && player.paused()) player.play().catch(() => {});
@@ -262,41 +235,34 @@
         player.playbackRate(st.speed);
         player.loop(st.repeatMode === 2);
 
-        // Handle live scrubbing/seeking from the footer UI
         if (st.seekProgressRequest !== null && st.seekProgressRequest !== undefined) {
           const dur = player.duration() ?? 0;
-          if (dur > 0) {
-            player.currentTime(st.seekProgressRequest * dur);
-          }
+          if (dur > 0) player.currentTime(st.seekProgressRequest * dur);
           playbackState.update(s => ({ ...s, seekProgressRequest: null }));
+        }
+
+        if (st.seekTo !== null && st.seekTo !== undefined) {
+          player.currentTime(st.seekTo);
+          playbackState.update(s => ({ ...s, seekTo: null }));
         }
       });
 
       unsubMedia = activeMedia.subscribe(item => {
-        if (!player || !item) return;
+        if (!player || !item || item.type !== 'video') return;
         loadItemIntoPlayer(player, item);
-        bindPlayerEvents(player, item);
-        const artSrc = item.album_art || item.poster;
-        if (artSrc) extractDominantColor(convertFileSrc(artSrc));
       });
 
-      // ── Mouse move → reset idle timer ───────────────────────────────────
-      const handleMouseMove = () => resetIdleTimer();
-      window.addEventListener('mousemove', handleMouseMove);
-      removeMouseMove = () => window.removeEventListener('mousemove', handleMouseMove);
     })();
 
     // Return a synchronous cleanup for Svelte
     return () => {
       unsubState?.();
       unsubMedia?.();
-      removeMouseMove?.();
     };
   });
 
   onDestroy(() => {
     if (saveTimer) clearTimeout(saveTimer);
-    if (idleTimer) clearTimeout(idleTimer);
     if (player) { player.dispose(); player = null; }
     if (nextPlayer) { nextPlayer.dispose(); nextPlayer = null; }
     playerEngineRef.set(null);
@@ -323,17 +289,34 @@
     cursor: none;
   }
 
-  /* Strip all default Video.js chrome — Flux provides its own controls */
-  :global(.video-js.vjs-flux) {
-    width: 100%;
-    height: 100%;
-    background: transparent;
-  }
-
+  /* Strip all default Video.js chrome — Flux provides its own premium controls */
   :global(.vjs-flux .vjs-control-bar),
   :global(.vjs-flux .vjs-big-play-button),
   :global(.vjs-flux .vjs-loading-spinner),
-  :global(.vjs-flux .vjs-error-display) {
+  :global(.vjs-flux .vjs-error-display),
+  :global(.vjs-flux .vjs-modal-dialog),
+  :global(.vjs-flux .vjs-text-track-settings),
+  :global(.vjs-flux .vjs-hidden) {
+    display: none !important;
+  }
+
+  /* Ensure the Video.js wrapper fills the container fully */
+  :global(.video-js.vjs-flux) {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+
+  :global(.vjs-flux .vjs-tech) {
+    display: block !important; /* Ensure the actual video remains visible */
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain; /* Preserve aspect ratio within the 100% container */
+  }
+
+  /* Robust fix: Hide absolutely everything but the video element itself and captions */
+  :global(.vjs-flux > *:not(.vjs-tech):not(.vjs-text-track-display)) {
     display: none !important;
   }
 </style>

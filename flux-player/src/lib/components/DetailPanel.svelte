@@ -5,6 +5,7 @@
    */
   import { mediaItems, selectedMediaId, type MediaItem, loadLibraryFromDb } from '$lib/stores/media';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { derived } from 'svelte/store';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
   import { playMediaFromItem } from '$lib/stores/playback';
@@ -22,17 +23,11 @@
   });
 
   const resolvedBackdrop = derived(selectedItem, ($item) => {
-    if (!$item || !$item.backdrop) return '/flux_backdrop.png';
-    return $item.backdrop.startsWith('/') || $item.backdrop.startsWith('http') || $item.backdrop.startsWith('data:') 
-      ? $item.backdrop 
-      : convertFileSrc($item.backdrop);
+    return resolveResource($item?.backdrop, '/flux_backdrop.png');
   });
 
   const resolvedPoster = derived(selectedItem, ($item) => {
-    if (!$item || !$item.poster) return null;
-    return $item.poster.startsWith('/') || $item.poster.startsWith('http') || $item.poster.startsWith('data:') 
-      ? $item.poster 
-      : convertFileSrc($item.poster);
+    return $item?.poster ? resolveResource($item.poster) : null;
   });
 
   let playingHovered = $state(false);

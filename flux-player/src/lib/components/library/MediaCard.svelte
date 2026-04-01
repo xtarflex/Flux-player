@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { tooltip } from '$lib/actions/tooltip';
   import { toggleFavorite as toggleFavoriteAction } from '$lib/stores/media';
 
@@ -38,7 +39,7 @@
   }
 
   let hasPoster = $derived(!!item.poster);
-  let resolvedPoster = $derived(item.poster ? convertFileSrc(item.poster) : null);
+  let resolvedPoster = $derived(resolveResource(item.poster));
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();

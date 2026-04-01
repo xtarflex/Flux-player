@@ -1,5 +1,6 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   import { onMount } from "svelte";
   import { spring } from "svelte/motion";
   import IslandLogo from "./island/IslandLogo.svelte";
@@ -38,12 +39,7 @@
   });
 
   // Real album art / poster for the island thumbnail
-  let posterSrc = $derived.by(() => {
-    if (!$activeMedia) return "/flux2d.png";
-    const src = $activeMedia.album_art || $activeMedia.poster || "/flux2d.png";
-    if (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:')) return src;
-    return convertFileSrc(src);
-  });
+  let posterSrc = $derived(resolveResource($activeMedia?.album_art || $activeMedia?.poster));
 
   // ── Adaptive Border & Offline State ──────────────────────────────────
   let isOffline = $state(false);

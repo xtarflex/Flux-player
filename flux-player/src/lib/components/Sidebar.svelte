@@ -33,7 +33,7 @@
         <span class="version">V0.1.0</span>
       </div>
     </div>
-    <button class="menu-toggle" onclick={() => isSidebarCollapsed.update(v => !v)} aria-label="Toggle Sidebar" use:tooltip={{ content: $isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar', placement: 'right' }}>
+    <button class="menu-toggle" onclick={() => isSidebarCollapsed.update(v => !v)} aria-label="Toggle Sidebar" use:tooltip={{ content: $isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar', shortcut: 'Ctrl B', placement: 'right' }}>
       <Icon name="menu" strokeWidth={2.5} />
     </button>
   </div>

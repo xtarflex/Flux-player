@@ -53,7 +53,9 @@ These work regardless of which section you're in:
 | `Ctrl + P` | Go to Playlists | |
 | `Ctrl + Q` | View Queue | |
 | `Ctrl + F` | Focus search bar | Opens if closed |
-| `Ctrl + R` | Global refresh | Rescans library |
+| `Ctrl + R` | Refresh Context | Section-aware refresh |
+| `Ctrl + Shift + R` | Global Refresh | App/Window reload |
+| `Ctrl + B` | Toggle Sidebar | Collapse/Expand |
 | `Ctrl + W` | Close window | Confirm if playing |
 | `F11` | Toggle fullscreen | Video only |
 | `ESC` | Exit fullscreen / Close modal | Context-aware |

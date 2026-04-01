@@ -129,14 +129,22 @@
       case 'j':
       case 'J':
         e.preventDefault();
-        playbackState.update(s => ({ ...s, seekProgressRequest: Math.max(0, s.progress - 0.1) }));
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Rewind 10%', icon: 'seek-backward' } }));
+        playbackState.update(s => {
+          const dur = $activeMedia?.duration || 0;
+          const currentTime = dur * s.progress;
+          return { ...s, seekTo: Math.max(0, currentTime - 10) };
+        });
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Rewind 10s', icon: 'seek-backward' } }));
         break;
       case 'l':
       case 'L':
         e.preventDefault();
-        playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.1) }));
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Forward 10%', icon: 'seek-forward' } }));
+        playbackState.update(s => {
+          const dur = $activeMedia?.duration || 0;
+          const currentTime = dur * s.progress;
+          return { ...s, seekTo: Math.min(dur, currentTime + 10) };
+        });
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Forward 10s', icon: 'seek-forward' } }));
         break;
       case 'Home':
         e.preventDefault();
@@ -169,8 +177,12 @@
         if (e.shiftKey) {
           nextTrack();
         } else {
-          playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.05) }));
-          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Forward', icon: 'seek-forward' } }));
+          playbackState.update(s => {
+            const dur = $activeMedia?.duration || 0;
+            const currentTime = dur * s.progress;
+            return { ...s, seekTo: Math.min(dur, currentTime + 5) };
+          });
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Forward 5s', icon: 'seek-forward' } }));
         }
         break;
       case 'ArrowLeft':
@@ -178,8 +190,12 @@
         if (e.shiftKey) {
           prevTrack();
         } else {
-          playbackState.update(s => ({ ...s, seekProgressRequest: Math.max(0, s.progress - 0.05) }));
-          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Seek Backward', icon: 'seek-backward' } }));
+          playbackState.update(s => {
+            const dur = $activeMedia?.duration || 0;
+            const currentTime = dur * s.progress;
+            return { ...s, seekTo: Math.max(0, currentTime - 5) };
+          });
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Backward 5s', icon: 'seek-backward' } }));
         }
         break;
     }
@@ -216,8 +232,20 @@
         onToggleShuffle={() => playbackState.update(s => ({ ...s, shuffleState: !s.shuffleState }))}
         onToggleRepeat={() => playbackState.update(s => ({ ...s, repeatMode: (s.repeatMode + 1) % 3 }))}
         onTogglePlay={() => playbackState.update(s => ({ ...s, isPlaying: !s.isPlaying }))}
-        onSeekForward={() => playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.05) }))}
-        onSeekBackward={() => playbackState.update(s => ({ ...s, seekProgressRequest: Math.max(0, s.progress - 0.05) }))}
+        onSeekForward={() => {
+          playbackState.update(s => {
+            const dur = $activeMedia?.duration || 0;
+            const currentTime = dur * s.progress;
+            return { ...s, seekTo: Math.min(dur, currentTime + 5) };
+          });
+        }}
+        onSeekBackward={() => {
+          playbackState.update(s => {
+            const dur = $activeMedia?.duration || 0;
+            const currentTime = dur * s.progress;
+            return { ...s, seekTo: Math.max(0, currentTime - 5) };
+          });
+        }}
         isPlaying={$playbackState.isPlaying} 
       />
     </div>

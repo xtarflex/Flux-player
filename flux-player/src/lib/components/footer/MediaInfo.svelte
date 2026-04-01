@@ -1,5 +1,6 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   let { 
     currentMedia, 
     hasMedia, 
@@ -15,7 +16,7 @@
   function toggleLike() {
     onToggleLike?.();
   }
-  let resolvedPoster = $derived(currentMedia?.poster ? convertFileSrc(currentMedia.poster) : '/flux2d.png');
+  let resolvedPoster = $derived(resolveResource(currentMedia?.poster));
 </script>
 
 <div class="left-section">

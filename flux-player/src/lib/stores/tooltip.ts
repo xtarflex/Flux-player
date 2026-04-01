@@ -6,6 +6,8 @@ export interface TooltipState {
   visible: boolean;
   content: string;
   shortcut?: string;
+  secondaryContent?: string;
+  secondaryShortcut?: string;
   x: number;
   y: number;
   placement: Placement;

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { resolveResource } from '$lib/utils/media';
   /**
    * @typedef {Object} Props
    * @property {any} item - The media item to display details for
@@ -21,10 +22,10 @@
     duration: '2h 15m',
     rating: '8.4',
     genres: ['Action', 'Sci-Fi', 'Thriller'],
-    backdrop: item.poster ? convertFileSrc(item.poster) : null // Uses current item poster as backdrop
+    backdrop: resolveResource(item.poster) // Uses current item poster as backdrop
   });
 
-  let resolvedPoster = $derived(item.poster ? convertFileSrc(item.poster) : null);
+  let resolvedPoster = $derived(resolveResource(item.poster));
 </script>
 
 <div class="detail-panel glass-dark">

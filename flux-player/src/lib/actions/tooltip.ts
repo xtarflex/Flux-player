@@ -3,20 +3,30 @@ import { tooltipState, type Placement } from '../stores/tooltip';
 interface TooltipParams {
   content: string;
   shortcut?: string;
+  secondaryContent?: string;
+  secondaryShortcut?: string;
   placement?: Placement;
 }
 
 export function tooltip(node: HTMLElement, params: string | TooltipParams) {
   let content = '';
   let shortcut = '';
+  let secondaryContent = '';
+  let secondaryShortcut = '';
   let placement: Placement = 'bottom';
 
   function parseParams(p: string | TooltipParams) {
     if (typeof p === 'string') {
       content = p;
+      shortcut = '';
+      secondaryContent = '';
+      secondaryShortcut = '';
+      placement = 'bottom';
     } else {
       content = p.content;
       shortcut = p.shortcut || '';
+      secondaryContent = p.secondaryContent || '';
+      secondaryShortcut = p.secondaryShortcut || '';
       placement = p.placement || 'bottom';
     }
   }
@@ -50,6 +60,8 @@ export function tooltip(node: HTMLElement, params: string | TooltipParams) {
         visible: true,
         content,
         shortcut,
+        secondaryContent,
+        secondaryShortcut,
         placement,
         x,
         y
