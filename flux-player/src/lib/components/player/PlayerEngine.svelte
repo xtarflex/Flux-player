@@ -1,11 +1,11 @@
-/**
+<!--
  * @file PlayerEngine.svelte
  * @description Headless Video.js engine for Flux Player.
  * Manages dual-instance pre-loading for gapless transitions (Blueprint §14).
  * Translates $playbackState store changes → Video.js API calls.
  * Translates Video.js events → store updates.
  * Handles the 90% watched rule and debounced progress saving via Tauri.
- */
+-->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { invoke, convertFileSrc } from '@tauri-apps/api/core';
@@ -333,7 +333,15 @@
   :global(.vjs-flux .vjs-control-bar),
   :global(.vjs-flux .vjs-big-play-button),
   :global(.vjs-flux .vjs-loading-spinner),
-  :global(.vjs-flux .vjs-error-display) {
+  :global(.vjs-flux .vjs-error-display),
+  :global(.vjs-flux .vjs-modal-dialog),
+  :global(.vjs-flux .vjs-text-track-settings),
+  :global(.vjs-flux .vjs-hidden) {
+    display: none !important;
+  }
+
+  /* Hide absolutely everything but the video element itself and captions */
+  :global(.vjs-flux > *:not(.vjs-tech):not(.vjs-text-track-display)) {
     display: none !important;
   }
 </style>
