@@ -146,7 +146,7 @@
       case "hover":   size.set({ w: 220, h: 60, r: 30 });  break;
       case "status":  size.set({ w: 320, h: 48, r: 24 });  break;
       case "audio":   size.set({ w: 240, h: 56, r: 28 });  break;
-      case "playing": size.set({ w: 200, h: 56, r: 28 });  break;
+      case "playing": size.set({ w: 240, h: 56, r: 28 });  break;
     }
   });
 </script>

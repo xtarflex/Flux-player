@@ -92,8 +92,8 @@
   }
 
   .video-playing-content {
-    gap: 8px;
-    padding: 0 10px 0 0;
+    gap: 12px;
+    padding: 0 16px;
     height: 100%;
   }
 
