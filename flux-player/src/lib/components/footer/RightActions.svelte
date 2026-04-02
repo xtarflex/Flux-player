@@ -1,7 +1,8 @@
 <script lang="ts">
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
-  import { openMenu, activeMenu } from '../../stores/ui';
+  import { activeMenu, openMenu } from '../../stores/ui';
+  import { playbackState } from '../../stores/playback';
 
   let { 
     controlsEnabled, 
@@ -10,8 +11,8 @@
     showSubtitles, 
     showPiP,
     showVisualizer = false, 
-    isPiPActive = $bindable(false), 
-    isFullscreen = $bindable(false), 
+    isPiPActive = false, 
+    isFullscreen = false, 
     volume = $bindable(0.7), 
     isMuted = $bindable(false) 
   }: {
@@ -44,12 +45,12 @@
 
   function togglePiP() {
     if (!showPiP) return;
-    isPiPActive = !isPiPActive;
+    playbackState.update(s => ({ ...s, pipRequest: s.pipRequest === null ? true : !s.pipRequest }));
   }
 
   function toggleFullscreen() {
     if (!controlsEnabled) return;
-    isFullscreen = !isFullscreen;
+    playbackState.update(s => ({ ...s, fullscreenRequest: s.fullscreenRequest === null ? true : !s.fullscreenRequest }));
   }
 
   function toggleMute() {

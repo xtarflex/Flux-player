@@ -51,6 +51,11 @@ export interface PlaybackState {
    * Whether the user is currently idle (mouse hasn't moved)
    */
   isIdle: boolean;
+  /**
+   * Internal implementation signals
+   */
+  fullscreenRequest: boolean | null;
+  pipRequest: boolean | null;
 }
 
 // ── Stores ───────────────────────────────────────────────────────────────────
@@ -73,6 +78,8 @@ export const playbackState = writable<PlaybackState>({
   repeatMode: 0,
   shuffleState: false,
   isIdle: false,
+  fullscreenRequest: null,
+  pipRequest: null,
 });
 
 /**

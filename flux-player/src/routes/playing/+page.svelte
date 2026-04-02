@@ -12,7 +12,6 @@
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
   import { goto } from '$app/navigation';
-  import PlayerEngine from '$lib/components/player/PlayerEngine.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import { activeMedia, playbackState } from '$lib/stores/playback';
 
@@ -64,7 +63,7 @@
   {:else if isVideo}
     <!-- ── Video Mode ──────────────────────────────────────────────────── -->
     <div class="video-wrapper">
-      <PlayerEngine />
+      <!-- PlayerEngine is now globally managed in +layout.svelte -->
     </div>
   {:else if isAudio}
     <!-- ── Vinyl Mode ──────────────────────────────────────────────────── -->

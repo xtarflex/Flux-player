@@ -35,8 +35,6 @@
   // Control States
   let isLiked = $derived($mediaItems.find(i => i.path === $activeMedia?.path)?.is_favorite ?? false);
   let isMuted = $state(false);
-  let isPiPActive = $state(false);
-  let isFullscreen = $state(false);
 
   // Queue management
   type QueueItem = { title: string; poster?: string };
@@ -115,14 +113,14 @@
       case 'F11':
         if (isVideo) {
           e.preventDefault();
-          isFullscreen = !isFullscreen;
-          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isFullscreen ? 'Fullscreen' : 'Windowed', icon: 'fullscreen' } }));
+          playbackState.update(s => ({ ...s, fullscreenRequest: s.fullscreenRequest === null ? true : !s.fullscreenRequest }));
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: $playbackState.isFullscreen ? 'Windowed' : 'Fullscreen', icon: 'fullscreen' } }));
         }
         break;
       case 'Escape':
-        if (isFullscreen) {
+        if ($playbackState.isFullscreen) {
           e.preventDefault();
-          isFullscreen = false;
+          playbackState.update(s => ({ ...s, fullscreenRequest: false }));
           window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Exited Fullscreen', icon: 'fullscreen' } }));
         }
         break;
@@ -259,8 +257,8 @@
         {showSubtitles} 
         {showPiP} 
         showVisualizer={isAudio}
-        bind:isPiPActive 
-        bind:isFullscreen 
+        isPiPActive={$playbackState.isPiP} 
+        isFullscreen={$playbackState.isFullscreen} 
         bind:volume={$playbackState.volume} 
         bind:isMuted={$playbackState.isMuted} 
       />

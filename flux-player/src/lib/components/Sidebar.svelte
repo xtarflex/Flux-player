@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { isScanning } from '$lib/stores/media';
-  import { activeMedia, playbackState } from '$lib/stores/playback';
+  import { activeMedia, playbackState, deactivateMiniPlayer } from '$lib/stores/playback';
   import AnimatedDiscovery from './ui/animated-icons/AnimatedDiscovery.svelte';
   import AnimatedLibrary from './ui/animated-icons/AnimatedLibrary.svelte';
   import AnimatedPlaying from './ui/animated-icons/AnimatedPlaying.svelte';
@@ -44,6 +44,7 @@
         href="/{item.id}"
         class="nav-item" 
         class:active={$page.url.pathname.startsWith('/' + item.id)}
+        onclick={() => { if (item.id === 'playing') deactivateMiniPlayer(); }}
         use:tooltip={{ content: item.label, shortcut: item.shortcut, placement: 'right' }}
       >
         <div class="nav-icon">

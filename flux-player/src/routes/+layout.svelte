@@ -8,9 +8,9 @@
   import DynamicIsland from '$lib/components/DynamicIsland.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import PlaybackFooter from '$lib/components/PlaybackFooter.svelte';
-  import MiniPlayer from '$lib/components/player/MiniPlayer.svelte';
   import AudioEngine from '$lib/components/player/AudioEngine.svelte';
-  import { activeMedia, playbackState, activateMiniPlayer } from '$lib/stores/playback';
+  import PlayerEngine from '$lib/components/player/PlayerEngine.svelte';
+  import { activeMedia, playbackState, activateMiniPlayer, deactivateMiniPlayer } from '$lib/stores/playback';
   import { isScanning } from '$lib/stores/media';
   import { activeMenu, closeMenu, isSidebarCollapsed } from '$lib/stores/ui';
   import { open } from '@tauri-apps/plugin-dialog';
@@ -133,7 +133,7 @@
         case 'l': e.preventDefault(); goto('/library'); dispatchToast('Library Navigation', 'library'); break;
         case 'd': e.preventDefault(); goto('/discovery'); dispatchToast('Discovery Navigation', 'discovery'); break;
         case 'p': e.preventDefault(); goto('/playlists'); dispatchToast('Playlists', 'playlists'); break;
-        case 'q': e.preventDefault(); goto('/playing'); dispatchToast('Now Playing', 'playing'); break;
+        case 'q': e.preventDefault(); deactivateMiniPlayer(); goto('/playing'); dispatchToast('Now Playing', 'playing'); break;
         case ',': e.preventDefault(); goto('/settings'); dispatchToast('Settings', 'settings'); break;
         case 'r':
           e.preventDefault();
@@ -208,8 +208,7 @@
     {@render children()}
   </main>
   <div data-footer class="footer-slot"><PlaybackFooter /></div>
-  <MiniPlayer />
-  <!-- Persistent audio engine — survives all route changes -->
+  <PlayerEngine />
   <AudioEngine />
   <Tooltip />
 
