@@ -5,7 +5,7 @@
  */
 
 import { writable, get } from 'svelte/store';
-import { type MediaItem, mediaItems } from './media';
+import { type MediaItem, mediaItems, selectedMediaId } from './media';
 import { settings } from './settings';
 import { activeMedia, playbackState } from './playback';
 import { goto } from '$app/navigation';
@@ -31,14 +31,17 @@ export const queue = writable<QueueState>(initialState);
  * @param items - The new track list.
  * @param startIndex - The index to start playback at.
  * @param seekTo - Optional position in seconds to start from.
+ * @param silent - If true, only updates the queue list/index without starting playback.
  */
-export function setQueue(items: MediaItem[], startIndex = 0, seekTo?: number) {
+export function setQueue(items: MediaItem[], startIndex = 0, seekTo?: number, silent = false) {
   const targetItem = items[startIndex];
   const isVideo = targetItem?.type === 'video' || targetItem?.type === 'mixed';
   
   queue.set({ items, originalItems: [...items], index: startIndex });
-  if (targetItem) {
+  
+  if (targetItem && !silent) {
     activeMedia.set(targetItem);
+    selectedMediaId.set(targetItem.id);
     playbackState.update(s => ({ 
       ...s, 
       isPlaying: true,
@@ -110,11 +113,36 @@ export function nextTrack() {
 
   queue.update(s => ({ ...s, index: nextIndex }));
   const nextMedia = state.items[nextIndex];
+  const prevMedia = state.items[state.index];
+
   if (nextMedia) {
     activeMedia.set(nextMedia);
-    // Note: If repeatMode is 2 (Repeat One), the engine handles the loop, 
-    // but if the user MANUALLY clicks "Next", we still advance.
+    selectedMediaId.set(nextMedia.id);
     playbackState.update(s => ({ ...s, isPlaying: true, progress: 0 }));
+
+    // MIXED MEDIA ROUTING REFINEMENT
+    const isNextVideo = nextMedia.type === 'video';
+    const isPrevVideo = prevMedia?.type === 'video';
+    const isAppInPlayer = window.location.pathname.includes('/playing');
+    const isAppInLibrary = window.location.pathname === '/' || window.location.pathname === '/library';
+    const { transitionBehavior } = get(settings);
+
+    // Rule: Route to Player ONLY if (Prev was Audio AND Next is Video) AND not already in Player
+    if (isNextVideo && !isPrevVideo && !isAppInPlayer) {
+      window.dispatchEvent(new CustomEvent('flux-toast', { 
+        detail: { label: 'Casting to Player', icon: 'smart-display' } 
+      }));
+      goto('/playing');
+    } 
+    // Rule: Route to Library ONLY if (Prev was Video AND Next is Audio) AND setting enabled AND not already in Library
+    else if (!isNextVideo && isPrevVideo && isAppInPlayer) {
+      if (transitionBehavior === 'Return to Library' && !isAppInLibrary) {
+        window.dispatchEvent(new CustomEvent('flux-toast', { 
+          detail: { label: 'Returning to Library', icon: 'library-music' } 
+        }));
+        goto('/');
+      }
+    }
   }
 }
 
@@ -149,6 +177,7 @@ export function prevTrack() {
   const prevMedia = state.items[prevIndex];
   if (prevMedia) {
     activeMedia.set(prevMedia);
+    selectedMediaId.set(prevMedia.id);
     playbackState.update(s => ({ ...s, isPlaying: true, progress: 0 }));
   }
 }
@@ -196,6 +225,13 @@ export function clearQueue() {
   queue.set(initialState);
 }
 
+/**
+ * Seeds the queue without starting playback.
+ */
+export function hydrateQueue(targetItem: MediaItem, contextList?: MediaItem[]) {
+  playWithAutoQueue(targetItem, undefined, contextList, true);
+}
+
 // ── Smart Logic ─────────────────────────────────────────────────────────────
 
 /**
@@ -204,28 +240,34 @@ export function clearQueue() {
  * @param targetItem - The item to play.
  * @param seekTo - Optional resume position.
  * @param contextList - Optional list of items to use as the "Always" context (e.g. filtered library).
+ * @param silent - If true, updates store without starting playback or routing.
  */
-export function playWithAutoQueue(targetItem: MediaItem, seekTo?: number, contextList?: MediaItem[]) {
-  const mode = get(settings).autoQueueMode;
+export function playWithAutoQueue(targetItem: MediaItem, seekTo?: number, contextList?: MediaItem[], silent = false) {
+  const currentSettings = get(settings);
+  const mode = currentSettings.autoQueueMode;
+  const allowMixed = currentSettings.allowMixedQueue;
   const allMedia = get(mediaItems);
 
   if (mode === 'Never') {
-    setQueue([targetItem], 0, seekTo);
+    setQueue([targetItem], 0, seekTo, silent);
     return;
   }
 
   if (mode === 'Always') {
-    // Queue everything in context (or all library if no context provided)
-    const baseList = contextList || allMedia;
+    // Queue everything in context (respecting mixed media toggle)
+    let baseList = contextList || allMedia;
+    
+    if (!allowMixed) {
+      baseList = baseList.filter(i => i.type === targetItem.type);
+    }
+
     const sorted = [...baseList].sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
     const idx = sorted.findIndex(i => i.path === targetItem.path);
     
-    // If item not in context, fallback to single item or Smart? 
-    // Usually it should be in context, but safety first:
     if (idx === -1) {
-      setQueue([targetItem], 0, seekTo);
+      setQueue([targetItem], 0, seekTo, silent);
     } else {
-      setQueue(sorted, idx, seekTo);
+      setQueue(sorted, idx, seekTo, silent);
     }
     return;
   }
@@ -257,5 +299,5 @@ export function playWithAutoQueue(targetItem: MediaItem, seekTo?: number, contex
     startIndex = smartList.findIndex(i => i.path === targetItem.path);
   }
 
-  setQueue(smartList, startIndex, seekTo);
+  setQueue(smartList, startIndex, seekTo, silent);
 }

@@ -11,6 +11,7 @@ export type TransitionBehavior = 'Return to Library' | 'Stay in Now Playing';
 
 export interface FluxSettings {
   autoQueueMode: AutoQueueMode;
+  allowMixedQueue: boolean;
   transitionBehavior: TransitionBehavior;
   volume: number;
   isMuted: boolean;
@@ -26,6 +27,7 @@ export interface FluxSettings {
 
 const DEFAULT_SETTINGS: FluxSettings = {
   autoQueueMode: 'Smart',
+  allowMixedQueue: true,
   transitionBehavior: 'Return to Library',
   volume: 0.7,
   isMuted: false,

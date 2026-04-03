@@ -17,6 +17,7 @@
   let osUsername = $state(current.osUsername);
 
   let autoQueue = $state<AutoQueueMode>(current.autoQueueMode);
+  let allowMixedQueue = $state(current.allowMixedQueue);
   let transitionBehavior = $state<TransitionBehavior>(current.transitionBehavior);
 
   const threadingOptions = ['Auto', '1 Core', '2 Cores', '4 Cores', 'Max Cores'];
@@ -28,6 +29,7 @@
   $effect(() => { updateSetting('ffmpegThreading', ffmpegThreading); });
   $effect(() => { updateSetting('watchedThreshold', watchedThreshold); });
   $effect(() => { updateSetting('autoQueueMode', autoQueue); });
+  $effect(() => { updateSetting('allowMixedQueue', allowMixedQueue); });
   $effect(() => { updateSetting('transitionBehavior', transitionBehavior); });
   $effect(() => { updateSetting('subtitleLanguage', subtitleLanguage); });
   $effect(() => { updateSetting('subtitleFuzzy', subtitleFuzzy); });
@@ -98,6 +100,17 @@
           <span class="help-text">Queue from current filtered view.</span>
         {/if}
       </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <label for="allowMixedQueue">Mixed Media Queue</label>
+        <span class="description">Allow audio and video tracks to be mixed in the same session queue.</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="allowMixedQueue" bind:checked={allowMixedQueue} />
+        <span class="slider round"></span>
+      </label>
     </div>
 
     <div class="setting-row radio-group-row">

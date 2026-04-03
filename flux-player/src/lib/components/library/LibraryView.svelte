@@ -9,7 +9,7 @@
   import type { MenuItem } from '../ui/context-menu';
   import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState, toggleFavorite } from '$lib/stores/media';
   import { setMedia } from '$lib/stores/playback';
-  import { playWithAutoQueue } from '$lib/stores/queue';
+  import { playWithAutoQueue, hydrateQueue } from '$lib/stores/queue';
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/actions/tooltip';
 
@@ -146,6 +146,7 @@
     } else if (item && item.type === 'video') {
       // Highlight/Focus video AND hydrate the footer silently
       setMedia(item);
+      hydrateQueue(item, filteredItems);
     }
     
     // CRITICAL: Always update lastSelectedIndex so Shift+Click knows the start point

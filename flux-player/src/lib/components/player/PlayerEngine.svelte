@@ -46,7 +46,7 @@
   let isDragging = $state(false);
   let miniPos = $state({ 
     x: typeof window !== 'undefined' ? window.innerWidth - 384 - 16 : 0, 
-    y: typeof window !== 'undefined' ? window.innerHeight - 216 - 108 : 0 
+    y: typeof window !== 'undefined' ? window.innerHeight - 216 - 112 : 0 
   });
 
   // ── Derived States ─────────────────────────────────────────────────────────
@@ -99,7 +99,29 @@
   let unsubState: (() => void) | null = null;
   let unsubMedia: (() => void) | null = null;
 
+  function clampPosition(pos: { x: number, y: number }) {
+    if (typeof window === 'undefined') return pos;
+    const padding = 16;
+    const footerHeight = 112; 
+    
+    // MiniPlayer size is 384x216
+    const maxX = window.innerWidth - 384 - padding;
+    const maxY = window.innerHeight - 216 - footerHeight;
+    
+    return {
+      x: Math.min(Math.max(padding, pos.x), maxX),
+      y: Math.min(Math.max(padding, pos.y), maxY)
+    };
+  }
+
+  function handleResize() {
+    if (isMini) {
+      miniPos = clampPosition(miniPos);
+    }
+  }
+
   onMount(() => {
+    window.addEventListener('resize', handleResize);
     (async () => {
       const videojs = (await import('video.js')).default;
       if (!videoEl) return;
@@ -257,7 +279,11 @@
       });
     })();
 
-    return () => { unsubState?.(); unsubMedia?.(); };
+    return () => { 
+      unsubState?.(); 
+      unsubMedia?.(); 
+      window.removeEventListener('resize', handleResize);
+    };
   });
 
   onDestroy(() => {

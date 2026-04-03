@@ -341,7 +341,6 @@
 
   .credit-text {
     font-size: 0.75rem;
-    line-height: 1.4;
     color: var(--text-muted);
     margin: 0;
     text-align: left;
