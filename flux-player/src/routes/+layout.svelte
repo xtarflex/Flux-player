@@ -290,7 +290,8 @@
   /* Picture-in-Picture Breakout */
   :global(.app-container.pip-mode) .titlebar-slot,
   :global(.app-container.pip-mode) .sidebar-slot,
-  :global(.app-container.pip-mode) .footer-slot {
+  :global(.app-container.pip-mode) .footer-slot,
+  :global(.app-container.pip-mode) .dynamic-island {
     display: none !important;
   }
 
