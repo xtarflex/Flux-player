@@ -8,6 +8,8 @@
   import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { enterPiP, exitPiP } from '$lib/utils/pip';
+  import PiPOverlay from './PiPOverlay.svelte';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -53,9 +55,10 @@
   const isVideo = $derived(media?.type === 'video' || media?.type === 'mixed');
   const isMini = $derived($playbackState.isMiniPlayer);
   const isPlaying = $derived($playbackState.isPlaying);
+  const isPiP = $derived($playbackState.isPiP);
   
   const onPlayingRoute = $derived(page.url.pathname === '/playing');
-  const isVisible = $derived(isVideo && (onPlayingRoute || isMini));
+  const isVisible = $derived(isVideo && (onPlayingRoute || isMini || isPiP));
 
   // ── Interaction Handlers ───────────────────────────────────────────────────
   function handleStageClick() {
@@ -144,23 +147,7 @@
 
       player.on('fullscreenchange', () => playbackState.update(s => ({ ...s, isFullscreen: player.isFullscreen() })));
 
-      if (videoEl) {
-        videoEl.addEventListener('enterpictureinpicture', async () => {
-          playbackState.update(s => ({ ...s, isPiP: true }));
-          try { await getCurrentWindow().minimize(); } catch (e) {}
-        });
-        videoEl.addEventListener('leavepictureinpicture', async () => {
-          playbackState.update(s => ({ ...s, isPiP: false }));
-          setTimeout(async () => {
-            try {
-              const win = getCurrentWindow();
-              await win.unminimize();
-              await win.show();
-              await win.setFocus();
-            } catch (e) {}
-          }, 150);
-        });
-      }
+
 
       // ── Initial Sync removed — handled by activeMedia subscription below ──
 
@@ -189,9 +176,18 @@
           playbackState.update(s => ({ ...s, fullscreenRequest: null }));
         }
         if (st.pipRequest != null) {
-          if (st.pipRequest && videoEl) videoEl.requestPictureInPicture().catch(() => {});
-          else if (document.pictureInPictureElement) document.exitPictureInPicture().catch(() => {});
+          const isRequestingPiP = st.pipRequest;
           playbackState.update(s => ({ ...s, pipRequest: null }));
+
+          if (isRequestingPiP) {
+            enterPiP().then(() => {
+              playbackState.update(s => ({ ...s, isPiP: true }));
+            });
+          } else {
+            exitPiP().then(() => {
+              playbackState.update(s => ({ ...s, isPiP: false }));
+            });
+          }
         }
       });
 
@@ -254,6 +250,7 @@
   class:is-visible={isVisible}
   class:is-idle={$playbackState.isIdle}
   class:is-mini={isMini}
+  class:is-pip={isPiP}
   class:is-dragging={isDragging}
   style={isMini ? `left: ${miniPos.x}px; top: ${miniPos.y}px;` : ''}
   use:draggable={{
@@ -276,6 +273,9 @@
       onClose={closeMiniPlayer} 
     />
   {/if}
+  {#if isPiP}
+    <PiPOverlay />
+  {/if}
 </div>
 
 <style>
@@ -296,6 +296,10 @@
                 left 0.1s linear, 
                 top 0.1s linear,
                 opacity 0.3s ease;
+  }
+
+    .engine-container.is-pip {
+    z-index: 10000;
   }
 
   .engine-container.is-visible {

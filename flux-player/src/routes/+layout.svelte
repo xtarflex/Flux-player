@@ -24,6 +24,7 @@
 
   // ── Theater Mode State ────────────────────────────────────────────────────
   let isTheaterMode = $derived($playbackState.isTheaterMode);
+  let isPiP = $derived($playbackState.isPiP);
   let sidebarReveal = $state(false);
   let footerReveal = $state(false);
   let uiIdle = $derived($playbackState.isIdle);
@@ -198,12 +199,15 @@
   class:sidebar-reveal={sidebarReveal && isTheaterMode}
   class:footer-reveal={footerReveal && isTheaterMode}
   class:ui-idle={uiIdle && isTheaterMode}
+  class:pip-mode={isPiP}
   onmousemove={handleTheaterMouseMove}
   role="presentation"
 >
   <div data-titlebar class="titlebar-slot"><Titlebar /></div>
   <div data-sidebar class="sidebar-slot"><Sidebar /></div>
+  {#if !isPiP}
   <DynamicIsland />
+  {/if}
   <main class="main-content">
     {@render children()}
   </main>
@@ -282,6 +286,20 @@
 {/if}
 
 <style>
+
+  /* Picture-in-Picture Breakout */
+  :global(.app-container.pip-mode) .titlebar-slot,
+  :global(.app-container.pip-mode) .sidebar-slot,
+  :global(.app-container.pip-mode) .footer-slot {
+    display: none !important;
+  }
+
+  :global(.app-container.pip-mode) {
+    grid-template-areas: "main";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
   /* Theater Mode slot wrappers — transparent to grid layout in normal mode */
   .titlebar-slot, .sidebar-slot, .footer-slot {
     display: contents;
