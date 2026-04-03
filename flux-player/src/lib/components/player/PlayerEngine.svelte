@@ -126,17 +126,30 @@
         }
       });
 
-      player.on('play', () => playbackState.update(s => ({ ...s, isPlaying: true })));
+      player.on('play', () => {
+        const item = get(activeMedia);
+        if (item?.type === 'video' || item?.type === 'mixed') {
+          playbackState.update(s => ({ ...s, isPlaying: true }));
+        }
+      });
       player.on('pause', () => {
         const item = get(activeMedia);
-        if (get(playbackState).repeatMode !== 2 && item) saveNow(item.path, player.currentTime(), player.duration());
-        playbackState.update(s => ({ ...s, isPlaying: false }));
+        const isVideoOwner = item?.type === 'video' || item?.type === 'mixed';
+        if (get(playbackState).repeatMode !== 2 && item && isVideoOwner) {
+          saveNow(item.path, player.currentTime(), player.duration());
+        }
+        // Only update global play state if we still own the media session
+        if (isVideoOwner) {
+          playbackState.update(s => ({ ...s, isPlaying: false }));
+        }
       });
 
       player.on('ended', () => {
         const item = get(activeMedia);
-        if (item) saveNow(item.path, 0, player.duration());
-        if (get(playbackState).repeatMode === 2) return;
+        const isVideoOwner = item?.type === 'video' || item?.type === 'mixed';
+        if (item && isVideoOwner) saveNow(item.path, 0, player.duration());
+        if (get(playbackState).repeatMode === 2 || !isVideoOwner) return;
+
         playbackState.update(s => ({ ...s, isPlaying: false, progress: 0, isTheaterMode: false, isMiniPlayer: false }));
         activeMedia.set(null);
         goto('/library');
@@ -166,7 +179,9 @@
 
       // ── Store Listeners ───────────────────────────────────────────────────
       unsubState = playbackState.subscribe(st => {
-        if (!player) return;
+        const media = get(activeMedia);
+        if (!player || !media || media.type === 'audio') return;
+
         if (st.isPlaying && player.paused()) player.play().catch(() => {});
         if (!st.isPlaying && !player.paused()) player.pause();
         player.volume(st.volume);
@@ -196,7 +211,13 @@
       });
 
       unsubMedia = activeMedia.subscribe(item => {
-        if (!player || !item || item.type !== 'video') return;
+        if (!player) return;
+
+        // If we switch to audio or null, stop the video player instance immediately (Fix 12.1)
+        if (!item || item.type !== 'video') {
+          if (!player.paused()) player.pause();
+          return;
+        }
         
         // 1. Resolve source and load into Video.js
         loadItemIntoPlayer(player, item);

@@ -53,6 +53,17 @@
 
 *KI: Video.js must be lazy-imported (`await import('video.js')`) inside a non-async `onMount` IIFE to avoid SSR issues and keep Svelte's cleanup return synchronous.*
 
+## [2026-04-02] - Milestone 1.7: Player Engine Modularization & Seek Refinement
+
+- **MODULARIZATION**: Refactored the monolithic `PlayerEngine.svelte` to improve maintainability and adherence to the project's modular design principles.
+    - **UTILS**: Extracted core playback logic (`extractDominantColor`, `savePlaybackProgress`, `loadItemIntoPlayer`) into `src/lib/utils/player.ts`.
+    - **ACTIONS**: Created a reusable `draggable.ts` action in `src/lib/actions/` to decouple dragging physics from component logic.
+    - **COMPONENTS**: Extracted the MiniPlayer UI into `MiniPlayerOverlay.svelte`, transforming the main engine into a clean, headless coordinator.
+- **SEEK REFINEMENT**: (Credit: User) Improved playback resumption by moving the initial sync logic into the `activeMedia` subscription and wrapping the `currentTime` assignment in a `loadedmetadata` event listener. This ensures that seeks only occur once the Video.js tech is fully ready to accept time updates.
+- **STABILITY**: Verified the refactor with `npm run check` (0 errors).
+
+*KI: When seeking programmatically in Video.js (especially in Svelte/Tauri), always wait for `loadedmetadata` to ensure the underlying media tech is hydrated, otherwise the seek command may be ignored or cause a race condition.*
+
 # UI Polish: Tooltip Migration & Media Card Contrast
 
 ## Work Summary
@@ -79,3 +90,26 @@
 - **Visual Integrity**: "Cyber Dark" aesthetic is now consistent across all hovering interactions.
 - **High-Key Contrast**: Verified button visibility on pure white test posters.
 - **State Stability**: Tooltips remain perfectly anchored during high-frequency playback store updates.
+
+---
+
+## [2026-04-03] - Dynamic Island Layout Refinement
+
+- **ACTION**: Fixed the Dynamic Island's video playback state layout issues.
+- **WIDTH**: Increased the island's spring-target width from 200px to 240px to prevent movie title truncation.
+- **PADDING**: Replaced the unbalanced `0 10px 0 0` padding with a consistent `0 16px` in `IslandMedia.svelte`.
+- **SPACING**: Increased the inner gap from 8px to 12px for better visual breathing room.
+- **UI**: Corrected the poster clipping bug where the 40px video thumb was being cut by the pill's 28px border-radius.
+- **RATIONALE**: Ensures a premium, high-fidelity aesthetic that aligns with the project's design standards.
+
+---
+
+## [2026-04-03] - Playback Engine Friction & Race Condition Fix
+
+- **OWNERSHIP**: Implemented **Strict Engine Ownership** for `PlayerEngine.svelte` and `AudioEngine.svelte`.
+    - **FIX**: Event listeners for Video.js (video) and HTMLAudio (audio) now verify the `activeMedia` type before updating the global `isPlaying` store.
+    - **RATIONALE**: Prevents the outgoing engine's `pause` cleanup from accidentally overwriting the new engine's `playing` state during media transitions.
+- **AUDIO STABILITY**: Added guards to `AudioEngine.svelte` for `duration` and `NaN` values in the progress-saving logic to prevent Tauri command errors.
+- **CLEANUP**: Removed all temporary debugging console logs from `playback.ts`, `PlayerEngine.svelte`, and `AudioEngine.svelte`.
+
+*KI: When using multiple media engines in the same layout, ensure they only have write-access to global stores if they currently "own" the active session based on media type.*

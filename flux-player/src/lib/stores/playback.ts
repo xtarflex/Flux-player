@@ -142,11 +142,7 @@ export function togglePlayback() {
  * Called by the layout's beforeNavigate interceptor.
  */
 export function activateMiniPlayer() {
-  playbackState.update(s => ({
-    ...s,
-    isMiniPlayer: true,
-    isTheaterMode: false,
-  }));
+  playbackState.update(s => ({ ...s, isMiniPlayer: true, isTheaterMode: false }));
 }
 
 /**

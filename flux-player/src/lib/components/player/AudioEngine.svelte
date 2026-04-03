@@ -28,7 +28,7 @@
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       try {
-        console.log(`[AudioEngine] Scheduled save: ${path} @ ${Math.floor(current)}s`);
+        if (!duration || isNaN(duration)) return;
         await invoke('save_playback_progress', {
           path,
           seconds: Math.floor(current),
@@ -51,7 +51,7 @@
       saveTimer = null;
     }
     try {
-      console.log(`[AudioEngine] Immediate save: ${path} @ ${Math.floor(current)}s`);
+      if (!duration || isNaN(duration)) return;
       await invoke('save_playback_progress', {
         path,
         seconds: Math.floor(current),
@@ -210,28 +210,38 @@
       }
     }
 
-    function onPlay() { playbackState.update(s => ({ ...s, isPlaying: true })); }
+    function onPlay() { 
+      const item = get(activeMedia);
+      if (item?.type === 'audio') {
+        playbackState.update(s => ({ ...s, isPlaying: true })); 
+      }
+    }
     function onPause() { 
       // If we are in Repeat One mode, ignore the native pause event triggered 
       // by the browser's loop transition. This prevents UI flickering.
       if (get(playbackState).repeatMode === 2) return;
       
       const media = get(activeMedia);
-      if (media && media.type === 'audio') {
+      const isAudioOwner = media?.type === 'audio';
+      if (media && isAudioOwner) {
         saveNow(media.path, audioEl.currentTime, audioEl.duration);
       }
-
-      playbackState.update(s => ({ ...s, isPlaying: false })); 
+      
+      // Only update global play state if we still own the media session
+      if (isAudioOwner) {
+        playbackState.update(s => ({ ...s, isPlaying: false })); 
+      }
     }
     function onEnded() { 
       const media = get(activeMedia);
-      if (media && media.type === 'audio') {
+      const isAudioOwner = media?.type === 'audio';
+      if (media && isAudioOwner) {
         saveNow(media.path, 0, audioEl.duration); // Reset to 0 for Smart Progress (Fix 11.2)
       }
 
       // If we are in Repeat One, the native 'loop' attribute handles the reset.
       // We ignore this event to maintain the 'Playing' state in the UI.
-      if (get(playbackState).repeatMode === 2) return;
+      if (get(playbackState).repeatMode === 2 || !isAudioOwner) return;
 
       playbackState.update(s => ({ ...s, isPlaying: false, progress: 0 })); 
       activeMedia.set(null);
