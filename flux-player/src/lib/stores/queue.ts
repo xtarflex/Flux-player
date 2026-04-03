@@ -7,7 +7,7 @@
 import { writable, get } from 'svelte/store';
 import { type MediaItem, mediaItems, selectedMediaId } from './media';
 import { settings } from './settings';
-import { activeMedia, playbackState } from './playback';
+import { activeMedia, playbackState, deactivateMiniPlayer } from './playback';
 import { goto } from '$app/navigation';
 
 export interface QueueState {
@@ -132,6 +132,7 @@ export function nextTrack() {
       window.dispatchEvent(new CustomEvent('flux-toast', { 
         detail: { label: 'Casting to Player', icon: 'smart-display' } 
       }));
+      deactivateMiniPlayer();
       goto('/playing');
     } 
     // Rule: Route to Library ONLY if (Prev was Video AND Next is Audio) AND setting enabled AND not already in Library
@@ -261,13 +262,18 @@ export function playWithAutoQueue(targetItem: MediaItem, seekTo?: number, contex
       baseList = baseList.filter(i => i.type === targetItem.type);
     }
 
-    const sorted = [...baseList].sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
-    const idx = sorted.findIndex(i => i.path === targetItem.path);
+    // CRITICAL: Only sort if we are falling back to the entire library.
+    // If contextList is provided, we MUST respect its existing visual order.
+    const finalQueue = contextList 
+      ? [...baseList] 
+      : [...baseList].sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
+
+    const idx = finalQueue.findIndex(i => i.path === targetItem.path);
     
     if (idx === -1) {
       setQueue([targetItem], 0, seekTo, silent);
     } else {
-      setQueue(sorted, idx, seekTo, silent);
+      setQueue(finalQueue, idx, seekTo, silent);
     }
     return;
   }

@@ -127,8 +127,10 @@
 - **Mixed Media by Default**: Enabled `allowMixedQueue` as a global store default.
 - **Silent Hydration**: Added `hydrateQueue` to populate the footer previews on single-click without interrupting the Library view.
 - **Smart Routing**: Refined `nextTrack()` to be context-aware. It only routes to the Player when transitioning from Audio to Video, and returns to Library when transitioning back (if configured), avoiding redundant jumps for same-type sequences.
+- **Always Mode Visual Order Fix**: Resolved a bug where `Always` mode would hardcodedly sort alphabetically, ignoring the library view's user-applied filters or sort preferences. It now preserves the exact sequence of the current view context.
 - **Library Focus Sync**: Synchronized `selectedMediaId` with `activeMedia`. The Library view now automatically highlights the currently playing track as the queue advances.
 - **Responsive Mini-Player**: Implemented viewport clamping in `PlayerEngine.svelte`. The mini-player now correctly repositions itself during window resizes to prevent being cut off.
+- **MiniPlayer Leak Fix**: Resolved an edge-case bug where auto-casting from Audio (Library) to Video (Player) would leave the `isMiniPlayer` state active, causing the video to appear as a tiny box on the full-screen page. Created a explicit `deactivateMiniPlayer()` call during the routing transition.
 
 **KI: Mini-Player Clamping**
 When implementing draggable overlays in Tauri, always bind a `resize` listener to the window to ensure the coordinates are clamped within `window.innerWidth - elementWidth`. This prevents UI "leakage" or loss of controls when the user shrinks the application window.
