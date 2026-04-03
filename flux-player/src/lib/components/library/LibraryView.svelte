@@ -8,7 +8,8 @@
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
   import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState, toggleFavorite } from '$lib/stores/media';
-  import { playMediaFromItem, setMedia } from '$lib/stores/playback';
+  import { setMedia } from '$lib/stores/playback';
+  import { playWithAutoQueue } from '$lib/stores/queue';
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/actions/tooltip';
 
@@ -141,7 +142,7 @@
     // Play audio immediately on single click
     const item = filteredItems[idx];
     if (item && item.type === 'audio') {
-      playMediaFromItem(item);
+      playWithAutoQueue(item, undefined, filteredItems);
     } else if (item && item.type === 'video') {
       // Highlight/Focus video AND hydrate the footer silently
       setMedia(item);
@@ -155,11 +156,9 @@
     const item = filteredItems.find(i => i.id === id);
     if (!item) return;
 
-    // Fix 11.4: Double-click always routes to player regardless of media type
-    playMediaFromItem(item);
-    if (item.type === 'audio') {
-      goto('/playing');
-    }
+    // Double-click always uses auto-queue logic and routes to Now Playing
+    playWithAutoQueue(item, undefined, filteredItems);
+    goto('/playing');
   }
 
   function toggleSelection(id: string, event?: MouseEvent) {
@@ -395,7 +394,7 @@
 
     switch (action) {
       case 'play':
-        playMediaFromItem(menuTarget);
+        playWithAutoQueue(menuTarget, undefined, filteredItems);
         break;
       case 'favorite':
         toggleFavorite(menuTarget.id);

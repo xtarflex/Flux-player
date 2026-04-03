@@ -1,7 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
-  type QueueItem = { title: string; poster?: string };
+  import type { MediaItem } from '$lib/stores/media';
   
   let { 
     hasMedia, 
@@ -10,9 +10,9 @@
     currentMedia 
   } = $props<{
     hasMedia: boolean;
-    queueHistory?: QueueItem[];
-    queue?: QueueItem[];
-    currentMedia: { title: string; duration: string; currentTime: string; poster?: string } | null;
+    queueHistory?: MediaItem[];
+    queue?: MediaItem[];
+    currentMedia: MediaItem | null;
   }>();
 
   let hasQueue = $derived(queue.length > 0 || queueHistory.length > 0);
@@ -34,20 +34,32 @@
       {:else}
         <!-- Cases 2/3/4: Media Playing -->
         <div class="queue-card side-card prev-card">
-          {#if queueHistory.length > 0 && queueHistory[queueHistory.length - 1].poster}
-            <img src={resolveResource(queueHistory[queueHistory.length - 1].poster)} alt="Previous" class="card-image" />
+          {#if queueHistory.length > 0}
+            <img 
+              src={resolveResource(queueHistory[queueHistory.length - 1].poster || queueHistory[queueHistory.length - 1].album_art || queueHistory[queueHistory.length - 1].backdrop)} 
+              alt="Previous" 
+              class="card-image" 
+            />
           {/if}
         </div>
 
         <div class="queue-card side-card next-card">
-          {#if queue.length > 0 && queue[0].poster}
-            <img src={resolveResource(queue[0].poster)} alt="Next" class="card-image" />
+          {#if queue.length > 0}
+            <img 
+              src={resolveResource(queue[0].poster || queue[0].album_art || queue[0].backdrop)} 
+              alt="Next" 
+              class="card-image" 
+            />
           {/if}
         </div>
 
         <div class="queue-card center-card">
-          {#if currentMedia?.poster}
-            <img src={resolveResource(currentMedia.poster)} alt="Current" class="card-image" />
+          {#if currentMedia}
+            <img 
+              src={resolveResource(currentMedia.poster || currentMedia.album_art || currentMedia.backdrop)} 
+              alt="Current" 
+              class="card-image" 
+            />
           {/if}
         </div>
       {/if}

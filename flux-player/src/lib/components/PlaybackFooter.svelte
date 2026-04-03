@@ -6,6 +6,7 @@
   import RightActions from './footer/RightActions.svelte';
   import { activeMedia, playbackState } from '$lib/stores/playback';
   import { mediaItems, toggleFavorite } from '$lib/stores/media';
+  import { nextTrack as nextAction, prevTrack as prevAction, queue as queueStore, toggleShuffle } from '$lib/stores/queue';
 
   
   // Media Info
@@ -36,11 +37,10 @@
   let isLiked = $derived($mediaItems.find(i => i.path === $activeMedia?.path)?.is_favorite ?? false);
   let isMuted = $state(false);
 
-  // Queue management
-  type QueueItem = { title: string; poster?: string };
-  let queueHistory = $state<QueueItem[]>([]);
-  let queue = $state<QueueItem[]>([]);
-  let hasQueue = $derived(queue.length > 0 || queueHistory.length > 0);
+  // Queue management (derived from global store)
+  let queueHistory = $derived($queueStore.items.slice(0, $queueStore.index));
+  let queue = $derived($queueStore.items.slice($queueStore.index + 1));
+  let hasQueue = $derived($queueStore.items.length > 0);
 
   // Computed: Media-aware control visibility
   let hasMedia = $derived(currentMedia.type !== null);
@@ -54,17 +54,15 @@
   // Enable/disable states
   let controlsEnabled = $derived(hasMedia);
 
-  // Track Navigation Stubs
+  // Track Navigation
   function nextTrack() {
     if (!controlsEnabled) return;
-    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Next Track', icon: 'skip-next' } }));
-    console.log('Action: Next Track');
+    nextAction();
   }
-
+  
   function prevTrack() {
     if (!controlsEnabled) return;
-    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Previous Track', icon: 'skip-previous' } }));
-    console.log('Action: Previous Track');
+    prevAction();
   }
 
   // Keyboard Shortcuts
@@ -106,7 +104,37 @@
       case 'M':
         e.preventDefault();
         playbackState.update(s => ({ ...s, isMuted: !s.isMuted }));
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: isMuted ? 'Muted' : 'Unmuted', icon: isMuted ? 'volume-mute' : 'volume-up' } }));
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: $playbackState.isMuted ? 'Muted' : 'Unmuted', icon: $playbackState.isMuted ? 'volume-mute' : 'volume-up' } }));
+        break;
+      case 's':
+      case 'S':
+        e.preventDefault();
+        const nextShuffle = !$playbackState.shuffleState;
+        playbackState.update(s => ({ ...s, shuffleState: nextShuffle }));
+        toggleShuffle(nextShuffle);
+        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: nextShuffle ? 'Shuffle On' : 'Shuffle Off', icon: 'shuffle' } }));
+        break;
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        playbackState.update(s => {
+          const nextRepeat = (s.repeatMode + 1) % 3;
+          const labels = ['Repeat Off', 'Repeat All', 'Repeat One'];
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: labels[nextRepeat], icon: 'repeat' } }));
+          return { ...s, repeatMode: nextRepeat };
+        });
+        break;
+      case 'n':
+      case 'N':
+      case 'MediaTrackNext':
+        e.preventDefault();
+        nextTrack();
+        break;
+      case 'p':
+      case 'P':
+      case 'MediaTrackPrevious':
+        e.preventDefault();
+        prevTrack();
         break;
       case 'f':
       case 'F':
@@ -227,9 +255,15 @@
         {controlsEnabled} 
         shuffleState={$playbackState.shuffleState}
         repeatMode={$playbackState.repeatMode}
-        onToggleShuffle={() => playbackState.update(s => ({ ...s, shuffleState: !s.shuffleState }))}
+        onToggleShuffle={() => {
+          const newState = !$playbackState.shuffleState;
+          playbackState.update(s => ({ ...s, shuffleState: newState }));
+          toggleShuffle(newState);
+        }}
         onToggleRepeat={() => playbackState.update(s => ({ ...s, repeatMode: (s.repeatMode + 1) % 3 }))}
         onTogglePlay={() => playbackState.update(s => ({ ...s, isPlaying: !s.isPlaying }))}
+        onNext={nextTrack}
+        onPrev={prevTrack}
         onSeekForward={() => {
           playbackState.update(s => {
             const dur = $activeMedia?.duration || 0;
@@ -249,7 +283,7 @@
     </div>
 
     <div class="footer-right-group">
-      <QueueStack {hasMedia} {queueHistory} {queue} {currentMedia} />
+      <QueueStack {hasMedia} {queueHistory} {queue} currentMedia={$activeMedia} />
       <RightActions 
         {controlsEnabled} 
         playbackSpeed={$playbackState.speed}

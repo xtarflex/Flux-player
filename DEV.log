@@ -112,4 +112,18 @@
 - **AUDIO STABILITY**: Added guards to `AudioEngine.svelte` for `duration` and `NaN` values in the progress-saving logic to prevent Tauri command errors.
 - **CLEANUP**: Removed all temporary debugging console logs from `playback.ts`, `PlayerEngine.svelte`, and `AudioEngine.svelte`.
 
-*KI: When using multiple media engines in the same layout, ensure they only have write-access to global stores if they currently "own" the active session based on media type.*
+---
+117: 
+118: ## [2026-04-03] - Milestone 2.2: True Shuffle & Advanced Playback Logic
+119: 
+120: - **ACTION**: Implemented the "True Shuffle" reordering-based queue system and advanced playback modes.
+121: - **SHUFFLE**: Refactored `queue.ts` to physically reorder upcoming tracks on shuffle toggle. This ensures the `QueueStack` UI (Next cards) is always visually in sync with the actual playback sequence.
+122: - **REPEAT**: Fixed "Repeat One" reliability. Added software-level wrap-around in `queue.ts` for manual skips (Next/Prev) and a manual loop fallback in `AudioEngine/PlayerEngine` to catch browser `loop` attribute quirks.
+123: - **ALWAYS MODE**: Implemented context-aware queueing. "Always" mode now detects if a user is in a filtered library/search view and queues only those specific items, maintaining natural numbering (Episode 1, 2, 3...) within the view.
+124: - **SHORTCUTS**: Wired up dedicated keyboard shortcuts: `N` (Next), `P` (Prev), `S` (Shuffle), `R` (Repeat), and standard Media Key support.
+125: - **UI**: Engineered a robust artwork fallback chain in `QueueStack.svelte` (Poster -> Album Art -> Backdrop -> Flux Icon) to ensure no empty cards in the footer.
+126: - **RATIONALE**: Solidifies the playback experience for the Beta 1 release, prioritizing visual fidelity and predictable, industry-standard behavior.
+127: 
+128: *KI: For "True Shuffle," always maintain an `originalItems` array alongside the active `items` in the queue store to allow a lossless "Unshuffle" action that restores natural order relative to the current track.*
+129: 
+130: *KI: When implementing wrap-around logic for Next/Prev, ensure that both `repeatMode 1` (All) and `repeatMode 2` (One) trigger the wrap. This aligns with industry standards (Spotify/iTunes) where manual skips ignore the One-track lock but respect the queue boundary loop.*

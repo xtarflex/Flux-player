@@ -8,7 +8,7 @@
   import { resolveResource } from '$lib/utils/media';
   import { derived } from 'svelte/store';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
-  import { playMediaFromItem } from '$lib/stores/playback';
+  import { playWithAutoQueue } from '$lib/stores/queue';
   import { tooltip } from '$lib/actions/tooltip';
 
   /**
@@ -182,7 +182,7 @@
           class="btn-play"
           onmouseenter={() => playingHovered = true}
           onmouseleave={() => playingHovered = false}
-          onclick={() => $selectedItem && playMediaFromItem($selectedItem, $lastPosition)}
+          onclick={() => $selectedItem && playWithAutoQueue($selectedItem, $lastPosition)}
         >
           <AnimatedPlayPause isPlaying={playingHovered} size={14} />
           {$resumeLabel ?? 'Play Audio'}
@@ -199,7 +199,7 @@
           class:btn-resume={!!$resumeLabel}
           onmouseenter={() => playingHovered = true}
           onmouseleave={() => playingHovered = false}
-          onclick={() => $selectedItem && playMediaFromItem($selectedItem, $lastPosition)}
+          onclick={() => $selectedItem && playWithAutoQueue($selectedItem, $lastPosition)}
         >
           <AnimatedPlayPause isPlaying={playingHovered} size={14} />
           {$resumeLabel ?? `Play ${$selectedItem.subtitle === 'Movie' ? 'Movie' : 'Video'}`}

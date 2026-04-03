@@ -8,6 +8,8 @@
     onToggleShuffle,
     onToggleRepeat,
     onTogglePlay,
+    onNext,
+    onPrev,
     onSeekForward,
     onSeekBackward
   } = $props<{
@@ -18,6 +20,8 @@
     onToggleShuffle: () => void;
     onToggleRepeat: () => void;
     onTogglePlay: () => void;
+    onNext: () => void;
+    onPrev: () => void;
     onSeekForward: () => void;
     onSeekBackward: () => void;
   }>();
@@ -48,7 +52,7 @@
     </button>
 
     <div class="control-pill">
-      <button class="pill-btn" aria-label="Previous" disabled={!controlsEnabled} use:tooltip={{ content: 'Previous', shortcut: 'P', placement: 'top' }}>
+      <button class="pill-btn" aria-label="Previous" disabled={!controlsEnabled} onclick={onPrev} use:tooltip={{ content: 'Previous', shortcut: 'P', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="6" x2="5" y2="18" />
           <path d="M19,7.5 V16.5 C19,18 17.5,19 16.5,18.2 L10,13.7 C8.8,12.9 8.8,11.1 10,10.3 L16.5,5.8 C17.5,5 19,6 19,7.5Z" />
@@ -75,7 +79,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V9a4 4 0 0 0-4-4H3"/><polyline points="17 23 21 19 17 15"/><path d="M3 13v2a4 4 0 0 0 4 4h14"/></svg>
       </button>
       <div class="separator"></div>
-      <button class="pill-btn" aria-label="Next" disabled={!controlsEnabled} use:tooltip={{ content: 'Next', shortcut: 'N', placement: 'top' }}>
+      <button class="pill-btn" aria-label="Next" disabled={!controlsEnabled} onclick={onNext} use:tooltip={{ content: 'Next', shortcut: 'N', placement: 'top' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5,7.5 V16.5 C5,18 6.5,19 7.5,18.2 L14,13.7 C15.2,12.9 15.2,11.1 14,10.3 L7.5,5.8 C6.5,5 5,6 5,7.5Z" />
           <line x1="19" y1="6" x2="19" y2="18" />

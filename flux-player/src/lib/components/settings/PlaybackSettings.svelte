@@ -1,20 +1,38 @@
 <script lang="ts">
+  import { onMount, untrack } from 'svelte';
+  import { settings, updateSetting, type AutoQueueMode, type TransitionBehavior } from '$lib/stores/settings';
   import Dropdown from '../ui/Dropdown.svelte';
-  let hwAcceleration = $state(true);
-  let ffmpegThreading = $state('Auto');
-  let watchedThreshold = $state(90); // percent
+  import { get } from 'svelte/store';
 
-  let subtitleLanguage = $state('System Default');
-  let subtitleFuzzy = $state(true);
-  let subtitleAutoFetch = $state(true);
-  let osUsername = $state('');
+  // ── Local State (Runes) synced with Global Store ───────────────────────────
+  const current = get(settings);
 
-  let autoQueue = $state('Smart');
-  let transitionBehavior = $state('Return to Library');
+  let hwAcceleration = $state(current.hwAcceleration);
+  let ffmpegThreading = $state(current.ffmpegThreading);
+  let watchedThreshold = $state(current.watchedThreshold); // percent
+
+  let subtitleLanguage = $state(current.subtitleLanguage);
+  let subtitleFuzzy = $state(current.subtitleFuzzy);
+  let subtitleAutoFetch = $state(current.subtitleAutoFetch);
+  let osUsername = $state(current.osUsername);
+
+  let autoQueue = $state<AutoQueueMode>(current.autoQueueMode);
+  let transitionBehavior = $state<TransitionBehavior>(current.transitionBehavior);
 
   const threadingOptions = ['Auto', '1 Core', '2 Cores', '4 Cores', 'Max Cores'];
-  const queueOptions = ['Never', 'Smart', 'Always'];
-  const transitionOptions = ['Return to Library', 'Stay in Now Playing'];
+  const queueOptions = ['Never', 'Smart', 'Always'] as const;
+  const transitionOptions = ['Return to Library', 'Stay in Now Playing'] as const;
+
+  // ── Sync Effects ───────────────────────────────────────────────────────────
+  $effect(() => { updateSetting('hwAcceleration', hwAcceleration); });
+  $effect(() => { updateSetting('ffmpegThreading', ffmpegThreading); });
+  $effect(() => { updateSetting('watchedThreshold', watchedThreshold); });
+  $effect(() => { updateSetting('autoQueueMode', autoQueue); });
+  $effect(() => { updateSetting('transitionBehavior', transitionBehavior); });
+  $effect(() => { updateSetting('subtitleLanguage', subtitleLanguage); });
+  $effect(() => { updateSetting('subtitleFuzzy', subtitleFuzzy); });
+  $effect(() => { updateSetting('subtitleAutoFetch', subtitleAutoFetch); });
+  $effect(() => { updateSetting('osUsername', osUsername); });
 </script>
 
 <div class="settings-section">

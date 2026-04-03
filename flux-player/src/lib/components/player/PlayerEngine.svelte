@@ -24,6 +24,7 @@
     deactivateMiniPlayer,
     type MediaItem,
   } from '$lib/stores/playback';
+  import { nextTrack } from '$lib/stores/queue';
 
   // ── Props ──────────────────────────────────────────────────────────────────
   interface Props {
@@ -148,11 +149,14 @@
         const item = get(activeMedia);
         const isVideoOwner = item?.type === 'video' || item?.type === 'mixed';
         if (item && isVideoOwner) saveNow(item.path, 0, player.duration());
-        if (get(playbackState).repeatMode === 2 || !isVideoOwner) return;
-
-        playbackState.update(s => ({ ...s, isPlaying: false, progress: 0, isTheaterMode: false, isMiniPlayer: false }));
-        activeMedia.set(null);
-        goto('/library');
+        // Milestone 2.2: Auto-advance to next track in queue
+        if (get(playbackState).repeatMode === 1 || get(playbackState).repeatMode === 0) {
+          nextTrack();
+        } else if (get(playbackState).repeatMode === 2) {
+          // Manual fallback if native loop fails
+          player.currentTime(0);
+          player.play().catch(() => {});
+        }
       });
 
       player.on('fullscreenchange', () => playbackState.update(s => ({ ...s, isFullscreen: player.isFullscreen() })));

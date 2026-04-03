@@ -14,6 +14,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { activeMedia, playbackState, type MediaItem } from '$lib/stores/playback';
+  import { nextTrack, prevTrack } from '$lib/stores/queue';
 
   let audioEl: HTMLAudioElement;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -102,13 +103,8 @@
         playbackState.update(s => ({ ...s, seekProgressRequest: Math.min(1, s.progress + 0.05) }));
       });
       
-      // These will be wired to the upcoming Queue Controller
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        window.dispatchEvent(new CustomEvent('flux-prev-track'));
-      });
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        window.dispatchEvent(new CustomEvent('flux-next-track'));
-      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
+      navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
     }
 
     // ── Subscribe to activeMedia ─────────────────────────────────────────────
@@ -181,6 +177,7 @@
       }
       audioEl.volume = state.isMuted ? 0 : state.volume;
       audioEl.playbackRate = state.speed;
+      audioEl.loop = state.repeatMode === 2;
 
       // Handle live scrubbing/seeking
       if (state.seekProgressRequest !== null && state.seekProgressRequest !== undefined) {
@@ -239,16 +236,13 @@
         saveNow(media.path, 0, audioEl.duration); // Reset to 0 for Smart Progress (Fix 11.2)
       }
 
-      // If we are in Repeat One, the native 'loop' attribute handles the reset.
-      // We ignore this event to maintain the 'Playing' state in the UI.
-      if (get(playbackState).repeatMode === 2 || !isAudioOwner) return;
-
-      playbackState.update(s => ({ ...s, isPlaying: false, progress: 0 })); 
-      activeMedia.set(null);
-
-      // Fix 9.1: If we are in the Now Playing view, reroute to library on completion
-      if (get(page).url.pathname === '/playing') {
-        goto('/library');
+      // Milestone 2.2: Auto-advance to next track in queue
+      if (get(playbackState).repeatMode === 1 || get(playbackState).repeatMode === 0) {
+        nextTrack();
+      } else if (get(playbackState).repeatMode === 2) {
+        // Manual fallback if native loop fails
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
       }
     }
 
@@ -256,6 +250,12 @@
     audioEl.addEventListener('play', onPlay);
     audioEl.addEventListener('pause', onPause);
     audioEl.addEventListener('ended', onEnded);
+
+    // Event listeners for UI-triggered next/prev
+    const handleNext = () => nextTrack();
+    const handlePrev = () => prevTrack();
+    window.addEventListener('flux-next-track', handleNext);
+    window.addEventListener('flux-prev-track', handlePrev);
 
     return () => {
       unsubMedia();
@@ -265,6 +265,8 @@
       audioEl.removeEventListener('play', onPlay);
       audioEl.removeEventListener('pause', onPause);
       audioEl.removeEventListener('ended', onEnded);
+      window.removeEventListener('flux-next-track', handleNext);
+      window.removeEventListener('flux-prev-track', handlePrev);
     };
   });
 </script>

@@ -1,18 +1,10 @@
 <script lang="ts">
-  import { convertFileSrc } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
-  /**
-   * @typedef {Object} Props
-   * @property {any} item - The media item to display details for
-   * @property {() => void} onClose - Function to call when closing the panel
-   */
+  import { playWithAutoQueue, addToEnd } from '$lib/stores/queue';
+  import type { MediaItem } from '$lib/stores/media';
+  
   let { item, onClose } = $props<{
-    item: {
-      id: string;
-      title: string;
-      poster?: string;
-      type: 'video' | 'audio' | 'unknown';
-    };
+    item: MediaItem;
     onClose: () => void;
   }>();
 
@@ -71,8 +63,8 @@
     </div>
 
     <div class="actions">
-      <button class="btn-play">Play Now</button>
-      <button class="btn-secondary">Add to Queue</button>
+      <button class="btn-play" onclick={() => playWithAutoQueue(item)}>Play Now</button>
+      <button class="btn-secondary" onclick={() => addToEnd(item)}>Add to Queue</button>
     </div>
 
     <div class="description-section">
