@@ -9,12 +9,13 @@
    * For complex animated navigation icons, use the `Animated*.svelte` components
    * in `src/lib/components/ui/animated-icons/`.
    */
-  let { name, size = 20, strokeWidth = 2, fill = "none", class: className = "" } = $props<{
+  let { name, size = 20, strokeWidth = 2, fill = "none", class: className = "", style = "" } = $props<{
     name: string;
     size?: number | string;
     strokeWidth?: number;
     fill?: string;
     class?: string;
+    style?: string;
   }>();
 
   // Icon Path Dictionary (Using Lucide-inspired geometric paths)
@@ -28,6 +29,12 @@
 
     // Actions
     refresh: ['M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8', 'M21 3v5h-5'], 
+    'refresh-spark': [
+      'M20 12C20 7.58 16.42 4 12 4C9.5 4 7.2 5.1 5.8 6.9L4 9', 
+      'M4 4v5h5', 
+      'M4 12c0 4.42 3.58 8 8 8c2.5 0 4.8-1.1 6.2-2.9L20 15', 
+      'M20 20v-5h-5'
+    ],
     search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'M21 21l-4.35-4.35'],
     'new-playlist': ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z', 'M12 11v6', 'M9 14h6'],
     import: ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z', 'M12 11v6', 'M9 14h6'],
@@ -79,24 +86,46 @@
     'chevron-left': ['M15 18l-6-6 6-6'],
     close: ['M18 6L6 18', 'M6 6l12 12'],
     more: ['M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0', 'M19 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0', 'M5 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0'],
-    x: ['M18 6L6 18', 'M6 6l12 12'] // Alias for close
+    x: ['M18 6L6 18', 'M6 6l12 12'], // Alias for close
+
+    'network-offline': []
   };
 
   let paths = $derived(icons[name] || []);
+  let isFilled = $derived(name.startsWith('network-') || name.endsWith('-fill'));
 </script>
 
 <svg 
   viewBox="0 0 24 24" 
   width={size} 
   height={size} 
-  fill="none" 
-  stroke="currentColor" 
+  fill={name.startsWith('network-') ? "none" : (isFilled ? "currentColor" : fill)} 
+  stroke={name.startsWith('network-') ? "none" : "currentColor"} 
   stroke-width={strokeWidth} 
   stroke-linecap="round" 
   stroke-linejoin="round"
   class={className}
+  {style}
 >
-  {#each paths as d}
-    <path {d} />
-  {/each}
+  {#if name === 'network-online'}
+    <rect x="4" y="14" width="3" height="6" rx="1.5" fill="#00ff00"/>
+    <rect x="10.5" y="10" width="3" height="10" rx="1.5" fill="#00ff00"/>
+    <rect x="17" y="6" width="3" height="14" rx="1.5" fill="#00ff00"/>
+  {:else if name === 'network-weak'}
+    <rect x="4" y="14" width="3" height="6" rx="1.5" fill="#ffa500"/>
+    <rect x="10.5" y="10" width="3" height="10" rx="1.5" fill="#ffa500"/>
+    <rect x="17" y="6" width="3" height="14" rx="1.5" fill="var(--text-muted)"opacity="0.5"/>
+  {:else if name === 'network-error'}
+    <rect x="4" y="14" width="3" height="6" rx="1.5" fill="#ff0000"/>
+    <rect x="10.5" y="10" width="3" height="10" rx="1.5" fill="var(--text-muted)"opacity="0.5"/>
+    <rect x="17" y="6" width="3" height="14" rx="1.5" fill="var(--text-muted)"opacity="0.5"/>
+    <path d="M20 4L23 7M23 4L20 7" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+  {:else if name === 'network-offline'}
+    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" stroke="var(--text-muted)" fill="none"/>
+    <path d="M3 3L21 21" stroke="var(--text-muted)" stroke-opacity="0.8" stroke-width="2.5"/>
+  {:else}
+    {#each paths as d}
+      <path {d} />
+    {/each}
+  {/if}
 </svg>

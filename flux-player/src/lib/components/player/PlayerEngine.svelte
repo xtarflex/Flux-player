@@ -12,18 +12,11 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import MiniPlayerOverlay from './MiniPlayerOverlay.svelte';
+  import PiPOverlay from './PiPOverlay.svelte';
   import { draggable } from '$lib/actions/draggable';
-  import {
-    savePlaybackProgress,
-    loadItemIntoPlayer
-  } from '$lib/utils/player';
-  import {
-    activeMedia,
-    playbackState,
-    playerEngineRef,
-    deactivateMiniPlayer,
-    type MediaItem,
-  } from '$lib/stores/playback';
+  import { enterPiP, exitPiP } from '$lib/utils/pip';
+  import { savePlaybackProgress, loadItemIntoPlayer } from '$lib/utils/player';
+  import { activeMedia, playbackState, playerEngineRef, deactivateMiniPlayer, type MediaItem } from '$lib/stores/playback';
   import { nextTrack } from '$lib/stores/queue';
 
   // ── Props ──────────────────────────────────────────────────────────────────
@@ -53,6 +46,7 @@
   const media = $derived($activeMedia);
   const isVideo = $derived(media?.type === 'video' || media?.type === 'mixed');
   const isMini = $derived($playbackState.isMiniPlayer);
+  const isPiP = $derived($playbackState.isPiP);
   const isPlaying = $derived($playbackState.isPlaying);
   
   const onPlayingRoute = $derived(page.url.pathname === '/playing');
@@ -183,24 +177,6 @@
 
       player.on('fullscreenchange', () => playbackState.update(s => ({ ...s, isFullscreen: player.isFullscreen() })));
 
-      if (videoEl) {
-        videoEl.addEventListener('enterpictureinpicture', async () => {
-          playbackState.update(s => ({ ...s, isPiP: true }));
-          try { await getCurrentWindow().minimize(); } catch (e) {}
-        });
-        videoEl.addEventListener('leavepictureinpicture', async () => {
-          playbackState.update(s => ({ ...s, isPiP: false }));
-          setTimeout(async () => {
-            try {
-              const win = getCurrentWindow();
-              await win.unminimize();
-              await win.show();
-              await win.setFocus();
-            } catch (e) {}
-          }, 150);
-        });
-      }
-
       // ── Initial Sync removed — handled by activeMedia subscription below ──
 
       // ── Store Listeners ───────────────────────────────────────────────────
@@ -230,9 +206,18 @@
           playbackState.update(s => ({ ...s, fullscreenRequest: null }));
         }
         if (st.pipRequest != null) {
-          if (st.pipRequest && videoEl) videoEl.requestPictureInPicture().catch(() => {});
-          else if (document.pictureInPictureElement) document.exitPictureInPicture().catch(() => {});
+          const isRequestingPiP = st.pipRequest;
           playbackState.update(s => ({ ...s, pipRequest: null }));
+
+          if (isRequestingPiP && !st.isPiP) {
+            enterPiP().then((success) => {
+              if (success) playbackState.update(s => ({ ...s, isPiP: true }));
+            });
+          } else if (!isRequestingPiP && st.isPiP) {
+            exitPiP().then(() => {
+              playbackState.update(s => ({ ...s, isPiP: false }));
+            });
+          }
         }
       });
 
@@ -326,6 +311,10 @@
       onExpand={expandFromMini} 
       onClose={closeMiniPlayer} 
     />
+  {/if}
+
+  {#if isPiP}
+    <PiPOverlay />
   {/if}
 </div>
 

@@ -1,6 +1,9 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import Icon from "../ui/Icon.svelte";
+  import { connectivity, getConnectivityDetails } from "$lib/stores/connectivity";
+
+  let connectivityDetails = $derived(getConnectivityDetails($connectivity));
 
   let { mediaState, bufferingProgress, isScanning = false, toast = null, onClose } = $props<{ 
     mediaState: string; 
@@ -46,8 +49,9 @@
         </div>
       </div>
     {:else}
-      <div class="status-info">
-        <span>FLUX SYSTEM STATUS: OPTIMAL</span>
+      <div class="toast-state" in:fade={{ duration: 200 }}>
+        <Icon name={connectivityDetails.icon} size={20} strokeWidth={2} class="network-svg" style="color: {connectivityDetails.color}" />
+        <span class="status-msg">{connectivityDetails.label}</span>
       </div>
     {/if}
     <button 
@@ -80,12 +84,6 @@
     align-items: center;
   }
 
-  .status-info {
-    font-family: var(--font-heading);
-    font-size: 0.7rem;
-    color: var(--secondary);
-    letter-spacing: 0.1em;
-  }
 
   .loading-state, .buffering-state, .toast-state {
     display: flex;
@@ -96,6 +94,10 @@
 
   :global(.toast-svg) {
     color: var(--secondary);
+  }
+
+  :global(.network-svg) {
+    flex-shrink: 0;
   }
 
   .status-msg {

@@ -137,6 +137,21 @@ When implementing draggable overlays in Tauri, always bind a `resize` listener t
 
 - **RATIONALE**: Solidifies the playback experience for the Beta 1 release, prioritizing visual fidelity and predictable, industry-standard behavior.
 
+## [2026-04-04] - Native Picture-in-Picture Finalization
+
+- **ACTION**: Completed the native Picture-in-Picture (PiP) implementation and resolved critical window state management bugs.
+- **TITLEBAR**: Removed `setDecorations(true)` from the `exitPiP` sequence. This prevents the duplicate native title bar from appearing above the custom Flux chassis.
+- **HIJACK FIX**: Resolved the "Window Hijacking" bug. The app now restores unmaximized dimensions *before* re-applying the maximized state, ensuring the OS-level "Restore" function correctly returns to the previous custom size.
+- **ROUTING**: Implemented route-aware PiP activation in `RightActions.svelte`. If triggered from the Library, the app now automatically navigates to `/playing` and deactivates the MiniPlayer before transforming the window.
+- **ALWAYS ON TOP**: Enforced a strict `setAlwaysOnTop(false)` reset during the exit sequence to ensure the window "unpins" from the foreground correctly.
+- **PERMISSIONS**: Updated `src-tauri/capabilities/default.json` with comprehensive window manipulation permissions (`set-always-on-top`, `set-decorations`, `set-size`, `set-position`, `center`, `unmaximize`).
+
+*KI: When exiting a native PiP mode in Tauri with an undecorated custom chassis, avoid re-enabling decorations. Instead, rely on restoring window geometry (size/position) first, then state (maximize), to maintain a seamless transition without UI duplication.*
+
+---
+
+**Next Action:** Proceeding to Milestone 2.1: Playlist System (Foundation).
+
 *KI: For "True Shuffle," always maintain an `originalItems` array alongside the active `items` in the queue store to allow a lossless "Unshuffle" action that restores natural order relative to the current track.*
 
 *KI: When implementing wrap-around logic for Next/Prev, ensure that both `repeatMode 1` (All) and `repeatMode 2` (One) trigger the wrap. This aligns with industry standards (Spotify/iTunes) where manual skips ignore the One-track lock but respect the queue boundary loop.*

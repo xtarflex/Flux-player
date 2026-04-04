@@ -2,7 +2,9 @@
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
   import { activeMenu, openMenu } from '../../stores/ui';
-  import { playbackState } from '../../stores/playback';
+  import { playbackState, deactivateMiniPlayer } from '../../stores/playback';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
 
   let { 
     controlsEnabled, 
@@ -43,8 +45,18 @@
     } as MenuItem)).reverse() // Put fastest at the top
   );
 
-  function togglePiP() {
+  async function togglePiP() {
     if (!showPiP) return;
+
+    // Protection: If not on the playing route, navigate there first.
+    // This ensures we have a valid video layout before shrinking.
+    if (page.url.pathname !== '/playing') {
+      deactivateMiniPlayer();
+      await goto('/playing');
+      // Wait a cycle for the layout to mount before triggering PiP
+      await new Promise(r => setTimeout(r, 100));
+    }
+
     playbackState.update(s => ({ ...s, pipRequest: s.pipRequest === null ? true : !s.pipRequest }));
   }
 

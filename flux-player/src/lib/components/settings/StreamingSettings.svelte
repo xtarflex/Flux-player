@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
+  import { settings, updateSetting } from '$lib/stores/settings';
   import Dropdown from '../ui/Dropdown.svelte';
+  import Toggle from '../ui/Toggle.svelte';
   
   let tmdbKey = $state('');
   let streamingQuality = $state('Best Available');
@@ -39,6 +41,20 @@
 
 <div class="settings-section">
   <h2>Streaming & Network</h2>
+  
+  <div class="card">
+    <h3>Connectivity</h3>
+    <div class="setting-row">
+      <div class="setting-info">
+        <span class="description">Enable Intentional Offline Mode to stop all network requests. Useful for saving bandwidth or preventing online data fetching.</span>
+      </div>
+      <Toggle 
+        checked={$settings.offlineMode} 
+        onchange={(e: boolean) => updateSetting('offlineMode', e)} 
+        label="Offline Mode"
+      />
+    </div>
+  </div>
 
   <div class="card">
     <h3>External API Keys (TMDB)</h3>

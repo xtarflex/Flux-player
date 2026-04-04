@@ -9,6 +9,7 @@
   import IslandMedia from "./island/IslandMedia.svelte";
   import { isScanning } from "$lib/stores/media";
   import { activeMedia, playbackState } from "$lib/stores/playback";
+  import { connectivity, getConnectivityDetails } from "$lib/stores/connectivity";
 
   // ── Island State ────────────────────────────────────────────────────
   let currentState = $state("idle"); // idle | status | audio | playing | hover
@@ -41,10 +42,11 @@
   // Real album art / poster for the island thumbnail
   let posterSrc = $derived(resolveResource($activeMedia?.album_art || $activeMedia?.poster));
 
-  // ── Adaptive Border & Offline State ──────────────────────────────────
-  let isOffline = $state(false);
+  // ── Adaptive Border & Connectivity State ─────────────────────────────
   let adaptiveTint = $state("var(--island-adaptive-tint)");
-  let borderColor = $derived(isOffline ? "#ff0000" : adaptiveTint);
+  let connectivityDetails = $derived(getConnectivityDetails($connectivity as any));
+  // Solid Red for connection errors, Adaptive Tint for everything else (including intentional offline)
+  let borderColor = $derived($connectivity === 'error' ? connectivityDetails.color : adaptiveTint);
 
   async function updateAdaptiveTint(src: string) {
     if (!src || src === '/flux2d.png') return;
@@ -99,7 +101,9 @@
     };
 
     window.addEventListener('flux-toast', handleToast);
-    return () => window.removeEventListener('flux-toast', handleToast);
+    return () => {
+      window.removeEventListener('flux-toast', handleToast);
+    };
   });
 
   $effect(() => {

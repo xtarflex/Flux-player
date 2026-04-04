@@ -4,6 +4,8 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { goto } from '$app/navigation';
   import ProfileAvatar from './ProfileAvatar.svelte';
+  import Icon from './ui/Icon.svelte';
+  import { settings } from '$lib/stores/settings';
   import { tooltip } from '$lib/actions/tooltip';
   
   let appWindow: any;
@@ -12,9 +14,45 @@
   }
 
   let isOnline = $state(true);
+  let isWeak = $state(false);
   let pcName = $state("FLUX-DEVICE");
   let displayName = $state("");
   let isMuted = $state(false);
+
+  // ── Network State Logic ─────────────────────────────────────────────
+  let netStatus = $derived.by(() => {
+    if (!isOnline) return "error";
+    if ($settings.offlineMode) return "offline-mode";
+    if (isWeak) return "weak";
+    return "online";
+  });
+
+  let connectivityIcon = $derived.by(() => {
+    switch (netStatus) {
+      case "error": return "network-error";
+      case "offline-mode": return "network-offline";
+      case "weak": return "network-weak";
+      default: return "network-online";
+    }
+  });
+
+  let connectivityLabel = $derived.by(() => {
+    switch (netStatus) {
+      case "error": return "Offline (Error)";
+      case "offline-mode": return "Offline Mode";
+      case "weak": return "Weak Connection";
+      default: return "Online";
+    }
+  });
+
+  function updateNetworkStatus() {
+    isOnline = window.navigator.onLine;
+    // Check for weak connection if Network Information API is available
+    const conn = (navigator as any).connection;
+    if (conn) {
+      isWeak = conn.downlink < 1.5 || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g';
+    }
+  }
 
   async function checkMuteStatus() {
     try {
@@ -39,13 +77,25 @@
   onMount(() => {
     loadProfile();
     checkMuteStatus();
+    updateNetworkStatus();
+    
     console.log("Flux Titlebar: Initialized");
 
     const muteInterval = setInterval(checkMuteStatus, 5000);
+    
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    
+    const conn = (navigator as any).connection;
+    if (conn) conn.addEventListener('change', updateNetworkStatus);
 
     window.addEventListener('flux-settings-updated', loadProfile);
+    
     return () => {
       clearInterval(muteInterval);
+      window.removeEventListener('online', updateNetworkStatus);
+      window.removeEventListener('offline', updateNetworkStatus);
+      if (conn) conn.removeEventListener('change', updateNetworkStatus);
       window.removeEventListener('flux-settings-updated', loadProfile);
     };
   });
@@ -83,18 +133,15 @@
           placement: 'bottom' 
         }}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6m12-4a9 9 0 0 1-15 6.7L3 16" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <Icon name="refresh-spark" size={18} />
       </button>
       
-      <div class="connectivity-wrapper" class:offline={!isOnline} aria-label={isOnline ? "Online" : "Offline"} use:tooltip={{ content: isOnline ? 'Online' : 'Offline', placement: 'bottom' }}>
-        <div class="signal-bars">
-          <div class="bar bar-1"></div>
-          <div class="bar bar-2"></div>
-          <div class="bar bar-3"></div>
-          <div class="bar bar-4"></div>
-        </div>
+      <div 
+        class="connectivity-indicator status-{netStatus}" 
+        aria-label={connectivityLabel} 
+        use:tooltip={{ content: connectivityLabel, placement: 'bottom' }}
+      >
+        <Icon name={connectivityIcon} size={22} strokeWidth={2.5} />
       </div>
 
       <button class="audio-device-btn" aria-label="System Speakers" use:tooltip={{ content: isMuted ? 'System Muted' : 'System Speakers (Realtek HD Audio)', placement: 'bottom' }}>
@@ -217,6 +264,13 @@
 
   .refresh-btn:hover {
     color: var(--secondary);
+  }
+
+  .refresh-btn :global(svg) {
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .refresh-btn:hover :global(svg) {
     transform: rotate(180deg);
   }
 
@@ -225,8 +279,7 @@
     transform: rotate(90deg);
   }
 
-  .refresh-btn svg { width: 16px; height: 16px; }
-  .settings-btn svg { width: 18px; height: 18px; }
+  .settings-btn :global(svg) { width: 18px; height: 18px; }
 
   .audio-device-btn {
     background: none;
@@ -248,32 +301,22 @@
     height: 18px;
   }
 
-  /* Signal Bar Connectivity Indicator */
-  .signal-bars {
+  /* Connectivity Indicators */
+  .connectivity-indicator {
     display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 14px;
-  }
-
-  .bar {
-    width: 2.5px;
-    background: var(--text-muted);
-    border-radius: 1px;
+    align-items: center;
+    justify-content: center;
     transition: all 0.3s ease;
   }
 
-  .bar-1 { height: 4px; }
-  .bar-2 { height: 7px; }
-  .bar-3 { height: 10px; }
-  .bar-4 { height: 14px; }
+  .status-online { color: #00ff00; }
+  .status-weak { color: #ffa500; }
+  .status-error { color: #ff0000; }
+  .status-offline-mode { color: var(--text-muted); }
 
-  .connectivity-wrapper:not(.offline) .bar {
-    background: var(--secondary);
-  }
-
-  .connectivity-wrapper.offline .bar {
-    background: #ff0000;
+  /* Intentional offline needs the primary accent slash */
+  .status-offline-mode :global(path:nth-child(2)) {
+    stroke: var(--primary);
   }
 
   /* App Branding */

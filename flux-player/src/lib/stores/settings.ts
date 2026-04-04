@@ -23,6 +23,7 @@ export interface FluxSettings {
   subtitleFuzzy: boolean;
   subtitleAutoFetch: boolean;
   osUsername: string;
+  offlineMode: boolean; // Intentional offline state
 }
 
 const DEFAULT_SETTINGS: FluxSettings = {
@@ -39,6 +40,7 @@ const DEFAULT_SETTINGS: FluxSettings = {
   subtitleFuzzy: true,
   subtitleAutoFetch: true,
   osUsername: '',
+  offlineMode: false,
 };
 
 // ── Persistence Logic ────────────────────────────────────────────────────────
