@@ -7,6 +7,21 @@
   import { activeMedia, playbackState } from '$lib/stores/playback';
   import { mediaItems, toggleFavorite } from '$lib/stores/media';
   import { nextTrack as nextAction, prevTrack as prevAction, queue as queueStore, toggleShuffle } from '$lib/stores/queue';
+  import { onMount } from 'svelte';
+  import { onboarding, triggerTour } from '$lib/stores/onboarding';
+
+  onMount(() => {
+    // Automatically trigger player tour when media loads (if library tour is done)
+    const unsub = activeMedia.subscribe(m => {
+      if (m) {
+        const state = $onboarding;
+        if (!state.isActive && state.completedSections.includes('library') && !state.completedSections.includes('player')) {
+          setTimeout(() => triggerTour('player'), 800);
+        }
+      }
+    });
+    return unsub;
+  });
 
   
   // Media Info
@@ -250,7 +265,7 @@
       />
     </div>
 
-    <div class="footer-center-group">
+    <div id="onboard-player-controls" class="footer-center-group">
       <PlaybackControls 
         {controlsEnabled} 
         shuffleState={$playbackState.shuffleState}

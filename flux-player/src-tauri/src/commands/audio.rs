@@ -2,9 +2,10 @@ use tauri::command;
 use windows::Win32::Media::Audio::*;
 use windows::Win32::Media::Audio::Endpoints::*;
 use windows::Win32::System::Com::*;
+use crate::utils::error::{AppResult, AppError};
 
 #[command]
-pub fn get_system_mute_status() -> Result<bool, String> {
+pub fn get_system_mute_status() -> AppResult<bool> {
     unsafe {
         // Initialize COM (usually already initialized by Tauri but let's be safe)
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -13,19 +14,19 @@ pub fn get_system_mute_status() -> Result<bool, String> {
             &MMDeviceEnumerator,
             None,
             CLSCTX_ALL,
-        ).map_err(|e| format!("Failed to create MMDeviceEnumerator: {}", e))?;
+        ).map_err(|e| AppError::Internal(format!("Failed to create MMDeviceEnumerator: {}", e)))?;
 
         let endpoint: IMMDevice = enumerator
             .GetDefaultAudioEndpoint(eRender, eConsole)
-            .map_err(|e| format!("Failed to get default audio endpoint: {}", e))?;
+            .map_err(|e| AppError::Internal(format!("Failed to get default audio endpoint: {}", e)))?;
 
         // 0.52.0 Activate signature expects Option<*const PROPVARIANT>
         let audio_endpoint_volume: IAudioEndpointVolume = endpoint
             .Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None)
-            .map_err(|e| format!("Failed to activate audio endpoint volume: {}", e))?;
+            .map_err(|e| AppError::Internal(format!("Failed to activate audio endpoint volume: {}", e)))?;
 
         let is_muted = audio_endpoint_volume.GetMute()
-            .map_err(|e| format!("Failed to get mute status: {}", e))?;
+            .map_err(|e| AppError::Internal(format!("Failed to get mute status: {}", e)))?;
 
         Ok(is_muted.as_bool())
     }

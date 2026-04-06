@@ -17,9 +17,15 @@
   import { invoke } from '@tauri-apps/api/core';
   import Tooltip from '$lib/components/ui/Tooltip.svelte';
   import ContextMenu from '$lib/components/ui/ContextMenu.svelte';
+  import WelcomeSplash from '$lib/components/ui/WelcomeSplash.svelte';
+  import OnboardingOverlay from '$lib/components/ui/OnboardingOverlay.svelte';
+  import ApiLimitModal from '$lib/components/ui/ApiLimitModal.svelte';
+  import { onboarding, triggerTour } from '$lib/stores/onboarding';
+  import { listen } from '@tauri-apps/api/event';
 
   let { children } = $props();
   let showShortcutsRef = $state(false);
+  let showApiLimitModal = $state(false);
 
 
   // ── Theater & PiP Mode State ──────────────────────────────────────────────
@@ -38,8 +44,8 @@
     
     if (leavingPlayer && !goingToPlayer) {
       if (hasActiveVideo) {
-        activateMiniPlayer();
-      } else {
+          activateMiniPlayer();
+        } else {
         // Just turn off theater mode for audio
         playbackState.update(s => ({ ...s, isTheaterMode: false }));
       }
@@ -179,8 +185,27 @@
   }
 
   onMount(() => {
+    // Orchestrate Onboarding Flow
+    if (!$onboarding.completedSections.includes('welcome')) {
+      triggerTour('welcome');
+    } else if (!$onboarding.completedSections.includes('global') && !$onboarding.isActive) {
+      triggerTour('global');
+    }
+    
+    // Subscribe to onboarding changes to cascade from Welcome -> Global automatically
+    const unsubOnboarding = onboarding.subscribe(state => {
+      if (!state.isActive && state.completedSections.includes('welcome') && !state.completedSections.includes('global')) {
+        setTimeout(() => triggerTour('global'), 500); // Small delay for smooth transition
+      }
+    });
+
     window.addEventListener('keydown', handleGlobalKeydown);
     
+    // API Limit Listener (Milestone 2.5)
+    const unsubLimit = listen('flux-require-api-key', () => {
+      showApiLimitModal = true;
+    });
+
     // Centralized folder picker trigger
     const handleImportEvent = () => importFolder();
     window.addEventListener('flux-import-folder', handleImportEvent);
@@ -189,6 +214,8 @@
       window.removeEventListener('keydown', handleGlobalKeydown);
       window.removeEventListener('flux-import-folder', handleImportEvent);
       if (idleTimer) clearTimeout(idleTimer);
+      unsubOnboarding();
+      unsubLimit.then(u => u());
     };
   });
 </script>
@@ -208,13 +235,23 @@
   {#if !isPiP}
     <DynamicIsland />
   {/if}
-  <main class="main-content">
+  <main class="main-content" class:is-settings-page={$page.url.pathname.startsWith('/settings')}>
     {@render children()}
   </main>
   <div data-footer class="footer-slot"><PlaybackFooter /></div>
   <PlayerEngine />
   <AudioEngine />
   <Tooltip />
+
+  {#if $onboarding.isActive && $onboarding.currentSection === 'welcome'}
+    <WelcomeSplash />
+  {:else if $onboarding.isActive}
+    <OnboardingOverlay />
+  {/if}
+
+  {#if showApiLimitModal}
+    <ApiLimitModal onclose={() => showApiLimitModal = false} />
+  {/if}
 
   <!-- Shortcuts Reference Modal -->
   {#if showShortcutsRef}
@@ -320,6 +357,11 @@
     grid-area: main;
     overflow-y: auto;
     padding: 20px;
+    transition: padding 0.3s ease;
+  }
+  .main-content.is-settings-page {
+    padding: 0;
+    overflow: hidden;
   }
 
   /* Shortcuts Reference */
@@ -342,7 +384,6 @@
     border-radius: 32px;
     width: 800px;
     position: relative;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
   }
 
   .shortcuts-grid {

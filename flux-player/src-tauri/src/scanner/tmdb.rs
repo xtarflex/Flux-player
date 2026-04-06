@@ -1,5 +1,5 @@
 use crate::commands::settings;
-use reqwest::Client;
+use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, Runtime};
 
@@ -57,6 +57,25 @@ struct TmdbSearchResponse {
     pub results: Vec<TmdbSearchResult>,
 }
 
+/// Detects if the key is a v3 API Key or a v4 Read Access Token (RAT)
+/// and applies the correct authentication to the request.
+fn apply_auth(mut req: RequestBuilder, api_key: &str) -> RequestBuilder {
+    let api_key = api_key.trim();
+    
+    // Add default headers to prevent 403s on some TMDB endpoints
+    req = req.header("Accept", "application/json");
+
+    if api_key.len() > 100 || api_key.starts_with("ey") {
+        // Use v4 Bearer Token
+        println!("[TMDB] Applying v4 Bearer Auth");
+        req.header("Authorization", format!("Bearer {}", api_key))
+    } else {
+        // Use v3 API Key Query Param
+        println!("[TMDB] Applying v3 API Key Auth");
+        req.query(&[("api_key", api_key)])
+    }
+}
+
 pub async fn search_metadata<R: Runtime>(
     app: &AppHandle<R>,
     query: &str,
@@ -68,17 +87,19 @@ pub async fn search_metadata<R: Runtime>(
         .ok()?;
 
     let client = Client::new();
-    let mut url = format!(
-        "https://api.themoviedb.org/3/search/multi?api_key={}&query={}&include_adult=false",
-        api_key,
-        urlencoding::encode(query)
-    );
+    let url = "https://api.themoviedb.org/3/search/multi";
+    
+    let mut req = client.get(url)
+        .query(&[("query", query), ("include_adult", "false")]);
 
     if let Some(y) = year {
-        url.push_str(&format!("&year={}", y));
+        req = req.query(&[("year", &y.to_string())]);
     }
 
-    let response = client.get(url).send().await.ok()?;
+    // Apply Auth (v3 or v4)
+    req = apply_auth(req, &api_key);
+
+    let response = req.send().await.ok()?;
     let search_data: TmdbSearchResponse = response.json().await.ok()?;
 
     let result = search_data.results.into_iter().next()?;
@@ -91,12 +112,15 @@ pub async fn fetch_details(
     media_type: &str, // "movie" or "tv"
 ) -> Option<TmdbDetails> {
     let client = Client::new();
-    let url = format!(
-        "https://api.themoviedb.org/3/{}/{}?api_key={}&append_to_response=credits",
-        media_type, tmdb_id, api_key
-    );
+    let url = format!("https://api.themoviedb.org/3/{}/{}", media_type, tmdb_id);
+    
+    let mut req = client.get(url)
+        .query(&[("append_to_response", "credits")]);
 
-    let response = client.get(url).send().await.ok()?;
+    // Apply Auth (v3 or v4)
+    req = apply_auth(req, api_key);
+
+    let response = req.send().await.ok()?;
     let full_details: TmdbFullDetails = response.json().await.ok()?;
 
     let genres = full_details

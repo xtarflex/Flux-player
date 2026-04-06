@@ -94,6 +94,10 @@
     // Automatically stop editing and save once a full combo is pressed
     stopEdit(sectionIndex, itemIndex);
   }
+
+  function focus(node: HTMLElement) {
+    node.focus();
+  }
 </script>
 
 <div class="shortcut-settings">
@@ -124,7 +128,7 @@
                     value={currentKeyCombo}
                     onkeydown={(e) => handleKeydown(e, sIdx, iIdx)}
                     onblur={() => { editingId = null; }}
-                    autoFocus
+                    use:focus
                     readonly
                     placeholder="Press keys..."
                   />

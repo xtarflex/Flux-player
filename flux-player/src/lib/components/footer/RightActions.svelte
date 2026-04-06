@@ -133,6 +133,7 @@
   <!-- PiP (Video Only) -->
   {#if showPiP}
     <button 
+      id="onboard-pip-toggle"
       class="icon-btn-large pip-btn" 
       class:active={isPiPActive}
       aria-label="Picture-in-Picture"

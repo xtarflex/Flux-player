@@ -155,3 +155,23 @@ When implementing draggable overlays in Tauri, always bind a `resize` listener t
 *KI: For "True Shuffle," always maintain an `originalItems` array alongside the active `items` in the queue store to allow a lossless "Unshuffle" action that restores natural order relative to the current track.*
 
 *KI: When implementing wrap-around logic for Next/Prev, ensure that both `repeatMode 1` (All) and `repeatMode 2` (One) trigger the wrap. This aligns with industry standards (Spotify/iTunes) where manual skips ignore the One-track lock but respect the queue boundary loop.*
+
+---
+
+## [2026-04-06] - Milestone 2.0: High-Fidelity Onboarding (Zenith) & TMDB Hardening
+
+- **ACTION**: Implemented the "Zenith Convergence" onboarding experience and hardened TMDB authentication logic.
+- **ONBOARDING**: Created a multi-stage tour system (Welcome -> Global -> Library -> Player) in `onboarding.ts`.
+- **ZENITH SPLASH**: Built `WelcomeSplash.svelte` featuring high-fidelity SVG/CSS convergence animations, automatic system folder discovery via Rust `get_default_media_folders`, and initial library indexing triggers.
+- **TOUR ENGINE**: Implemented `OnboardingOverlay.svelte` for contextual guided tours, integrated into `+layout.svelte` with reactive state synchronization between sections.
+- **TMDB HARDENING**: Implemented `ApiLimitModal.svelte` to handle the 150-call shared API limit. The app now listens for the `flux-require-api-key` event and prompts the user to provide a personal v4 Bearer token, which is persisted via `save_setting`.
+- **UI REFINEMENT**:
+    - Redesigned the Settings footer navigation to use a vertical stack on mobile viewports, improving label legibility.
+    - Added conditional padding to the `main-content` area for immersive Settings views.
+    - Expanded the internal SVG library in `Icon.svelte` with `streaming`, `refresh-spark`, `movie`, and `music` assets.
+- **DATABASE**: Refactored Tauri database logic with a new `initialize_database` migration runner in `database/init.rs` and centralized `LibraryItem` models in `models.rs`.
+- **STABILITY**: Enhanced the `media` store with optimistic `is_favorite` toggling and improved the `queue` store's shuffle logic with `originalItems` tracking for lossless unshuffle actions.
+
+*KI: When implementing onboarding splash screens in Tauri, always perform initial data discovery (e.g., folder detection) in the background during the entry animation to minimize perceived wait times.*
+
+*KI: For TMDB v4 tokens, always trim leading/trailing whitespace before persistence as many users accidentally copy the Bearer prefix or newlines from the dashboard.*

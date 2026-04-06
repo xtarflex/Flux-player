@@ -8,24 +8,54 @@
   type FolderEntry = { path: string; type: 'video' | 'audio' };
 
   let storageLocations = $state<FolderEntry[]>([]);
+  let autoIndexing = $state(true);
+  let scanFrequency = $state(30); // minutes
   let isLoading = $state(true);
-  // Using global store instead of local state
-
-  let cacheSize = "—";
-  let dbSize = "—";
+  let cacheSize = $state("—");
+  let dbSize = $state("—");
 
   onMount(async () => {
     try {
-      const defaults = await invoke<FolderEntry[]>('get_default_media_folders');
-      if (storageLocations.length === 0) {
+      // 1. Load Persistence
+      const savedFolders = await invoke<string | null>('get_setting', { key: 'library_folders' });
+      const savedAuto = await invoke<string | null>('get_setting', { key: 'auto_indexing' });
+      const savedFreq = await invoke<string | null>('get_setting', { key: 'scan_frequency' });
+
+      if (savedFolders) {
+        storageLocations = JSON.parse(savedFolders);
+      } else {
+        const defaults = await invoke<FolderEntry[]>('get_default_media_folders');
         storageLocations = defaults;
+        await syncFolders(defaults);
       }
+
+      if (savedAuto) autoIndexing = savedAuto === 'true';
+      if (savedFreq) scanFrequency = parseInt(savedFreq);
+
     } catch (e) {
-      console.warn('Could not fetch system defaults:', e);
+      console.warn('Flux Storage: Persistence load failed:', e);
     } finally {
       isLoading = false;
     }
   });
+
+  async function syncFolders(folders: FolderEntry[]) {
+    try {
+      await invoke('save_setting', { key: 'library_folders', value: JSON.stringify(folders) });
+    } catch (e) {
+      console.error('Failed to sync folders:', e);
+    }
+  }
+
+  async function updateAutoIndexing(val: boolean) {
+    autoIndexing = val;
+    await invoke('save_setting', { key: 'auto_indexing', value: val.toString() });
+  }
+
+  async function updateFrequency(val: number) {
+    scanFrequency = val;
+    await invoke('save_setting', { key: 'scan_frequency', value: val.toString() });
+  }
 
   async function addFolder() {
     try {
@@ -36,7 +66,9 @@
       });
 
       if (selected && typeof selected === 'string') {
-        storageLocations = [...storageLocations, { path: selected, type: "video" }];
+        const newFolders: FolderEntry[] = [...storageLocations, { path: selected, type: "video" }];
+        storageLocations = newFolders;
+        await syncFolders(newFolders);
         
         // Kick off the scan and refresh the library
         isScanning.set(true);
@@ -65,12 +97,22 @@
     }
   }
 
-  function removeFolder(index: number) {
-    storageLocations = storageLocations.filter((_, i) => i !== index);
+  async function removeFolder(index: number) {
+    const newFolders = storageLocations.filter((_, i) => i !== index);
+    storageLocations = newFolders;
+    await syncFolders(newFolders);
   }
 
   function openFolderDialog() {
     addFolder();
+  }
+
+  function formatFrequency(mins: number) {
+    if (mins < 60) return `Every ${mins} minutes`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (m === 0) return `Every ${h} hour${h > 1 ? 's' : ''}`;
+    return `Every ${h}h ${m}m`;
   }
 </script>
 
@@ -116,6 +158,38 @@
         {/each}
         {#if storageLocations.length === 0}
           <div class="empty-state">No media folders added. Click "Add Folder" to begin scanning.</div>
+        {/if}
+      </div>
+
+      <div class="indexing-controls">
+        <div class="control-row">
+          <div class="label-group">
+            <span class="label">Auto-Indexing</span>
+            <span class="sub">{autoIndexing ? 'Scanning active' : 'Manual refresh only'}</span>
+          </div>
+          <button 
+            class="toggle-switch" 
+            class:active={autoIndexing} 
+            onclick={() => updateAutoIndexing(!autoIndexing)}
+            aria-label="Toggle Auto-Indexing"
+          ></button>
+        </div>
+
+        {#if autoIndexing}
+          <div class="control-row frequency">
+            <div class="label-group">
+              <span class="label">Scan Frequency</span>
+              <span class="sub">{formatFrequency(scanFrequency)}</span>
+            </div>
+            <input 
+              type="range" 
+              min="5" 
+              max="1440" 
+              step="10" 
+              value={scanFrequency} 
+              oninput={(e) => updateFrequency(parseInt(e.currentTarget.value))}
+            />
+          </div>
         {/if}
       </div>
     </section>
@@ -338,6 +412,97 @@
     background: rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     border: 1px dashed var(--glass-border-mid);
+  }
+
+  /* Indexing Controls */
+  .indexing-controls {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--glass-border-low);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .label-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .label-group .label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-main);
+  }
+
+  .label-group .sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 22px;
+    background: var(--glass-bg-high);
+    border: 1px solid var(--glass-border-mid);
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toggle-switch.active {
+    background: rgba(0, 255, 255, 0.15);
+    border-color: var(--secondary);
+  }
+
+  .toggle-switch.active::after {
+    left: calc(100% - 18px);
+    background: var(--secondary);
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 200px;
+    height: 4px;
+    background: var(--glass-bg-high);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+    transition: transform 0.2s ease;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
   }
 
   /* Stat Rows */

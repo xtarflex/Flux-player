@@ -412,9 +412,9 @@
      Illustration Container
      ========================================== */
   .illustration-container {
-    width: 380px;
-    height: 380px;
-    margin-bottom: 48px;
+    width: 280px;
+    height: 280px;
+    margin-bottom: 32px;
     position: relative;
     display: flex;
     align-items: center;
@@ -561,7 +561,7 @@
     font-family: var(--font-body);
     font-size: 0.95rem;
     color: var(--text-muted);
-    max-width: 380px;
+    max-width: 320px;
     line-height: 1.7;
     margin-bottom: 32px;
     margin-top: 0;

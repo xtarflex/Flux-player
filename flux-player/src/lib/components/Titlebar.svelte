@@ -116,7 +116,10 @@
   </div>
 
   <div class="center-section" data-tauri-drag-region>
-    <span class="app-name" data-tauri-drag-region>FLUX</span>
+    <div id="onboard-dynamic-island" class="brand-badge-wrapper" data-tauri-drag-region>
+      <span class="app-name" data-tauri-drag-region>FLUX</span>
+      <span class="beta-tag">BETA</span>
+    </div>
   </div>
 
   <div class="right-section">
@@ -137,6 +140,7 @@
       </button>
       
       <div 
+        id="onboard-connectivity"
         class="connectivity-indicator status-{netStatus}" 
         aria-label={connectivityLabel} 
         use:tooltip={{ content: connectivityLabel, placement: 'bottom' }}
@@ -322,11 +326,35 @@
   /* App Branding */
   .app-name {
     font-family: var(--font-heading);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    letter-spacing: 0.3em;
+    letter-spacing: 0.35em;
     font-weight: 700;
     opacity: 0.8;
+  }
+
+  .brand-badge-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .beta-tag {
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: var(--secondary);
+    padding: 0px 4px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 3px;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+  }
+  
+  .brand-badge-wrapper:hover .beta-tag {
+    opacity: 1;
+    background: rgba(0, 255, 255, 0.05);
+    border-color: var(--secondary);
   }
 
   /* Window Controls */

@@ -137,7 +137,7 @@ export function nextTrack() {
     } 
     // Rule: Route to Library ONLY if (Prev was Video AND Next is Audio) AND setting enabled AND not already in Library
     else if (!isNextVideo && isPrevVideo && isAppInPlayer) {
-      if (transitionBehavior === 'Return to Library' && !isAppInLibrary) {
+      if (get(settings).videoAudioTransition && !isAppInLibrary) {
         window.dispatchEvent(new CustomEvent('flux-toast', { 
           detail: { label: 'Returning to Library', icon: 'library-music' } 
         }));

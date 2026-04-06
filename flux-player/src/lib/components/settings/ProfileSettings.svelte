@@ -146,32 +146,27 @@
 
   .avatar-large {
     position: relative;
-    width: 80px;
-    height: 80px;
-    /* Scale up the existing squircle */
-    transform: scale(2.5);
-    transform-origin: top left;
-    margin-right: 40px; /* Compensate for scale */
-    margin-bottom: 40px;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
   }
 
   .edit-avatar-btn {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
+    bottom: 2px;
+    right: 2px;
     background: var(--bg-surface);
     border: 1px solid var(--glass-border-mid);
     color: var(--secondary);
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    /* Scale down visually because parent is scaled up 2.5x */
-    transform: scale(0.4);
+    z-index: 2;
     transition: all 0.2s ease;
   }
 

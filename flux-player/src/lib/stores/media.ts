@@ -7,7 +7,7 @@
  */
 
 import { writable, get } from 'svelte/store';
-import Database from '@tauri-apps/plugin-sql';
+import { invoke } from '@tauri-apps/api/core';
 
 export interface MediaItem {
   id: string;      // maps to `path` (PRIMARY KEY)
@@ -23,7 +23,7 @@ export interface MediaItem {
   type: 'video' | 'audio' | 'mixed';
   last_played: number;
   added_at: number;
-  // UI-only enriched fields (populated from TMDB later)
+  // UI-only enriched fields
   rating?: number;
   genres?: string[];
   synopsis?: string;
@@ -32,7 +32,6 @@ export interface MediaItem {
   subtitle?: string;
   series_tag?: string | null;
   is_watched?: boolean;
-  /** Last playback position in seconds (0 = unwatched / from start) */
   last_position?: number;
   is_favorite?: boolean;
 }
@@ -45,81 +44,80 @@ export const libraryLoadState = writable<LibraryLoadState>('idle');
 export const isScanning = writable<boolean>(false);
 
 /**
- * Queries all rows from the `media` table in flux.db and updates the store.
- * Maps SQLite column names to the MediaItem interface.
+ * Fetches all media items from the database via the Rust command.
  */
 export async function loadLibraryFromDb(): Promise<void> {
   libraryLoadState.set('loading');
   try {
-    const db = await Database.load('sqlite:flux.db');
-    const rows = await db.select<any[]>(
-      'SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, last_played, added_at, synopsis, rating, genres, director, starring, series_tag, is_watched, last_position, is_favorite FROM media ORDER BY added_at DESC'
-    );
+    const rows = await invoke<any[]>('get_all_media');
 
     const items: MediaItem[] = rows.map((row) => ({
       id: row.path,
       path: row.path,
       title: row.title,
-      artist: row.artist ?? null,
-      album: row.album ?? null,
-      duration: row.duration ?? null,
-      poster: row.poster_path ?? null,
-      backdrop: row.backdrop_path ?? null,
-      album_art: row.album_art_path ?? null,
-      year: row.year ?? null,
-      type: (row.media_type as 'video' | 'audio' | 'mixed') ?? 'video',
-      last_played: row.last_played ?? 0,
-      added_at: row.added_at ?? 0,
-      synopsis: row.synopsis ?? null,
-      rating: row.rating ?? null,
-      genres: row.genres ? JSON.parse(row.genres) : [],
-      director: row.director ?? null,
-      starring: row.starring ?? null,
-      series_tag: row.series_tag ?? null,
-      is_watched: row.is_watched === 1 || row.is_watched === true,
-      last_position: row.last_position ?? 0,
-      is_favorite: row.is_favorite === 1 || row.is_favorite === true,
+      artist: row.artist,
+      album: row.album,
+      duration: row.duration,
+      poster: row.poster_path,
+      backdrop: row.backdrop_path,
+      album_art: row.album_art_path,
+      year: row.year,
+      type: row.media_type as 'video' | 'audio' | 'mixed',
+      last_played: row.last_played,
+      added_at: row.added_at,
+      synopsis: row.synopsis,
+      rating: row.rating,
+      genres: row.genres,
+      director: row.director,
+      starring: row.starring,
+      series_tag: row.series_tag,
+      is_watched: row.is_watched,
+      last_position: row.last_position,
+      is_favorite: row.is_favorite,
     }));
 
     mediaItems.set(items);
     libraryLoadState.set('done');
   } catch (e) {
-    console.error('[MediaStore] Failed to load library from DB:', e);
+    console.error('[MediaStore] Failed to load library from Rust backend:', e);
     libraryLoadState.set('error');
   }
 }
 
 /**
- * Toggles favorite status for a media item.
- * Optimistically updates the store first, then persists to DB.
+ * Toggles favorite status for a media item via the Rust command.
+ * Optimistically updates the store first.
  */
 export async function toggleFavorite(path: string) {
   const items = get(mediaItems);
   const index = items.findIndex(i => i.path === path);
   if (index === -1) return;
 
-  const newState = !items[index].is_favorite;
+  const currentFavorite = items[index].is_favorite;
   
   // 1. Optimistic Update
-  items[index] = { ...items[index], is_favorite: newState };
+  items[index] = { ...items[index], is_favorite: !currentFavorite };
   mediaItems.set([...items]);
 
   // 2. Persist
   try {
-    const db = await Database.load('sqlite:flux.db');
-    await db.execute('UPDATE media SET is_favorite = ? WHERE path = ?', [newState ? 1 : 0, path]);
+    const isFavoriteNow = await invoke<boolean>('toggle_favorite_status', { path });
     
+    // Ensure store is in sync with server truth
+    items[index].is_favorite = isFavoriteNow;
+    mediaItems.set([...items]);
+
     // Toast for feedback
     window.dispatchEvent(new CustomEvent('flux-toast', { 
       detail: { 
-        label: newState ? 'Added to Favorites' : 'Removed from Favorites', 
+        label: isFavoriteNow ? 'Added to Favorites' : 'Removed from Favorites', 
         icon: 'star' 
       } 
     }));
   } catch (e) {
     console.error('[MediaStore] Failed to update favorite in DB:', e);
     // Back out optimistic update on fail
-    items[index] = { ...items[index], is_favorite: !newState };
+    items[index].is_favorite = currentFavorite;
     mediaItems.set([...items]);
   }
 }

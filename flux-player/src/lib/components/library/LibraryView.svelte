@@ -1,5 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
+  import { fade, slide, crossfade } from 'svelte/transition';
+  import { flip } from 'svelte/animate';
+  import { onboarding, triggerTour } from '$lib/stores/onboarding';
   import MediaCard from './MediaCard.svelte';
   import Icon from '../ui/Icon.svelte';
   import Dropdown from '../ui/Dropdown.svelte';
@@ -363,6 +367,18 @@
   }
 
   onMount(() => {
+    // Orchestrate Onboarding Flow for Library
+    if (!$onboarding.isActive && $onboarding.completedSections.includes('global') && !$onboarding.completedSections.includes('library')) {
+      triggerTour('library');
+    }
+    
+    // Subscribe to onboarding changes to cascade from Global -> Library automatically
+    const unsubOnboarding = onboarding.subscribe(state => {
+      if (!state.isActive && state.completedSections.includes('global') && !state.completedSections.includes('library')) {
+        setTimeout(() => triggerTour('library'), 500); // Small delay for smooth transition
+      }
+    });
+
     // Load real data from SQLite immediately
     loadLibraryFromDb();
 
@@ -376,6 +392,7 @@
     return () => {
       window.removeEventListener('flux-search-focus', handleFocus);
       window.removeEventListener('flux-library-updated', handleLibraryUpdate);
+      unsubOnboarding();
     };
   });
 
@@ -472,11 +489,13 @@
         />
       </div>
 
-      <Dropdown options={mediaOptions} bind:value={mediaFilter} bind:isOpen={isFilterOpen} showCheckmark={false} />
-      <Dropdown options={sortOptions} bind:value={sortOption} bind:isOpen={isSortOpen} showCheckmark={false} />
+      <div id="onboard-filters" style="display: flex; gap: 16px;">
+        <Dropdown options={mediaOptions} bind:value={mediaFilter} bind:isOpen={isFilterOpen} showCheckmark={false} />
+        <Dropdown options={sortOptions} bind:value={sortOption} bind:isOpen={isSortOpen} showCheckmark={false} />
+      </div>
 
       <!-- Zoom Controls -->
-      <div class="zoom-controls" style:opacity={disableZoom ? 0.3 : 1} style:pointer-events={disableZoom ? 'none' : 'auto'}>
+      <div id="onboard-zoom" class="zoom-controls" style:opacity={disableZoom ? 0.3 : 1} style:pointer-events={disableZoom ? 'none' : 'auto'}>
         <button class="icon-btn" onclick={zoomOut} aria-label="Zoom Out" use:tooltip={{ content: 'Smaller Grid', shortcut: 'Ctrl -', placement: 'bottom' }} disabled={disableZoom}>
           <Icon name="zoom-out" size={16} />
         </button>
@@ -487,14 +506,14 @@
       </div>
 
       <!-- View Toggles -->
-      <div class="view-toggles">
+      <div id="onboard-views" class="view-toggles">
         <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'} aria-label="Grid View">
           <Icon name="grid-view" size={20} />
         </button>
         <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => viewMode = 'list'} aria-label="List View">
           <Icon name="list-view" size={20} />
         </button>
-        <button class="toggle-btn" class:active={viewMode === 'detail'} onclick={() => viewMode = 'detail'} aria-label="Detail View">
+        <button id="onboard-detail-trigger" class="toggle-btn" class:active={viewMode === 'detail'} onclick={() => viewMode = 'detail'} aria-label="Detail View">
           <Icon name="library" size={20} />
         </button>
       </div>

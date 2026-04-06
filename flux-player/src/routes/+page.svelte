@@ -6,7 +6,3 @@
     goto('/library', { replaceState: true });
   });
 </script>
-
-<style>
-  /* Base styles */
-</style>

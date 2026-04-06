@@ -1,15 +1,16 @@
 use crate::database::connection;
 use crate::scanner::MediaMetadata;
 use tauri::{AppHandle, Runtime};
+use crate::utils::error::AppResult;
 
 pub fn save_media_items<R: Runtime>(
     app: &AppHandle<R>,
     items: Vec<MediaMetadata>,
-) -> Result<(), String> {
+) -> AppResult<()> {
     let db_path = connection::get_db_path(app)?;
 
-    let mut conn = rusqlite::Connection::open(db_path).map_err(|e| e.to_string())?;
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let mut conn = rusqlite::Connection::open(db_path)?;
+    let tx = conn.transaction()?;
 
     for item in items {
         let genres_json = serde_json::to_string(&item.genres).unwrap_or_else(|_| "[]".to_string());
@@ -42,9 +43,9 @@ pub fn save_media_items<R: Runtime>(
                 item.duration, &item.media_type, item.added_at,
                 &item.synopsis, item.rating, &genres_json, &item.director, &item.starring, &item.series_tag, item.is_watched
             ],
-        ).map_err(|e| e.to_string())?;
+        )?;
     }
 
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit()?;
     Ok(())
 }

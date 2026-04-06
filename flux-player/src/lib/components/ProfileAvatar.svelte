@@ -8,8 +8,8 @@
 
 <style>
   .avatar-container {
-    width: 32px;
-    height: 32px;
+    width: 100%;
+    height: 100%;
     background: var(--glass-bg-low);
     display: flex;
     align-items: center;

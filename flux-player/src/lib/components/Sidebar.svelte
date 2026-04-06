@@ -30,10 +30,13 @@
       <img src="/flux.png" alt="Flux Logo" class="brand-logo" />
       <div class="brand-info">
         <span class="brand-name">FLUX</span>
-        <span class="version">V0.1.0</span>
+        <div class="version-wrapper">
+          <span class="version">V0.2.0</span>
+          <span class="beta-badge">BETA</span>
+        </div>
       </div>
     </div>
-    <button class="menu-toggle" onclick={() => isSidebarCollapsed.update(v => !v)} aria-label="Toggle Sidebar" use:tooltip={{ content: $isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar', shortcut: 'Ctrl B', placement: 'right' }}>
+    <button id="onboard-sidebar-toggle" class="menu-toggle" onclick={() => isSidebarCollapsed.update(v => !v)} aria-label="Toggle Sidebar" use:tooltip={{ content: $isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar', shortcut: 'Ctrl B', placement: 'right' }}>
       <Icon name="menu" strokeWidth={2.5} />
     </button>
   </div>
@@ -145,10 +148,27 @@
   }
 
   .version {
-    font-size: 0.75rem;
-    color: var(--primary);
+    font-size: 0.72rem;
+    color: var(--text-muted);
     font-weight: 500;
+  }
+
+  .version-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-top: 4px;
+  }
+
+  .beta-badge {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+    color: #000;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
   }
 
   .menu-toggle {
@@ -359,7 +379,7 @@
   /* Transitions for Collapsed State */
   .sidebar.collapsed .brand-info,
   .sidebar.collapsed .brand-name,
-  .sidebar.collapsed .version,
+  .sidebar.collapsed .version-wrapper,
   .sidebar.collapsed .nav-label {
     display: none;
   }

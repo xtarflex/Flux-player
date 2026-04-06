@@ -24,6 +24,9 @@ export interface FluxSettings {
   subtitleAutoFetch: boolean;
   osUsername: string;
   offlineMode: boolean; // Intentional offline state
+  videoAudioTransition: boolean; 
+  theme: string;
+  language: string;
 }
 
 const DEFAULT_SETTINGS: FluxSettings = {
@@ -39,8 +42,11 @@ const DEFAULT_SETTINGS: FluxSettings = {
   subtitleLanguage: 'System Default',
   subtitleFuzzy: true,
   subtitleAutoFetch: true,
-  osUsername: '',
+  osUsername: 'User',
   offlineMode: false,
+  videoAudioTransition: true,
+  theme: 'Cyber Dark',
+  language: 'System Default',
 };
 
 // ── Persistence Logic ────────────────────────────────────────────────────────

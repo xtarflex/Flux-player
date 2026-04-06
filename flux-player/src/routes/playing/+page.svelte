@@ -56,7 +56,7 @@
     <EmptyState
       variant="player"
       title="Ready for Input"
-      description="The Flux Core is in standby. Select a media file from your library to begin."
+      description="The Flux player is in standby. Select a media file from your library to begin."
       actionLabel="Open Library"
       onAction={() => goto('/library')}
     />

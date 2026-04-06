@@ -1,10 +1,10 @@
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Runtime, Manager};
+use crate::utils::error::AppResult;
 
-pub fn get_db_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
+pub fn get_db_path<R: Runtime>(app: &AppHandle<R>) -> AppResult<PathBuf> {
     let app_dir = app
         .path()
-        .app_data_dir()
-        .map_err(|e: tauri::Error| e.to_string())?;
+        .app_data_dir()?;
     Ok(app_dir.join("flux.db"))
 }
