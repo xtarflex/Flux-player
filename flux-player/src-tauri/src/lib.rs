@@ -3,7 +3,7 @@ pub mod database;
 pub mod scanner;
 pub mod utils;
 
-use std::sync::atomic::AtomicUsize;
+// use std::sync::atomic::AtomicUsize;
 use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -69,24 +69,30 @@ pub fn run() {
 }
 
 async fn background_scan_task<R: tauri::Runtime>(
-    app: &tauri::AppHandle<R>
+    app: &tauri::AppHandle<R>,
 ) -> crate::utils::error::AppResult<()> {
     // 1. Fetch current settings from database
-    let auto_indexing = crate::commands::settings::get_setting(app.clone(), "auto_indexing".to_string()).await?
-        .map(|v| v == "true")
-        .unwrap_or(true);
+    let auto_indexing =
+        crate::commands::settings::get_setting(app.clone(), "auto_indexing".to_string())
+            .await?
+            .map(|v| v == "true")
+            .unwrap_or(true);
 
     if !auto_indexing {
         return Ok(());
     }
 
-    let scan_frequency_mins = crate::commands::settings::get_setting(app.clone(), "scan_frequency".to_string()).await?
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(30);
+    let scan_frequency_mins =
+        crate::commands::settings::get_setting(app.clone(), "scan_frequency".to_string())
+            .await?
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(30);
 
-    let last_scan_time = crate::commands::settings::get_setting(app.clone(), "last_library_scan_time".to_string()).await?
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(0);
+    let last_scan_time =
+        crate::commands::settings::get_setting(app.clone(), "last_library_scan_time".to_string())
+            .await?
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(0);
 
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -95,28 +101,45 @@ async fn background_scan_task<R: tauri::Runtime>(
 
     // 2. Determine if enough time has passed
     if now - last_scan_time >= scan_frequency_mins * 60 {
-        let folders_json = crate::commands::settings::get_setting(app.clone(), "library_folders".to_string()).await?
-            .unwrap_or_else(|| "[]".to_string());
+        let folders_json =
+            crate::commands::settings::get_setting(app.clone(), "library_folders".to_string())
+                .await?
+                .unwrap_or_else(|| "[]".to_string());
 
-        let folders: Vec<serde_json::Value> = serde_json::from_str(&folders_json).unwrap_or_default();
+        let folders: Vec<serde_json::Value> =
+            serde_json::from_str(&folders_json).unwrap_or_default();
 
         if !folders.is_empty() {
-            println!("[Flux Background Scan] Starting scheduled scan of {} locations.", folders.len());
-            
+            println!(
+                "[Flux Background Scan] Starting scheduled scan of {} locations.",
+                folders.len()
+            );
+
             // Phase 3: Healing Sync - Heal the backlog FIRST (once per background scan cycle)
             let _ = crate::scanner::healing_sync(app.clone()).await;
 
             for folder in folders {
                 if let Some(path) = folder.get("path").and_then(|p| p.as_str()) {
                     // Reuse the existing scan command logic
-                    if let Err(e) = crate::commands::library::start_library_scan(app.clone(), path.to_string()).await {
-                        eprintln!("[Flux Background Scan] Error scanning path '{}': {:?}", path, e);
+                    if let Err(e) =
+                        crate::commands::library::start_library_scan(app.clone(), path.to_string())
+                            .await
+                    {
+                        eprintln!(
+                            "[Flux Background Scan] Error scanning path '{}': {:?}",
+                            path, e
+                        );
                     }
                 }
             }
 
             // Update timestamp and notify frontend
-            crate::commands::settings::save_setting(app.clone(), "last_library_scan_time".to_string(), now.to_string()).await?;
+            crate::commands::settings::save_setting(
+                app.clone(),
+                "last_library_scan_time".to_string(),
+                now.to_string(),
+            )
+            .await?;
             app.emit("flux-library-updated", ()).ok();
             println!("[Flux Background Scan] Scheduled scan complete.");
         }

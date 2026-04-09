@@ -3,20 +3,28 @@ use serde::{Deserialize, Serialize};
 use lofty::prelude::*;
 use sha2::{Digest, Sha256};
 use std::io::Write;
-use tauri::{AppHandle, Manager, Runtime};
 use std::path::Path;
+use tauri::{AppHandle, Manager, Runtime};
 
 #[cfg(target_os = "windows")]
 pub fn extract_native_thumbnail(path: &str, cache_dir: &Path, file_name: &str) -> Option<String> {
-    use windows::core::{PCWSTR, ComInterface};
-    use windows::Win32::Foundation::SIZE;
-    use windows::Win32::Graphics::Gdi::{DeleteObject, GetDIBits, HBITMAP, HDC, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, CreateCompatibleDC};
-    use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED};
-    use windows::Win32::UI::Shell::{SHCreateItemFromParsingName, IShellItem, IShellItemImageFactory, SIIGBF_THUMBNAILONLY};
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
-    
-    let path_wide_vec: Vec<u16> = OsStr::new(path).encode_wide().chain(std::iter::once(0)).collect();
+    use windows::core::{ComInterface, PCWSTR};
+    use windows::Win32::Foundation::SIZE;
+    use windows::Win32::Graphics::Gdi::{
+        CreateCompatibleDC, DeleteObject, GetDIBits, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
+        DIB_RGB_COLORS, HBITMAP, HDC,
+    };
+    use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED};
+    use windows::Win32::UI::Shell::{
+        IShellItem, IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_THUMBNAILONLY,
+    };
+
+    let path_wide_vec: Vec<u16> = OsStr::new(path)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
     let out_path = cache_dir.join(format!("{}.png", file_name));
     if out_path.exists() {
         return Some(out_path.to_string_lossy().to_string());
@@ -25,23 +33,26 @@ pub fn extract_native_thumbnail(path: &str, cache_dir: &Path, file_name: &str) -
 
     // New Hardening: Do not attempt extraction for 0-byte or tiny files (prevents Windows generic icon fallback)
     if let Ok(meta) = std::fs::metadata(path) {
-        if meta.len() < 1024 { // Smaller than 1KB is almost certainly not a valid movie with a thumbnail
+        if meta.len() < 1024 {
+            // Smaller than 1KB is almost certainly not a valid movie with a thumbnail
             return None;
         }
     }
 
     unsafe {
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
-        
+
         let mut success = false;
-        let item_result: windows::core::Result<IShellItem> = SHCreateItemFromParsingName(pcwstr, None);
+        let item_result: windows::core::Result<IShellItem> =
+            SHCreateItemFromParsingName(pcwstr, None);
         if let Ok(item) = item_result {
             if let Ok(factory) = item.cast::<IShellItemImageFactory>() {
                 // We request a slightly larger square to allow for a high-quality 2:3 portrait crop
                 let size = SIZE { cx: 600, cy: 600 };
-                
-                let hbitmap_result: windows::core::Result<HBITMAP> = factory.GetImage(size, SIIGBF_THUMBNAILONLY);
-                
+
+                let hbitmap_result: windows::core::Result<HBITMAP> =
+                    factory.GetImage(size, SIIGBF_THUMBNAILONLY);
+
                 if let Ok(hbitmap) = hbitmap_result {
                     let hdc = CreateCompatibleDC(HDC::default());
                     let mut bmi = BITMAPINFO {
@@ -58,20 +69,34 @@ pub fn extract_native_thumbnail(path: &str, cache_dir: &Path, file_name: &str) -
                     };
 
                     let mut pixels: Vec<u8> = vec![0; (size.cx * size.cy * 4) as usize];
-                    let res = GetDIBits(hdc, hbitmap, 0, size.cy as u32, Some(pixels.as_mut_ptr() as *mut std::ffi::c_void), &mut bmi, DIB_RGB_COLORS);
-                    
+                    let res = GetDIBits(
+                        hdc,
+                        hbitmap,
+                        0,
+                        size.cy as u32,
+                        Some(pixels.as_mut_ptr() as *mut std::ffi::c_void),
+                        &mut bmi,
+                        DIB_RGB_COLORS,
+                    );
+
                     if res != 0 {
                         for chunk in pixels.chunks_exact_mut(4) {
                             let b = chunk[0];
                             let r = chunk[2];
                             chunk[0] = r;
                             chunk[2] = b;
-                            chunk[3] = 255; 
+                            chunk[3] = 255;
                         }
 
-                        if let Some(mut img) = ::image::ImageBuffer::<::image::Rgba<u8>, Vec<u8>>::from_raw(size.cx as u32, size.cy as u32, pixels) {
+                        if let Some(mut img) =
+                            ::image::ImageBuffer::<::image::Rgba<u8>, Vec<u8>>::from_raw(
+                                size.cx as u32,
+                                size.cy as u32,
+                                pixels,
+                            )
+                        {
                             let (w, h) = img.dimensions();
-                            
+
                             // Native Auto-Trim Algorithm: Remove Letterboxing
                             let mut top_bound = 0;
                             let mut bottom_bound = h - 1;
@@ -110,9 +135,12 @@ pub fn extract_native_thumbnail(path: &str, cache_dir: &Path, file_name: &str) -
                             }
 
                             // 3. Extract Clean Crop
-                            let crop_height = (bottom_bound as i32 - top_bound as i32 + 1).max(1) as u32;
-                            let cropped_img = ::image::imageops::crop(&mut img, 0, top_bound, w, crop_height).to_image();
-                            
+                            let crop_height =
+                                (bottom_bound as i32 - top_bound as i32 + 1).max(1) as u32;
+                            let cropped_img =
+                                ::image::imageops::crop(&mut img, 0, top_bound, w, crop_height)
+                                    .to_image();
+
                             if cropped_img.save(&out_path).is_ok() {
                                 success = true;
                             }
@@ -133,7 +161,11 @@ pub fn extract_native_thumbnail(path: &str, cache_dir: &Path, file_name: &str) -
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn extract_native_thumbnail(_path: &str, _cache_dir: &Path, _file_name: &str) -> Option<String> {
+pub fn extract_native_thumbnail(
+    _path: &str,
+    _cache_dir: &Path,
+    _file_name: &str,
+) -> Option<String> {
     None
 }
 
@@ -176,24 +208,24 @@ pub async fn process_video<R: Runtime>(
     cached_show: Option<MediaMetadata>,
 ) -> Option<MediaMetadata> {
     let file_stem = path.file_stem()?.to_str()?;
-    
+
     let (cleaned_title, extracted_year, extracted_series) = clean_media_title(file_stem);
-    
-    // BUG FIX: Isolate SEARCH from DISPLAY. 
+
+    // BUG FIX: Isolate SEARCH from DISPLAY.
     // display_title: What the user sees (might have ' - S01E01' appended)
     // search_query: What we send to TMDB (Must be the clean show/movie name)
     let display_title = existing_title.clone().unwrap_or(cleaned_title.clone());
     let year = extracted_year;
 
-    // Calculate Search Query: 
+    // Calculate Search Query:
     // Always fallback to cleaned_title (from filename) if existing_title contains a tag.
     let mut search_query = display_title.clone();
     if let Some(ref tag) = extracted_series {
         if search_query.contains(tag) {
-             search_query = cleaned_title.clone(); // Filename cleaning is more reliable for TMDB
+            search_query = cleaned_title.clone(); // Filename cleaning is more reliable for TMDB
         }
     }
-    
+
     let mut metadata = MediaMetadata {
         path: path.to_string_lossy().to_string(),
         title: display_title,
@@ -234,7 +266,12 @@ pub async fn process_video<R: Runtime>(
     let mut embed_fallback = false;
 
     if let Some(cache) = cached_show {
-        metadata.title = cache.title.split(" - ").next().unwrap_or(&cache.title).to_string();
+        metadata.title = cache
+            .title
+            .split(" - ")
+            .next()
+            .unwrap_or(&cache.title)
+            .to_string();
         metadata.poster_path = cache.poster_path;
         metadata.backdrop_path = cache.backdrop_path;
         metadata.genres = cache.genres;
@@ -243,14 +280,17 @@ pub async fn process_video<R: Runtime>(
         metadata.synopsis = cache.synopsis;
         metadata.rating = cache.rating;
         metadata.year = cache.year;
-        
-        // BUG FIX: Propagate healing requirement. 
+
+        // BUG FIX: Propagate healing requirement.
         // If the cache itself is an offline/fallback record, the child must also scan later.
         metadata.needs_tmdb_scan = cache.needs_tmdb_scan;
     } else {
         match super::tmdb::search_metadata_advanced(app, &search_query, metadata.year).await {
             Ok(Some((tmdb_meta, api_key))) => {
-                metadata.title = tmdb_meta.title.or(tmdb_meta.name).unwrap_or(metadata.title.clone());
+                metadata.title = tmdb_meta
+                    .title
+                    .or(tmdb_meta.name)
+                    .unwrap_or(metadata.title.clone());
 
                 // Use TMDB Poster if available
                 if let Some(poster) = tmdb_meta.poster_path {
@@ -284,8 +324,10 @@ pub async fn process_video<R: Runtime>(
                 // Fetch Rich Details (Genres, Director, Starring)
                 let tmdb_id = tmdb_meta.id;
                 let tmdb_media_type = tmdb_meta.media_type.unwrap_or_else(|| "movie".to_string());
-                
-                if let Some(details) = super::tmdb::fetch_details(&api_key, tmdb_id, &tmdb_media_type).await {
+
+                if let Some(details) =
+                    super::tmdb::fetch_details(&api_key, tmdb_id, &tmdb_media_type).await
+                {
                     metadata.genres = details.genres;
                     metadata.director = details.director;
                     metadata.starring = details.starring;
@@ -302,14 +344,14 @@ pub async fn process_video<R: Runtime>(
                         }
                     }
                 }
-                
+
                 metadata.needs_tmdb_scan = false;
-            },
+            }
             Ok(None) => {
                 // 404 Not Found. Never try again.
                 embed_fallback = true;
                 metadata.needs_tmdb_scan = false;
-            },
+            }
             Err(_) => {
                 // Network Error / 500 / Rate Limit. Mark for retry.
                 embed_fallback = true;
@@ -333,7 +375,8 @@ pub async fn process_video<R: Runtime>(
             let cache_dir = app_dir.join("cache").join("images").join("posters");
             let _ = std::fs::create_dir_all(&cache_dir);
             let file_stem_safe = file_stem.replace(|c: char| !c.is_alphanumeric(), "_");
-            metadata.poster_path = extract_native_thumbnail(&metadata.path, &cache_dir, &file_stem_safe);
+            metadata.poster_path =
+                extract_native_thumbnail(&metadata.path, &cache_dir, &file_stem_safe);
         }
     }
 
@@ -350,7 +393,12 @@ pub async fn process_audio<R: Runtime>(
 ) -> Option<MediaMetadata> {
     let mut metadata = MediaMetadata {
         path: path.to_string_lossy().to_string(),
-        title: existing_title.unwrap_or_else(|| path.file_stem().unwrap_or_default().to_string_lossy().to_string()),
+        title: existing_title.unwrap_or_else(|| {
+            path.file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
+        }),
         year: None,
         artist: existing_artist,
         album: existing_album,
@@ -443,11 +491,12 @@ pub fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String
 
     // Stage 0: Initial Brackets and prepended resolution tags
     let mut title = raw_title.replace('_', " ").replace('.', " ");
-    
+
     // Wipe leading tags in brackets like "[1080p] Film Name" or prepended quality like "1080pMovieName"
     static PREPEND_PURGE_RE: OnceLock<regex::Regex> = OnceLock::new();
     let prepend_purge_re = PREPEND_PURGE_RE.get_or_init(|| {
-        regex::Regex::new(r"(?i)^(?:\[.*?\]|1080p|720p|4k|2160p|h264|x264|h265|x265|hevc)\s*").unwrap()
+        regex::Regex::new(r"(?i)^(?:\[.*?\]|1080p|720p|4k|2160p|h264|x264|h265|x265|hevc)\s*")
+            .unwrap()
     });
     title = prepend_purge_re.replace(&title, "").to_string();
 
@@ -462,7 +511,10 @@ pub fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String
     // Stage 2: Year Pivot (Golden Rule)
     static YEAR_RE: OnceLock<regex::Regex> = OnceLock::new();
     let year_re = YEAR_RE.get_or_init(|| {
-        regex::Regex::new(r"(?i)(.*?)(?:[\s\-_]+[\(\[]?((?:19|20|21)(?:\d{2}))[\)\]]?(?:[\s\-_]+|$))").unwrap()
+        regex::Regex::new(
+            r"(?i)(.*?)(?:[\s\-_]+[\(\[]?((?:19|20|21)(?:\d{2}))[\)\]]?(?:[\s\-_]+|$))",
+        )
+        .unwrap()
     });
 
     let mut extracted_year = None;
@@ -490,9 +542,10 @@ pub fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String
 
     // Stage 3.5: Fallback for "Show Name Part 1" if not caught above
     static PART_RE: OnceLock<regex::Regex> = OnceLock::new();
-    let part_re = PART_RE.get_or_init(|| regex::Regex::new(r"(?i)^(.*?)([\s\-_]+(?:Part|Pt)[\s\-_]*\d+)").unwrap());
+    let part_re = PART_RE
+        .get_or_init(|| regex::Regex::new(r"(?i)^(.*?)([\s\-_]+(?:Part|Pt)[\s\-_]*\d+)").unwrap());
     if let Some(caps) = part_re.captures(&title) {
-         if let (Some(t_match), Some(p_match)) = (caps.get(1), caps.get(2)) {
+        if let (Some(t_match), Some(p_match)) = (caps.get(1), caps.get(2)) {
             let s_tag = p_match.as_str().trim().to_uppercase();
             title = t_match.as_str().trim().to_string();
             extracted_series = Some(s_tag);
@@ -508,7 +561,8 @@ pub fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String
 
     // Stage 5: Group Drop (Restrictive: Only catch hyphenated or bracketed groups)
     static GROUP_RE: OnceLock<regex::Regex> = OnceLock::new();
-    let group_re = GROUP_RE.get_or_init(|| regex::Regex::new(r"[\s\-_]+(?:\[[A-Za-z0-9]+\]|-[A-Za-z0-9]+)$").unwrap());
+    let group_re = GROUP_RE
+        .get_or_init(|| regex::Regex::new(r"[\s\-_]+(?:\[[A-Za-z0-9]+\]|-[A-Za-z0-9]+)$").unwrap());
     title = group_re.replace(&title, "").to_string();
 
     // Final clean space crunch
@@ -580,32 +634,43 @@ mod tests {
         assert_eq!(y, None);
         assert_eq!(s, Some("S04E04".to_string()));
 
-        let (t, _, s) = clean_media_title("The.Show.Name.S01E01.720p.HDTV.X264-NoGroup[Proper]-1234567.mkv");
+        let (t, _, s) =
+            clean_media_title("The.Show.Name.S01E01.720p.HDTV.X264-NoGroup[Proper]-1234567.mkv");
         assert_eq!(t, "The Show Name");
         assert_eq!(s, Some("S01E01".to_string()));
 
-        let (t, y, _) = clean_media_title("Movie.Name.2023.1080p.WEBRip.x265-10bit-MultipleGroups-SceneTeam.mkv");
+        let (t, y, _) = clean_media_title(
+            "Movie.Name.2023.1080p.WEBRip.x265-10bit-MultipleGroups-SceneTeam.mkv",
+        );
         assert_eq!(t, "Movie Name");
         assert_eq!(y, Some(2023));
 
-        let (t, _, s) = clean_media_title("Show.Name.Part1.E02-E03.Subtitle.Version.3.5.7.1080p-GROUPA.mkv");
+        let (t, _, s) =
+            clean_media_title("Show.Name.Part1.E02-E03.Subtitle.Version.3.5.7.1080p-GROUPA.mkv");
         assert_eq!(t, "Show Name"); // Part1 should be stripped by Stage 3.5
         assert_eq!(s, Some("PART1".to_string())); // Current Stage 3.5 captures Part1 into series_tag
 
-        let (t, y, _) = clean_media_title("Some.Film.2022.1080p.BluRay.x264.DualAudio.AAC.2.0.Proper-AnotherGroup[0000000].mkv");
+        let (t, y, _) = clean_media_title(
+            "Some.Film.2022.1080p.BluRay.x264.DualAudio.AAC.2.0.Proper-AnotherGroup[0000000].mkv",
+        );
         assert_eq!(t, "Some Film");
         assert_eq!(y, Some(2022));
 
-        let (t, _, s) = clean_media_title("Show_Name_S05_E05_2024_1080p_WEB_DL_H264_10Bit_REPACK_MULTi_SUB[Group1]");
+        let (t, _, s) = clean_media_title(
+            "Show_Name_S05_E05_2024_1080p_WEB_DL_H264_10Bit_REPACK_MULTi_SUB[Group1]",
+        );
         // Our regex handles underscores now.
         assert_eq!(t, "Show Name");
-        assert_eq!(s, Some("S05 E05".to_string())); 
+        assert_eq!(s, Some("S05 E05".to_string()));
 
-        let (t, y, _) = clean_media_title("1080pMovieName.2023.1080p.WEBRip.x265-T0T0-GroupA_GroupB.mkv");
+        let (t, y, _) =
+            clean_media_title("1080pMovieName.2023.1080p.WEBRip.x265-T0T0-GroupA_GroupB.mkv");
         assert_eq!(t, "MovieName"); // 1080p should be purged by Stage 0
         assert_eq!(y, Some(2023));
 
-        let (t, _, s) = clean_media_title("The-Show-Name-S01-E01-E02-2160p-WEB-DL-DD+5.1-HDR-H265-[12345]-GrpName");
+        let (t, _, s) = clean_media_title(
+            "The-Show-Name-S01-E01-E02-2160p-WEB-DL-DD+5.1-HDR-H265-[12345]-GrpName",
+        );
         assert_eq!(t, "The Show Name");
         assert_eq!(s, Some("S01 E01 E02".to_string()));
 
@@ -623,4 +688,3 @@ mod tests {
         assert_eq!(t, "Movie Name");
     }
 }
-

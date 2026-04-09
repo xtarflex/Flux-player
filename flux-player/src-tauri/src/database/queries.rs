@@ -1,7 +1,7 @@
 use crate::database::connection;
 use crate::scanner::MediaMetadata;
-use tauri::{AppHandle, Runtime};
 use crate::utils::error::AppResult;
+use tauri::{AppHandle, Runtime};
 
 pub fn save_media_items<R: Runtime>(
     app: &AppHandle<R>,
@@ -14,7 +14,7 @@ pub fn save_media_items<R: Runtime>(
 
     for item in items {
         let genres_json = serde_json::to_string(&item.genres).unwrap_or_else(|_| "[]".to_string());
-        
+
         tx.execute(
             "INSERT INTO media (
                 path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, added_at,
@@ -53,9 +53,9 @@ pub fn save_media_items<R: Runtime>(
 
 #[cfg(test)]
 mod tests {
+    use crate::database::init::initialize_database_for_tests;
     use crate::scanner::MediaMetadata;
     use tempfile::tempdir;
-    use crate::database::init::initialize_database_for_tests;
 
     #[test]
     fn test_do_no_harm_metadata_protection() {
@@ -118,10 +118,18 @@ mod tests {
         ).unwrap();
 
         // 3. Verify results
-        let mut stmt = conn.prepare("SELECT title, synopsis, poster_path FROM media WHERE path = 'test.mkv'").unwrap();
-        let (title, synopsis, poster): (String, String, String) = stmt.query_row([], |row| {
-            Ok((row.get(0).unwrap(), row.get(1).unwrap(), row.get(2).unwrap()))
-        }).unwrap();
+        let mut stmt = conn
+            .prepare("SELECT title, synopsis, poster_path FROM media WHERE path = 'test.mkv'")
+            .unwrap();
+        let (title, synopsis, poster): (String, String, String) = stmt
+            .query_row([], |row| {
+                Ok((
+                    row.get(0).unwrap(),
+                    row.get(1).unwrap(),
+                    row.get(2).unwrap(),
+                ))
+            })
+            .unwrap();
 
         // Title should be updated
         assert_eq!(title, "Updated Title");
@@ -131,4 +139,3 @@ mod tests {
         assert_eq!(poster, "original.jpg");
     }
 }
-
