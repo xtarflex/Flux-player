@@ -28,6 +28,7 @@ graph TD
 - **Adaptive Tinting**: Extracting vibrant colors from posters to tint the `Dynamic Island` border.
 - **Clipboard Intercept**: Monitoring the clipboard for media URLs to trigger the "Rapid Stream" flow.
 - **Zero-Latency Search**: Frontend-heavy fuzzy filtering for instant library results.
+- **Smart Scanning & Enrichment**: Offline-first architecture using a `needs_tmdb_scan` flag to defer heavy API calls until network is available and prevent redundant scans.
 
 ---
 *Next focus: Implementing the Discovery Hub grid system.*

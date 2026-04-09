@@ -31,7 +31,7 @@
       <div class="brand-info">
         <span class="brand-name">FLUX</span>
         <div class="version-wrapper">
-          <span class="version">V0.2.0</span>
+          <span class="version">{import.meta.env.VITE_APP_VERSION}</span>
           <span class="beta-badge">BETA</span>
         </div>
       </div>

@@ -47,3 +47,32 @@ pub fn classify_device(name: &str) -> String {
         "speaker".to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_device_classification() {
+        // Bluetooth/Wireless
+        assert_eq!(classify_device("Sony WH-1000XM4 (Bluetooth)"), "bluetooth");
+        assert_eq!(classify_device("Wireless Stereo Headset"), "bluetooth");
+
+        // Headphones
+        assert_eq!(classify_device("Studio Headphones (High Definition Audio)"), "headphone");
+        assert_eq!(classify_device("Gaming Headset (Logitech G Pro)"), "headphone");
+
+        // HDMI
+        assert_eq!(classify_device("Samsung TV (NVIDIA High Definition Audio/HDMI)"), "hdmi");
+        assert_eq!(classify_device("HDMI Out (Digital Display)"), "hdmi");
+
+        // USB
+        assert_eq!(classify_device("USB Audio Codec"), "usb");
+        assert_eq!(classify_device("Blue Yeti USB Mic Speaker Output"), "usb");
+
+        // Default / Speakers
+        assert_eq!(classify_device("Realtek Audio Speakers"), "speaker");
+        assert_eq!(classify_device("Internal Laptop Sound"), "speaker");
+    }
+}
+

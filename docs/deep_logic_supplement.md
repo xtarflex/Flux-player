@@ -619,3 +619,52 @@ pub async fn global_refresh() {
     }
 }
 ```
+
+---
+
+## Section 9 (NEW): Smart Scanning & TMDB Enrichment Logic
+
+To prevent TMDB API quota burn and ensure a cinematic library experience, Flux uses a "Smart Scan" strategy.
+
+### 1. The `needs_tmdb_scan` Flag (SQLite)
+The `media` table includes a `needs_tmdb_scan` BOOLEAN column:
+- **TRUE (1)**: The item has been added to the library (either while offline or during a fast scan) but lacks rich TMDB metadata (synopsis, cast, high-res posters).
+- **FALSE (0)**: The item is fully enriched with TMDB data.
+
+### 2. Smart Scanning Workflow (Every 30 Minutes)
+Instead of re-scanning every file, Flux uses the file path as a fingerprint (Primary Key):
+
+```rust
+// scanner/mod.rs
+pub async fn scan_directory(app: AppHandle, dir: String) {
+    let disk_files = walk_directory(dir);
+    let existing_paths = get_all_db_paths(&app); // O(1) lookup in memory or indexed SQL
+
+    for file in disk_files {
+        if existing_paths.contains(&file.path) {
+            // Already in DB -> SKIP heavy processing
+            // Update only if file modification time changed (Lightweight)
+            continue;
+        }
+
+        // New File -> Process
+        process_new_media(&app, file).await;
+    }
+}
+```
+
+### 3. Automated Enrichment (The "Backlog" Task)
+When Flux detects an internet connection or a manual [Global Refresh] is clicked, it targets the backlog:
+
+```sql
+SELECT path, title, year FROM media WHERE needs_tmdb_scan = 1;
+```
+
+For each flagged item:
+1.  **Search**: Query `/3/search/multi`.
+2.  **Detail**: Query `/3/{media_type}/{id}` (Append `credits`).
+3.  **Cache**: Download poster/backdrop to local storage.
+4.  **Update**: Insert results into SQLite and set `needs_tmdb_scan = 0`.
+
+### 4. Preservation of User Edits
+If a user has manually edited a `title` or `year`, the enrichment logic MUST prioritize the user's input as the search query and NOT overwrite those specific fields with TMDB data if they differ significantly from the filename.

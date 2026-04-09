@@ -10,6 +10,10 @@ import { settings } from './settings';
 export type ConnectivityStatus = 'online' | 'weak' | 'error' | 'offline';
 
 const isBrowser = typeof window !== 'undefined';
+let invoke: typeof import('@tauri-apps/api/core').invoke | undefined;
+if (isBrowser) {
+  import('@tauri-apps/api/core').then(m => { invoke = m.invoke; }).catch(() => {});
+}
 
 /**
  * Internal store for the browser's raw online status.
@@ -56,6 +60,21 @@ export const connectivity = derived<[typeof onlineStatus, typeof settings], Conn
     return 'online';
   }
 );
+
+if (isBrowser) {
+  let initial = true;
+  let previousStatus: ConnectivityStatus = 'offline';
+  
+  connectivity.subscribe(status => {
+    if (!initial && status === 'online' && previousStatus !== 'online') {
+      if (invoke) {
+        invoke('heal_library').catch(console.error);
+      }
+    }
+    previousStatus = status;
+    initial = false;
+  });
+}
 
 /**
  * Returns the human-readable label and associated icon name for a status.

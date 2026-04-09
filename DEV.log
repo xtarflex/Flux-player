@@ -173,5 +173,68 @@ When implementing draggable overlays in Tauri, always bind a `resize` listener t
 - **STABILITY**: Enhanced the `media` store with optimistic `is_favorite` toggling and improved the `queue` store's shuffle logic with `originalItems` tracking for lossless unshuffle actions.
 
 *KI: When implementing onboarding splash screens in Tauri, always perform initial data discovery (e.g., folder detection) in the background during the entry animation to minimize perceived wait times.*
-
 *KI: For TMDB v4 tokens, always trim leading/trailing whitespace before persistence as many users accidentally copy the Bearer prefix or newlines from the dashboard.*
+---
+
+## [2026-04-09] - Native Thumbnail Auto-Trim Strategy
+
+- **ACTION**: Implemented the "Native Thumbnail Auto-Trim Strategy" for local media lacking external metadata.
+- **BACKEND**: Refactored `extract_native_thumbnail` in `metadata.rs` (Rust).
+    - **Extraction**: Now requests a high-fidelity **600x600 square** from the Windows Shell API (`IShellItemImageFactory`).
+    - **Auto-Trim**: Implemented a pixel-scanning algorithm to remove letterboxing. It finds the first non-black rows (`R, G, B >= 8`) from the top and bottom and crops the buffer to a "Clean Landscape" frame.
+- **FRONTEND**: Verified `object-fit: cover` implementation in `MediaCard.svelte` and `DetailPanel.svelte`.
+    - **Result**: The cleaned cinematic thumbnails now fill portrait-oriented library cards perfectly by centering on the action, eliminating the "double letterbox" effect and creating a more immersive grid.
+- **RATIONALE**: Ensures that even obscure or local-only media files maintain the Flux "Cyber Dark" premium aesthetic.
+
+*KI: When extracting thumbnails via Shell API, always request a square buffer larger than your target aspect ratio to provide the "Auto-Trim" algorithm enough vertical headroom to capture a clean 16:9 or 21:9 frame from the video source.*
+
+## [2026-04-09] Milestone 1.18: Offline Hardening & Font Localization
+Localized core typography and tightened connectivity requirements for a standalone experience.
+
+### Achievements:
+- **Font Bundling**: Downloaded and localized **Outfit** (300-700) and **Syncopate** (400, 700) to `static/fonts` for full offline support.
+- **Styling Migration**: Refactored `app.css` to use local `font-face` declarations, eliminating dependency on Google Fonts CDN.
+- **Security Hardening**: Hardened `tauri.conf.json` Content Security Policy (CSP) by removing external font domains (`fonts.googleapis.com` and `fonts.gstatic.com`).
+- **Aesthetic Consistency**: Prevented visual fallback to system fonts, ensuring the "Cyber-Dark" aesthetic remains premium under all network conditions.
+
+## [2026-03-31] Milestone 1.16: Persistence & OS Integration
+Successfully finalized the core interaction model and bridged Flux with the Operating System.
+
+### Achievements:
+- **Playback Persistence**: Refactored SQLite sync to 1s debounce with "Smart Progress" (autos-reset at 90%).
+- **Unified Idle State**: Centralized inactivity detection (1s timeout) for cursor, footer, and sidebar.
+- **Dynamic Island stability**: Implemented a priority-based state manager (Status > Playback).
+- **Control Refinements**: Added `Ctrl + B` sidebar toggle and protected all hotkeys from modifier conflicts.
+- **OS Integration**:
+    - Full **Native Media Session** support (lockscreen metadata & hardware keys).
+    - **Dynamic Window Titles** for real-time taskbar feedback.
+    - **Slanted Gradient HUD**: A custom, desktop-level multi-window notification system for track changes.
+
+### Technical Debt Resolved:
+- Fixed persistent "flickering" in Dynamic Island during rapid playback updates.
+- Standardized library routing to Player on all media types via double-click.
+- Corrected Svelte 5 / Tauri v2 lifecycle and monitor-detection API usage.
+
+## [2026-04-09] Milestone 1.17: Library Scanning & API Quota Hardening
+Ensured scanning reliability and user transparency for Beta release.
+
+### Achievements:
+- **Live Progress Reporting**: Implemented `(current/total)` counters for both background healing and manual directory scans.
+- **Quota Transparency**: 
+    - Overhauled the **API Limit Modal** with a 3-step registration guide.
+    - Updated settings with interactive, click-to-copy TMDB registration values.
+- **Performance Optimization**: 
+    - **Lazy Persistence**: Implemented batch-saving for the TMDB shared-quota (disk write every 10 calls) to reduce I/O pressure.
+    - **Smart Daily Reset**: Created a calendar-aware reset logic that gives heavy users (130+ calls) a fresh start every day while preserving community pool for light users.
+- **Backend Stability**: 
+    - Migrated to `chrono` for reliable time-based logic.
+    - Optimized library scanning memory footprints with show-caching.
+
+## [2026-04-09] - Centralized App Versioning & Repository Update
+
+- **ACTION**: Centralized the application versioning system using `package.json` as the single source of truth.
+- **VITE**: Implemented `VITE_APP_VERSION` injection in `vite.config.js` via the `define` property.
+- **UI**: Refactored `Sidebar.svelte`, `Settings Hub` (`+page.svelte`), and `SupportSettings.svelte` to utilize dynamic versioning, eliminating hardcoded strings across the frontend.
+- **SYNC**: Established a pattern for metadata coordination where `package.json` drives the UI version, ensuring consistency after updates.
+- **REPO**: Updated GitHub repository references from `flux-player/Flux-player` to `xtarflex/Flux-player` to reflect the current namespace.
+- **CLEANED**: Resolved unused `@ts-expect-error` linting directives in the build configuration.

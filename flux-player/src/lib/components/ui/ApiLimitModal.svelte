@@ -42,17 +42,34 @@
         <Icon name="streaming" size={32} class="header-icon" />
         <div class="title-stack">
           <h2>Unlock Infinite Discovery</h2>
-          <p>Your 150 free metadata fetches have been used! To keep Flux fast and free for everyone, please link your own personal TMDB API key.</p>
+          <p>You've hit the 150-call community limit for Flux's shared API keys. To keep Flux free and high-performance for everyone, users who scan large libraries need to link their own personal TMDB account.</p>
         </div>
       </div>
       <button class="close-btn" onclick={onclose}>✕</button>
     </header>
 
     <div class="modal-body">
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-text">
+            <strong>Create a Free Account</strong>
+            <span>Sign up at <a href="https://www.themoviedb.org/signup" target="_blank" rel="noopener">themoviedb.org/signup</a>. It's 100% free for personal use.</span>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-text">
+            <strong>Register your "App"</strong>
+            <span>Go to Settings > API and create a new "Developer" API key. Use the cheat sheet below to get approved instantly.</span>
+          </div>
+        </div>
+      </div>
+
       <div class="cheat-sheet">
         <div class="sheet-info">
           <h4>Registration Cheat Sheet</h4>
-          <p>Use these exact values at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> to get approved instantly:</p>
+          <p>Copy these values into your <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">TMDB App registration form:</a></p>
         </div>
 
         <div class="copy-grid">
@@ -165,14 +182,59 @@
   .modal-body {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+  }
+
+  .steps-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .step-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .step-number {
+    width: 24px;
+    height: 24px;
+    background: var(--secondary);
+    color: #000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .step-text strong {
+    font-size: 0.9rem;
+    color: var(--text-main);
+  }
+
+  .step-text span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
   }
 
   .cheat-sheet {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border-low);
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
   }
 
   .sheet-info h4 {
@@ -189,8 +251,12 @@
     margin: 4px 0 16px;
   }
 
-  .sheet-info a {
+  .step-text a, .sheet-info a {
     color: var(--primary);
+    text-decoration: underline;
+  }
+
+  .sheet-info a {
     text-decoration: underline;
   }
 

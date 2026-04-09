@@ -36,6 +36,8 @@ The Settings Hub is organized into six primary functional vertical tabs to maint
 
   * *Default:* ON (Scans every 30 minutes).
 
+  * *Behavior:* "Smart Scan" logic. It only processes new files (paths not in DB) or files flagged with `needs_tmdb_scan = 1` when online. It does NOT re-query TMDB for existing, enriched records.
+
   * *Customization:* Toggle ON/OFF; slider for scan frequency.
 
 * **Windows Indexing Integration:**

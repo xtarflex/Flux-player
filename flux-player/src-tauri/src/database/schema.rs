@@ -124,5 +124,11 @@ pub fn get_migrations() -> Vec<Migration> {
             sql: "ALTER TABLE media ADD COLUMN is_favorite BOOLEAN DEFAULT 0;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 13,
+            description: "add needs_tmdb_scan status",
+            sql: "ALTER TABLE media ADD COLUMN needs_tmdb_scan BOOLEAN DEFAULT 0;",
+            kind: MigrationKind::Up,
+        },
     ]
 }

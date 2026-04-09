@@ -14,6 +14,11 @@ pub async fn start_library_scan<R: Runtime>(app: AppHandle<R>, dir: String) -> A
 }
 
 #[tauri::command]
+pub async fn heal_library<R: Runtime>(app: AppHandle<R>) -> AppResult<usize> {
+    Ok(scanner::healing_sync(app).await)
+}
+
+#[tauri::command]
 pub fn get_file_oshash(path: String) -> AppResult<String> {
     Ok(os::compute_oshash(&path)?)
 }
@@ -98,7 +103,7 @@ pub async fn refresh_media_metadata<R: Runtime>(
     };
 
     let result = if scanner::metadata::is_video(&ext) {
-        scanner::metadata::process_video(&app, p, added_at, ex_title).await
+        scanner::metadata::process_video(&app, p, added_at, ex_title, None).await
     } else if scanner::metadata::is_audio(&ext) {
         scanner::metadata::process_audio(&app, p, added_at, ex_title, ex_artist, ex_album).await
     } else {
@@ -192,7 +197,7 @@ pub async fn get_all_media<R: Runtime>(app: AppHandle<R>) -> AppResult<Vec<Libra
     let mut stmt = conn.prepare(
         "SELECT path, title, year, artist, album, poster_path, backdrop_path, album_art_path, 
                 duration, media_type, last_played, added_at, synopsis, rating, genres, 
-                director, starring, series_tag, is_watched, last_position, is_favorite 
+                director, starring, series_tag, is_watched, last_position, is_favorite, needs_tmdb_scan
          FROM media ORDER BY added_at DESC"
     )?;
 
@@ -224,6 +229,7 @@ pub async fn get_all_media<R: Runtime>(app: AppHandle<R>) -> AppResult<Vec<Libra
             is_watched: row.get::<_, i64>(18)? == 1,
             last_position: row.get(19)?,
             is_favorite: row.get::<_, i64>(20)? == 1,
+            needs_tmdb_scan: row.get::<_, i64>(21)? == 1,
         })
     })?;
 

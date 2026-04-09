@@ -23,4 +23,5 @@ pub struct LibraryItem {
     pub is_watched: bool,
     pub last_position: i64,
     pub is_favorite: bool,
+    pub needs_tmdb_scan: bool,
 }

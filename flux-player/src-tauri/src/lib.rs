@@ -13,7 +13,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .manage(commands::settings::TmdbState {
-            rotation_index: AtomicUsize::new(0),
+            rotation_index: std::sync::atomic::AtomicUsize::new(0),
+            unsaved_calls: std::sync::atomic::AtomicU64::new(0),
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(
@@ -34,6 +35,7 @@ pub fn run() {
             commands::library::cache_tmdb_image,
             commands::library::get_file_oshash,
             commands::library::start_library_scan,
+            commands::library::heal_library,
             commands::library::refresh_media_metadata,
             commands::library::update_media_field,
             commands::library::save_playback_progress,
@@ -101,6 +103,9 @@ async fn background_scan_task<R: tauri::Runtime>(
         if !folders.is_empty() {
             println!("[Flux Background Scan] Starting scheduled scan of {} locations.", folders.len());
             
+            // Phase 3: Healing Sync - Heal the backlog FIRST (once per background scan cycle)
+            let _ = crate::scanner::healing_sync(app.clone()).await;
+
             for folder in folders {
                 if let Some(path) = folder.get("path").and_then(|p| p.as_str()) {
                     // Reuse the existing scan command logic

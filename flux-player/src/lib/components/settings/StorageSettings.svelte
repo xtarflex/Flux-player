@@ -3,6 +3,7 @@
   import Icon from "../ui/Icon.svelte";
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
+  import { listen } from '@tauri-apps/api/event';
   import { loadLibraryFromDb, isScanning } from '$lib/stores/media';
 
   type FolderEntry = { path: string; type: 'video' | 'audio' };
@@ -13,30 +14,56 @@
   let isLoading = $state(true);
   let cacheSize = $state("—");
   let dbSize = $state("—");
+  let scanProgress = $state({ current: 0, total: 0 });
+  let healProgress = $state({ current: 0, total: 0 });
+  let isHealing = $state(false);
 
-  onMount(async () => {
-    try {
-      // 1. Load Persistence
-      const savedFolders = await invoke<string | null>('get_setting', { key: 'library_folders' });
-      const savedAuto = await invoke<string | null>('get_setting', { key: 'auto_indexing' });
-      const savedFreq = await invoke<string | null>('get_setting', { key: 'scan_frequency' });
+  onMount(() => {
+    let unlistenScan: () => void;
+    let unlistenHeal: () => void;
 
-      if (savedFolders) {
-        storageLocations = JSON.parse(savedFolders);
-      } else {
-        const defaults = await invoke<FolderEntry[]>('get_default_media_folders');
-        storageLocations = defaults;
-        await syncFolders(defaults);
+    async function init() {
+      try {
+        // 1. Load Persistence
+        const savedFolders = await invoke<string | null>('get_setting', { key: 'library_folders' });
+        const savedAuto = await invoke<string | null>('get_setting', { key: 'auto_indexing' });
+        const savedFreq = await invoke<string | null>('get_setting', { key: 'scan_frequency' });
+
+        if (savedFolders) {
+          storageLocations = JSON.parse(savedFolders);
+        } else {
+          const defaults = await invoke<FolderEntry[]>('get_default_media_folders');
+          storageLocations = defaults;
+          await syncFolders(defaults);
+        }
+
+        if (savedAuto) autoIndexing = savedAuto === 'true';
+        if (savedFreq) scanFrequency = parseInt(savedFreq);
+
+      } catch (e) {
+        console.warn('Flux Storage: Persistence load failed:', e);
+      } finally {
+        isLoading = false;
       }
 
-      if (savedAuto) autoIndexing = savedAuto === 'true';
-      if (savedFreq) scanFrequency = parseInt(savedFreq);
+      // 2. Listen for Progress Updates
+      unlistenScan = await listen('flux-scan-progress', (event: any) => {
+        const [current, total] = event.payload;
+        scanProgress = { current, total };
+      });
 
-    } catch (e) {
-      console.warn('Flux Storage: Persistence load failed:', e);
-    } finally {
-      isLoading = false;
+      unlistenHeal = await listen('flux-heal-progress', (event: any) => {
+        const [current, total] = event.payload;
+        healProgress = { current, total };
+      });
     }
+
+    init();
+
+    return () => {
+      if (unlistenScan) unlistenScan();
+      if (unlistenHeal) unlistenHeal();
+    };
   });
 
   async function syncFolders(folders: FolderEntry[]) {
@@ -107,6 +134,40 @@
     addFolder();
   }
 
+  async function refreshAll() {
+    if ($isScanning) return;
+    
+    isScanning.set(true);
+    isHealing = true;
+    scanProgress = { current: 0, total: 0 };
+    healProgress = { current: 0, total: 0 };
+
+    try {
+      // 1. Heal the backlog (Offline-to-Online sync)
+      await invoke('heal_library');
+      isHealing = false;
+      
+      // 2. Scan all configured folders for new media
+      for (const folder of storageLocations) {
+        await invoke('start_library_scan', { dir: folder.path });
+      }
+      
+      // 3. Refresh the UI
+      await loadLibraryFromDb();
+      
+      window.dispatchEvent(new CustomEvent('flux-toast', { 
+        detail: { label: 'Library Refresh Complete', icon: 'library' } 
+      }));
+    } catch (e) {
+      console.error('Manual refresh failed:', e);
+      window.dispatchEvent(new CustomEvent('flux-toast', { 
+        detail: { label: 'Refresh failed', icon: 'error' } 
+      }));
+    } finally {
+      isScanning.set(false);
+    }
+  }
+
   function formatFrequency(mins: number) {
     if (mins < 60) return `Every ${mins} minutes`;
     const h = Math.floor(mins / 60);
@@ -135,13 +196,32 @@
           <h3>Base Media Folders</h3>
           <p class="subtitle">Folders that Flux Player will automatically scan for media files.</p>
         </div>
-        <button class="btn-primary" onclick={openFolderDialog} disabled={$isScanning}>
-          {#if $isScanning}
-            <span class="spinner"></span> Scanning…
-          {:else}
+        <div class="header-actions">
+          <button class="btn-secondary refresh-btn" onclick={refreshAll} disabled={$isScanning}>
+            {#if $isScanning}
+              <div class="spinner-box">
+                <svg class="flux-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path class="flux-spin-cyan" d="M12 22 A10 10 0 0 1 12 2 A5 5 0 0 1 12 12 A5 5 0 0 0 12 22 Z" fill="var(--secondary)"/>
+                  <path class="flux-spin-violet" d="M12 2 A10 10 0 0 1 12 22 A5 5 0 0 1 12 12 A5 5 0 0 0 12 2 Z" fill="var(--primary)"/>
+                </svg>
+              </div>
+              <span class="scanning-text">
+                {#if isHealing && healProgress.total > 0}
+                  Heal: {healProgress.current}/{healProgress.total}
+                {:else if scanProgress.total > 0}
+                  Scan: {scanProgress.current}/{scanProgress.total}
+                {:else}
+                  Working...
+                {/if}
+              </span>
+            {:else}
+              <Icon name="refresh" size={16} /> Refresh All
+            {/if}
+          </button>
+          <button class="btn-primary" onclick={openFolderDialog} disabled={$isScanning}>
             <Icon name="plus" size={16} /> Add Folder
-          {/if}
-        </button>
+          </button>
+        </div>
       </div>
 
       <div class="folder-list">
@@ -531,22 +611,64 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .btn-primary:disabled {
+  .btn-primary:disabled, .btn-secondary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 
-  .spinner {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid rgba(0, 255, 255, 0.3);
-    border-top-color: var(--secondary);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+  .header-actions {
+    display: flex;
+    gap: 0.75rem;
   }
 
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  .scanning-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: monospace;
+    opacity: 0.9;
+  }
+
+  /* Unified Island Spinner */
+  .spinner-box {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes flux-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes flux-breathe-cyan {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+    50% { transform: translate(-1px, -1px) scale(0.9); opacity: 1; }
+  }
+  @keyframes flux-breathe-violet {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+    50% { transform: translate(1px, 1px) scale(0.9); opacity: 1; }
+  }
+
+  .flux-spinner {
+    width: 100%;
+    height: 100%;
+    animation: flux-spin 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  }
+  .flux-spin-cyan {
+    animation: flux-breathe-cyan 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    transform-origin: center;
+  }
+  .flux-spin-violet {
+    animation: flux-breathe-violet 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    transform-origin: center;
   }
 </style>

@@ -7,6 +7,7 @@
   import StorageSettings from '$lib/components/settings/StorageSettings.svelte';
   import StreamingSettings from '$lib/components/settings/StreamingSettings.svelte';
   import ShortcutSettings from '$lib/components/settings/ShortcutSettings.svelte';
+  import SupportSettings from '$lib/components/settings/SupportSettings.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
@@ -18,7 +19,8 @@
     { id: 'playback', label: 'Performance', icon: 'playback', description: 'Engine & Queue' },
     { id: 'storage', label: 'Storage', icon: 'storage', description: 'Library folders' },
     { id: 'streaming', label: 'Streaming', icon: 'streaming', description: 'TMDB & APIs' },
-    { id: 'shortcuts', label: 'Shortcuts', icon: 'keyboard', description: 'Global keys' }
+    { id: 'shortcuts', label: 'Shortcuts', icon: 'keyboard', description: 'Global keys' },
+    { id: 'support', label: 'Support', icon: 'help', description: 'Help & Bugs' }
   ];
 
   function setCategory(id: string) {
@@ -70,6 +72,8 @@
         <StreamingSettings />
       {:else if activeCategory === 'shortcuts'}
         <ShortcutSettings />
+      {:else if activeCategory === 'support'}
+        <SupportSettings />
       {/if}
     </div>
   </main>
@@ -81,7 +85,7 @@
         <img src="/flux.png" alt="Flux" class="mini-logo" />
         <div class="logo-meta">
           <span class="brand">FLUX</span>
-          <span class="version-badge">BETA V0.2.0</span>
+          <span class="version-badge">BETA {import.meta.env.VITE_APP_VERSION}</span>
         </div>
       </div>
 

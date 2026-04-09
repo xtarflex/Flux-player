@@ -11,7 +11,7 @@
   import AudioEngine from '$lib/components/player/AudioEngine.svelte';
   import PlayerEngine from '$lib/components/player/PlayerEngine.svelte';
   import { activeMedia, playbackState, activateMiniPlayer, deactivateMiniPlayer } from '$lib/stores/playback';
-  import { isScanning } from '$lib/stores/media';
+  import { isScanning, loadLibraryFromDb } from '$lib/stores/media';
   import { activeMenu, closeMenu, isSidebarCollapsed } from '$lib/stores/ui';
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
@@ -206,6 +206,13 @@
       showApiLimitModal = true;
     });
 
+    // Bridge Tauri Library Updates to Store and Browser Window
+    const unsubLibrary = listen('flux-library-updated', () => {
+      console.log('[Flux] Received background library update event');
+      loadLibraryFromDb(); // Sync store immediately
+      window.dispatchEvent(new CustomEvent('flux-library-updated'));
+    });
+
     // Centralized folder picker trigger
     const handleImportEvent = () => importFolder();
     window.addEventListener('flux-import-folder', handleImportEvent);
@@ -216,6 +223,7 @@
       if (idleTimer) clearTimeout(idleTimer);
       unsubOnboarding();
       unsubLimit.then(u => u());
+      unsubLibrary.then(u => u());
     };
   });
 </script>

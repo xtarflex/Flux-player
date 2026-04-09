@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import { invoke } from '@tauri-apps/api/core';
   import { settings, updateSetting } from '$lib/stores/settings';
   import Icon from "../ui/Icon.svelte";
@@ -38,6 +39,17 @@
   function toggleCheatSheet() {
     isCheatSheetOpen = !isCheatSheetOpen;
   }
+
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      window.dispatchEvent(new CustomEvent('flux-toast', {
+        detail: { label: `${label} Copied`, icon: 'copy' }
+      }));
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  }
 </script>
 
 <div class="streaming-settings">
@@ -70,8 +82,14 @@
 
     <section class="settings-card">
       <div class="card-header">
-        <h3>External API Keys (TMDB)</h3>
-        <p class="subtitle">Flux uses the TMDB API to fetch posters and metadata. Add your own Read Access Token (v4) for unlimited personal use.</p>
+        <div class="title-with-badge">
+          <h3>TMDB API Metadata</h3>
+          <span class="badge">Recommended</span>
+        </div>
+        <p class="subtitle">
+          Flux uses <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">The Movie Database</a> to download high-quality posters and metadata. 
+          Linking your own personal account unlocks <strong>unlimited, high-priority fetches</strong> for your entire collection.
+        </p>
       </div>
 
       <div class="api-key-container">
@@ -92,23 +110,28 @@
       </div>
 
       {#if isCheatSheetOpen}
-        <div class="cheat-sheet glass">
-          <h4>Registration Cheat Sheet</h4>
-          <p>Use these exact values when creating your TMDB App to get approved instantly:</p>
-
-          <div class="copy-field">
-            <span class="label">App Name:</span>
-            <code class="value">Flux Player Local</code>
+        <div class="cheat-sheet glass" transition:fade>
+          <div class="sheet-title">
+            <Icon name="sparkle" size={18} />
+            <h4>Registration Cheat Sheet</h4>
           </div>
+          <p>Click any field below to copy it into the TMDB registration form:</p>
 
-          <div class="copy-field">
-            <span class="label">App URL:</span>
-            <code class="value">https://github.com/flux-player</code>
-          </div>
+          <div class="copy-grid">
+            <button class="copy-field interactive" onclick={() => copyToClipboard('Flux Player Local', 'App Name')}>
+              <span class="label">App Name</span>
+              <code class="value">Flux Player Local <Icon name="copy" size={12} /></code>
+            </button>
 
-          <div class="copy-field">
-            <span class="label">Summary:</span>
-            <code class="value">A local desktop media player using the TMDB API to fetch posters and metadata for my personal file collection.</code>
+            <button class="copy-field interactive" onclick={() => copyToClipboard('https://github.com/flux-player', 'App URL')}>
+              <span class="label">App URL</span>
+              <code class="value">https://github.com/flux-player <Icon name="copy" size={12} /></code>
+            </button>
+
+            <button class="copy-field interactive span-all" onclick={() => copyToClipboard('A local desktop media player using the TMDB API to fetch posters and metadata for my personal file collection.', 'Summary')}>
+              <span class="label">Application Summary</span>
+              <code class="value">A local desktop media player using the TMDB API to fetch posters and metadata for my personal file collection. <Icon name="copy" size={12} /></code>
+            </button>
           </div>
         </div>
       {/if}
@@ -297,43 +320,116 @@
     opacity: 1;
   }
 
-  .cheat-sheet {
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--glass-border-mid);
-    background: rgba(0, 0, 0, 0.2);
+  .title-with-badge {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  .cheat-sheet h4 {
+  .badge {
+    background: rgba(0, 255, 255, 0.1);
     color: var(--secondary);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 40px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cheat-sheet {
+    padding: 2rem;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border-mid);
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 0.5rem;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .sheet-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--secondary);
+  }
+
+  .sheet-title h4 {
     margin: 0;
     font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .copy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
   }
 
   .copy-field {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    width: 100%;
+  }
+
+  .copy-field.interactive {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .copy-field.interactive:hover {
+    transform: translateY(-2px);
+  }
+
+  .copy-field.span-all {
+    grid-column: span 2;
   }
 
   .copy-field .label {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     color: var(--text-muted);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .copy-field .value {
     background: rgba(0, 0, 0, 0.4);
-    padding: 0.75rem;
-    border-radius: 6px;
+    padding: 1rem;
+    border-radius: 12px;
     font-family: monospace;
     font-size: 0.85rem;
     color: var(--text-main);
     border: 1px solid var(--glass-border-low);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .copy-field.interactive:hover .value {
+    border-color: var(--secondary);
+    background: rgba(0, 255, 255, 0.05);
+  }
+
+  .subtitle a {
+    color: var(--secondary);
+    text-decoration: underline;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes fadeIn {

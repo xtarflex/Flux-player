@@ -37,15 +37,12 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 tauri-plugin-dialog = "2"
 urlencoding = "2"
 tauri-plugin-fs = "2"
-windows = { version = "0.52", features = [
-    "Win32_Foundation",
-    "Win32_Media_Audio",
-    "Win32_Media_Audio_Endpoints",
-    "Win32_Devices_FunctionDiscovery",
-    "Win32_System_Com",
-    "Win32_System_Com_StructuredStorage",
-    "Win32_System_Variant",
-    "Win32_UI_Shell_PropertiesSystem",
-] }
+windows = { version = "0.52", features = ["Win32_Foundation", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_Devices_FunctionDiscovery", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Variant", "Win32_UI_Shell_PropertiesSystem", "Win32_UI_Shell", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging"] }
 thiserror = "1"
+image = "0.25.10"
+chrono = "0.4"
+
+[dev-dependencies]
+tempfile = "3"
+
 
