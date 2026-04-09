@@ -490,7 +490,7 @@ pub fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String
     use std::sync::OnceLock;
 
     // Stage 0: Initial Brackets and prepended resolution tags
-    let mut title = raw_title.replace('_', " ").replace('.', " ");
+    let mut title = raw_title.replace(['_', '.'], " ");
 
     // Wipe leading tags in brackets like "[1080p] Film Name" or prepended quality like "1080pMovieName"
     static PREPEND_PURGE_RE: OnceLock<regex::Regex> = OnceLock::new();
