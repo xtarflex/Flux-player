@@ -3,6 +3,49 @@ use crate::scanner::MediaMetadata;
 use crate::utils::error::AppResult;
 use tauri::{AppHandle, Runtime};
 
+pub fn clean_stale_media<R: Runtime>(app: &AppHandle<R>, dir_path: &str) -> AppResult<usize> {
+    let db_path = connection::get_db_path(app)?;
+    let mut conn = rusqlite::Connection::open(db_path)?;
+
+    // Fetch all paths that start with the scanned directory
+    // Use proper path separator handling to avoid matching siblings if they have the same prefix
+    let mut dir_str = dir_path.to_string();
+    if !dir_str.ends_with(std::path::MAIN_SEPARATOR) {
+        dir_str.push(std::path::MAIN_SEPARATOR);
+    }
+    let like_pattern = format!("{}%", dir_str);
+
+    let mut paths_to_check = Vec::new();
+    {
+        let mut stmt = conn.prepare("SELECT path FROM media WHERE path LIKE ?1")?;
+        let mut rows = stmt.query([&like_pattern])?;
+        while let Ok(Some(row)) = rows.next() {
+            if let Ok(path) = row.get::<_, String>(0) {
+                paths_to_check.push(path);
+            }
+        }
+    }
+
+    let mut stale_paths = Vec::new();
+    for path in paths_to_check {
+        if !std::path::Path::new(&path).exists() {
+            stale_paths.push(path);
+        }
+    }
+
+    let mut deleted_count = 0;
+    if !stale_paths.is_empty() {
+        let tx = conn.transaction()?;
+        for path in stale_paths {
+            tx.execute("DELETE FROM media WHERE path = ?1", rusqlite::params![path])?;
+            deleted_count += 1;
+        }
+        tx.commit()?;
+    }
+
+    Ok(deleted_count)
+}
+
 pub fn save_media_items<R: Runtime>(
     app: &AppHandle<R>,
     items: Vec<MediaMetadata>,
