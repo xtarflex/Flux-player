@@ -28,9 +28,8 @@ pub fn get_system_mute_status() -> AppResult<bool> {
             })?;
 
         // Activate the volume control interface
-        let audio_endpoint_volume: IAudioEndpointVolume = endpoint
-            .Activate(CLSCTX_ALL, None)
-            .map_err(|e| {
+        let audio_endpoint_volume: IAudioEndpointVolume =
+            endpoint.Activate(CLSCTX_ALL, None).map_err(|e| {
                 AppError::Internal(format!("Failed to activate audio endpoint volume: {}", e))
             })?;
 
