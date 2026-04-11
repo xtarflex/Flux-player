@@ -90,6 +90,8 @@ This updates Section 5 (Execution Map) to reflect newly documented features.
 
 ### 🟢 ACCOMPLISHED
 
+* **In-App Mini Player (section-switching PiP)**
+* **OS-Level PiP Mode (dedicated button)**
 * Native Shell (Tauri + SvelteKit)
 * Dynamic Island physics, morphing logic, spacing geometry, and exact border aesthetic rules
 * Library Layouts (Grid/List/Detail) and Batch Selection memory logic
@@ -105,14 +107,13 @@ This updates Section 5 (Execution Map) to reflect newly documented features.
 ### 🟡 IN PROGRESS (Documented, Not Yet Implemented)
 
 * Context-Aware Search Bars (Discovery  vs. Library)
-* User Identity UI (Titlebar Avatar, Discovery  Greeting, Avatar Uploader)
 * Offline Image Caching & Fallback UI logic
 * Scraper Cascade & Auto-Fetch Subtitle engine
 * API Key Delegation Flow (150-call rotation pool and Setup UI)
 * Playback Resume State Memory
 * Sidecars (FFmpeg & `yt-dlp`)
-* In-App Mini Player (section-switching PiP)
-* OS-Level PiP Mode (dedicated button)
+
+
 
 ---
 
@@ -197,7 +198,7 @@ Based on our comprehensive documentation, the next implementation targets are:
 - Discovery screen basic layout
 
 **Target 2: Settings Hub**
-- Profile tab (OS username extraction, avatar uploader)
+- Profile tab (OS username/computer name extraction, avatar uploader)
 - Base Folders management
 - API Setup (delegation flow with 150-call tracker)
 - New playback settings (Auto-Queue, Video-to-Audio Transition)
@@ -232,6 +233,10 @@ All documentation is now synchronized and reflects the complete architectural vi
 
 **🟢 ACCOMPLISHED**
 
+* In-App Mini Player (section-switching PiP).
+
+* OS-Level PiP Mode (dedicated button).
+
 * Native Shell (Tauri + SvelteKit).
 
 * Dynamic Island physics, morphing logic, spacing geometry, and exact border aesthetic rules.
@@ -242,7 +247,6 @@ All documentation is now synchronized and reflects the complete architectural vi
 
 * Context-Aware Search Bars (Discovery  vs. Library).
 
-* User Identity UI (Titlebar Avatar, Discovery  Greeting, Avatar Uploader).
 
 * Offline Image Caching & Fallback UI logic.
 
