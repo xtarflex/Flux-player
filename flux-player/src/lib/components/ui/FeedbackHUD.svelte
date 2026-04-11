@@ -95,7 +95,7 @@
     } catch (err) {
       console.error('[FeedbackHUD] Screenshot failed:', err);
       window.dispatchEvent(new CustomEvent('flux-toast', {
-        detail: { label: 'Screenshot Failed', icon: 'close' }
+        detail: { label: `Screenshot Failed: ${err}`, icon: 'close' }
       }));
     } finally {
       // 4. Restore the HUD

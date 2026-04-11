@@ -261,15 +261,65 @@ pub async fn capture_screenshot<R: tauri::Runtime>(
 
     // Find the Flux window belonging to THIS process
     let windows = Window::all().map_err(|e| AppError::Internal(e.to_string()))?;
-    let flux_window = windows
-        .into_iter()
-        .find(|w| w.pid().map(|p| p == current_pid).unwrap_or(false))
-        .ok_or_else(|| AppError::NotFound("Flux window not found".into()))?;
+
+    println!("--- [Flux Diagnostic] Available Windows ---");
+    let mut best_window = None;
+    let mut best_score = -1;
+
+    for w in windows {
+        let pid = w.pid().unwrap_or(0);
+        let title = w.title().unwrap_or_default();
+        let app_name = w.app_name().unwrap_or_default();
+        let is_min = w.is_minimized().unwrap_or(false);
+        let id = w.id().unwrap_or(0);
+
+        println!(
+            "Window found: ID={}, PID={}, Title='{}', App='{}', Minimized={}",
+            id, pid, title, app_name, is_min
+        );
+
+        let title_lower = title.to_lowercase();
+        let app_lower = app_name.to_lowercase();
+
+        let pid_match = pid == current_pid;
+        let title_match = title_lower.contains("flux") || app_lower.contains("flux");
+
+        if pid_match || title_match {
+            let mut score = 0;
+            if !is_min {
+                score += 20;
+            }
+            if pid_match {
+                score += 10;
+            }
+            if title_match {
+                score += 5;
+            }
+
+            if score > best_score {
+                best_score = score;
+                best_window = Some(w);
+            }
+        }
+    }
+    println!("-------------------------------------------");
+
+    let flux_window =
+        best_window.ok_or_else(|| AppError::NotFound("Flux window not found".into()))?;
+
+    let id = flux_window.id().unwrap_or(0);
+    let title = flux_window.title().unwrap_or_default();
+    println!(
+        "[Flux Diagnostic] Selected Window: ID={}, Title='{}', PID={:?}",
+        id,
+        title,
+        flux_window.pid().unwrap_or(0)
+    );
 
     // Capture the window
     let image = flux_window
         .capture_image()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        .map_err(|e| AppError::Internal(format!("Failed to capture window image: {}", e)))?;
 
     // Prepare filename
     let now = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
