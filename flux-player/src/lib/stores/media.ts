@@ -8,6 +8,7 @@
 
 import { writable, get } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
+import { settings } from './settings';
 
 export interface MediaItem {
   id: string;      // maps to `path` (PRIMARY KEY)
@@ -123,13 +124,64 @@ export async function toggleFavorite(path: string) {
 }
 
 /**
+ * Toggles the watched status for a media item via the Rust command.
+ * Optimistically updates the store first.
+ */
+export async function toggleWatched(path: string) {
+  const items = get(mediaItems);
+  const index = items.findIndex(i => i.path === path);
+  if (index === -1) return;
+
+  const currentWatched = items[index].is_watched;
+  
+  // 1. Optimistic Update
+  items[index] = { ...items[index], is_watched: !currentWatched };
+  mediaItems.set([...items]);
+
+  // 2. Persist
+  try {
+    const isWatchedNow = await invoke<boolean>('toggle_media_watched_status', { path });
+    
+    // Ensure store is in sync with server truth
+    items[index].is_watched = isWatchedNow;
+    mediaItems.set([...items]);
+
+    // Toast for feedback
+    window.dispatchEvent(new CustomEvent('flux-toast', { 
+      detail: { 
+        label: isWatchedNow ? 'Marked as Watched' : 'Marked as Unwatched', 
+        icon: 'playing' 
+      } 
+    }));
+  } catch (e) {
+    console.error('[MediaStore] Failed to update watched status in DB:', e);
+    // Back out optimistic update on fail
+    items[index].is_watched = currentWatched;
+    mediaItems.set([...items]);
+  }
+}
+
+/**
  * Updates the playback position locally in the store.
  * Used for optimistic UI updates (e.g., progress bars) in the library.
+ * Also calculates watched status for instant filter syncing.
  */
 export function updateLocalProgress(path: string, position: number) {
+  const threshold = get(settings).watchedThreshold / 100;
+
   mediaItems.update(items => {
     const item = items.find(i => i.path === path);
-    if (item) {
+    if (item && item.duration) {
+      const prevPos = item.last_position || 0;
+      const prevWatched = item.is_watched || false;
+      const thresholdPos = threshold * item.duration;
+
+      // Threshold Crossing Logic (Blueprint Fix): 
+      // Only auto-mark if we cross from below to above the line.
+      if (!prevWatched && prevPos < thresholdPos && position >= thresholdPos) {
+        item.is_watched = true;
+      }
+      
       item.last_position = position;
     }
     return [...items];

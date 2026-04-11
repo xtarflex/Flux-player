@@ -143,7 +143,7 @@ pub async fn update_media_field<R: Runtime>(
 }
 
 /// Saves the current playback position (seconds) for a media file.
-/// Automatically marks the file as watched when >= 90% of duration is complete.
+/// Automatically marks the file as watched when reaching the user-defined threshold (default 90%).
 #[tauri::command]
 pub fn save_playback_progress<R: Runtime>(
     app: AppHandle<R>,
@@ -154,11 +154,39 @@ pub fn save_playback_progress<R: Runtime>(
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path)?;
 
-    // Calculate watched status: 90% completion rule
-    let is_watched = duration > 0 && (seconds as f64 / duration as f64) >= 0.9;
+    // 1. Resolve watched threshold (Default 90 if not set)
+    let threshold_val: i64 = conn.query_row(
+        "SELECT value FROM settings WHERE key = 'watchedThreshold'",
+        [],
+        |row| row.get(0).and_then(|v: String| v.parse::<i64>().map_err(|_| rusqlite::Error::InvalidQuery)),
+    ).unwrap_or(90);
 
-    // Smart Progress: If it's already watched (near end), reset next start position to 0
-    let last_position = if is_watched { 0 } else { seconds };
+    let threshold_factor = threshold_val as f64 / 100.0;
+
+    // 2. Fetch existing status and position to handle "Threshold Crossing"
+    let (prev_is_watched, prev_position): (i64, i64) = conn.query_row(
+        "SELECT is_watched, last_position FROM media WHERE path = ?1",
+        [&path],
+        |row| Ok((row.get(0).unwrap_or(0), row.get(1).unwrap_or(0))),
+    ).unwrap_or((0, 0));
+
+    let threshold_seconds = (duration as f64 * threshold_factor) as i64;
+
+    // 3. Threshold Crossing & Stickiness Logic:
+    // Once WATCHED, it stays WATCHED (Stickiness).
+    // If UNWATCHED, it only becomes WATCHED if the progress crosses the threshold line from below.
+    // This ensures that manual 'W' unmarking is respected even if you are near the end.
+    let is_watched = if prev_is_watched == 1 {
+        1
+    } else if duration > 0 && prev_position < threshold_seconds && seconds >= threshold_seconds {
+        1
+    } else {
+        prev_is_watched // Respect manual overrides
+    };
+    
+    // 4. Smart Progress: If it's finished (reset to 0 by frontend) or crosses threshold, 
+    // handle the last_position accordingly.
+    let last_position = if seconds == 0 && is_watched == 1 { 0 } else { seconds };
 
     conn.execute(
         "UPDATE media SET last_position = ?1, is_watched = ?2 WHERE path = ?3",
@@ -166,6 +194,34 @@ pub fn save_playback_progress<R: Runtime>(
     )?;
 
     Ok(())
+}
+
+/// Toggles the watched status of a media item manually (e.g. via 'W' key).
+#[tauri::command]
+pub async fn toggle_media_watched_status<R: Runtime>(
+    app: AppHandle<R>,
+    path: String,
+) -> AppResult<bool> {
+    let db_path = crate::database::connection::get_db_path(&app)?;
+    let conn = rusqlite::Connection::open(db_path)?;
+
+    let current_status: i64 = conn.query_row(
+        "SELECT is_watched FROM media WHERE path = ?1",
+        [&path],
+        |row| row.get(0),
+    ).map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => crate::utils::error::AppError::NotFound("MEDIA_NOT_FOUND".into()),
+        _ => crate::utils::error::AppError::Database(e),
+    })?;
+
+    let new_status = if current_status == 1 { 0 } else { 1 };
+
+    conn.execute(
+        "UPDATE media SET is_watched = ?1 WHERE path = ?2",
+        rusqlite::params![new_status, &path],
+    )?;
+
+    Ok(new_status == 1)
 }
 
 /// Fetches the stored playback position (seconds) for a media file.

@@ -238,3 +238,44 @@ Ensured scanning reliability and user transparency for Beta release.
 - **SYNC**: Established a pattern for metadata coordination where `package.json` drives the UI version, ensuring consistency after updates.
 - **REPO**: Updated GitHub repository references from `flux-player/Flux-player` to `xtarflex/Flux-player` to reflect the current namespace.
 - **CLEANED**: Resolved unused `@ts-expect-error` linting directives in the build configuration.
+ 
+ ---
+ 
+ ## [2026-04-10] - Precision Progress & Watched Control
+ 
+ - **ACTION**: Refactored the "Smart Progress" system to decouple watched status from resume points and ensure definite progress capture.
+ - **PRE-EMPTIVE SAVE**: Implemented a "Switch Fix" in `AudioEngine.svelte` and `PlayerEngine.svelte`. The app now executes an immediate save of the outgoing media's position **before** the `activeMedia` store updates, eliminating the "lost seconds" bug during track skips or player closes.
+ - **MANUAL TOGGLE**: 
+     - Fully implement the **'W'** keyboard shortcut logic in `LibraryView.svelte`.
+     - Integrated **"Mark as Watched/Unwatched"** into the media card context menu.
+ - **INSTANT SYNC**: Updated `media.ts` store logic to calculate `is_watched` locally using the current threshold setting. This allows the library's "Watched" filters to update in real-time without waiting for a database roundtrip.
+ - **DYNAMIC THRESHOLD**: Refactored the Rust backend (`library.rs`) to fetch the `watchedThreshold` from the settings database instead of utilizing a hardcoded 90% value.
+ - **RATIONALE**: Improves user trust in long-form media resume points while providing snappy, reactive library management.
+ 
+ *KI: When managing asynchronous state changes like `activeMedia`, always perform cleanup/persistence logic on the PREVIOUS value before applying the NEW value to maintain data integrity across transitions.*
+
+---
+
+## [2026-04-11] - Reliable Watched Status & Player Hotkeys
+
+- **ACTION**: Implemented "Threshold Crossing" logic to resolve conflicts between auto-saving and manual watched status toggling.
+- **STICKY STATUS**: Refactored both Rust backend (`library.rs`) and Svelte store (`media.ts`) to ensure the "Watched" status is persistent. Once marked, items remain watched regardless of rewinding or playhead resets to zero.
+- **THRESHOLD CROSSING**: The auto-saver now only flags an item as "Watched" if the playhead specifically moves from below the threshold (e.g., 89%) to above it.
+    - **UX**: This allows users to manually unmark a finished video as "Unwatched" using the 'W' key and have that choice respected even if the playhead remains at the end of the file.
+- **GLOBAL PLAYER HOTKEY**: Added the **'W'** key to the `PlaybackFooter` keyboard handler. Users can now toggle the watched status of the active media item directly from the "Now Playing" interface without returning to the library.
+- **BUG FIX**: Resolved a UI flickering issue where the frontend store would volatilely recalculate and overwrite the persistent "Watched" status on every progress update.
+- **RATIONALE**: Solidifies the library management experience by prioritizing user intent over automatic calculations.
+
+---
+
+## [2026-04-11] - OSS Foundation & Native Feedback Ecosystem
+
+- **MERGE**: Successfully integrated PR #11 into `main`, establishing the project's Open Source core.
+- **GOVERNANCE**: Deployed foundational documents: `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `CHANGELOG.md`.
+- **ARCHITECTURE**: Fully transitioned to a modular Rust backend structure (`commands/`, `database/`, `scanner/`, `utils/`).
+- **CI/CD**: Configured GitHub Actions for automated linting, formatting, and Tauri cross-platform build validation.
+- **FEEDBACK SYSTEM**:
+    - **NATIVE CAPTURE**: Implemented a Rust-based screenshot engine (`capture_screenshot`) with dual-path storage (Internal Cache + Public Pictures).
+    - **HUD**: Created `FeedbackHUD.svelte` (triggered via `Ctrl+Shift+F`) for integrated bug reporting and diagnostic collection.
+    - **DIAGNOSTICS**: Automated the collection of system metadata (OS version, CPU architecture) for precise issue triaging.
+- **RATIONALE**: Prepares Flux for community contribution while providing high-fidelity diagnostic tools for the upcoming Beta cycle.

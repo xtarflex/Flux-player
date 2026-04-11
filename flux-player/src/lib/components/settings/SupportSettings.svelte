@@ -29,14 +29,47 @@
   }
 
   async function copySystemInfo() {
-    const info = `Flux Version: ${appVersion}\nOS: ${osInfo}\nLocale: ${navigator.language}`;
     try {
+      const report = await invoke<{
+        app_version: string;
+        os: string;
+        computer_name: string;
+        library_total: number;
+        library_enriched: number;
+        library_pending: number;
+        offline_mode: boolean;
+        auto_indexing: boolean;
+        has_custom_tmdb_key: boolean;
+        theme: string;
+      }>('get_diagnostic_report');
+
+      const info = [
+        `## Flux Diagnostic Report`,
+        `| Key | Value |`,
+        `|---|---|`,
+        `| App Version | ${report.app_version} |`,
+        `| OS | ${report.os} |`,
+        `| Device | ${report.computer_name} |`,
+        `| Library | ${report.library_total} items (${report.library_enriched} enriched, ${report.library_pending} pending) |`,
+        `| Offline Mode | ${report.offline_mode ? 'Yes' : 'No'} |`,
+        `| Auto Indexing | ${report.auto_indexing ? 'Yes' : 'No'} |`,
+        `| Custom TMDB Key | ${report.has_custom_tmdb_key ? 'Yes' : 'No'} |`,
+        `| Theme | ${report.theme} |`,
+        `| Locale | ${navigator.language} |`,
+      ].join('\n');
+
       await navigator.clipboard.writeText(info);
       window.dispatchEvent(new CustomEvent('flux-toast', {
-        detail: { label: 'System Info Copied', icon: 'check' }
+        detail: { label: 'Full Diagnostic Copied', icon: 'check' }
       }));
     } catch (err) {
-      console.error("Failed to copy:", err);
+      console.error("Failed to copy diagnostics:", err);
+      // Fallback to basic info
+      const info = `Flux Version: ${appVersion}\nOS: ${osInfo}\nLocale: ${navigator.language}`;
+      await navigator.clipboard.writeText(info);
+      window.dispatchEvent(new CustomEvent('flux-toast', {
+        detail: { label: 'Basic Info Copied', icon: 'check' }
+      }));
     }
   }
 </script>

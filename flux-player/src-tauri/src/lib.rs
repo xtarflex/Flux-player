@@ -3,7 +3,6 @@ pub mod database;
 pub mod scanner;
 pub mod utils;
 
-// use std::sync::atomic::AtomicUsize;
 use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -42,6 +41,10 @@ pub fn run() {
             commands::library::get_playback_progress,
             commands::library::get_all_media,
             commands::library::toggle_favorite_status,
+            commands::library::toggle_media_watched_status,
+            commands::settings::get_diagnostic_report,
+            commands::settings::capture_screenshot,
+            commands::settings::send_feedback_report,
             utils::folders::get_default_media_folders,
             commands::audio::get_system_mute_status,
         ])

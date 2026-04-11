@@ -221,8 +221,16 @@
         }
       });
 
+      let lastItemPath: string | null = null;
       unsubMedia = activeMedia.subscribe(item => {
         if (!player) return;
+
+        // ── Pre-emptive Save (The Switch Fix) ──────────────────────────────────
+        if (lastItemPath && (!item || item.path !== lastItemPath)) {
+          console.log(`[PlayerEngine] Pre-emptive save for: ${lastItemPath}`);
+          saveNow(lastItemPath, player.currentTime(), player.duration());
+        }
+        lastItemPath = item?.path || null;
 
         // If we switch to audio or null, stop the video player instance immediately (Fix 12.1)
         if (!item || item.type !== 'video') {

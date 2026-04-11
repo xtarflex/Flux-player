@@ -108,7 +108,17 @@
     }
 
     // ── Subscribe to activeMedia ─────────────────────────────────────────────
+    let lastItemPath: string | null = null;
+
     const unsubMedia = activeMedia.subscribe(item => {
+      // ── Pre-emptive Save (The Switch Fix) ──────────────────────────────────
+      // If we HAD an item playing and it's changing (not just initial mount), save it.
+      if (lastItemPath && (!item || item.path !== lastItemPath)) {
+        console.log(`[AudioEngine] Pre-emptive save for: ${lastItemPath}`);
+        saveNow(lastItemPath, audioEl.currentTime, audioEl.duration);
+      }
+      lastItemPath = item?.path || null;
+
       // Update the OS lockscreen/thumbnail metadata
       updateMediaSession(item);
 

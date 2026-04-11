@@ -20,12 +20,14 @@
   import WelcomeSplash from '$lib/components/ui/WelcomeSplash.svelte';
   import OnboardingOverlay from '$lib/components/ui/OnboardingOverlay.svelte';
   import ApiLimitModal from '$lib/components/ui/ApiLimitModal.svelte';
+  import FeedbackHUD from '$lib/components/ui/FeedbackHUD.svelte';
   import { onboarding, triggerTour } from '$lib/stores/onboarding';
   import { listen } from '@tauri-apps/api/event';
 
   let { children } = $props();
   let showShortcutsRef = $state(false);
   let showApiLimitModal = $state(false);
+  let showFeedbackHUD = $state(false);
 
 
   // ── Theater & PiP Mode State ──────────────────────────────────────────────
@@ -152,7 +154,14 @@
             window.dispatchEvent(new CustomEvent('flux-refresh-context'));
           }
           break;
-        case 'f': e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-search-focus')); break;
+        case 'f':
+          e.preventDefault();
+          if (e.shiftKey) {
+            showFeedbackHUD = !showFeedbackHUD;
+          } else {
+            window.dispatchEvent(new CustomEvent('flux-search-focus'));
+          }
+          break;
         case 'n': 
           e.preventDefault();
           if (e.shiftKey) { dispatchToast('New Smart Playlist', 'discovery'); } // Use discovery as star
@@ -261,6 +270,8 @@
     <ApiLimitModal onclose={() => showApiLimitModal = false} />
   {/if}
 
+  <FeedbackHUD bind:show={showFeedbackHUD} />
+
   <!-- Shortcuts Reference Modal -->
   {#if showShortcutsRef}
     <div 
@@ -292,6 +303,7 @@
             <div class="row"><span>Ctrl + O</span> Import Folder</div>
             <div class="row"><span>Ctrl + S</span> Save Queue</div>
             <div class="row"><span>Ctrl + B</span> Toggle Sidebar</div>
+            <div class="row"><span>Ctrl+Shift+F</span> Feedback HUD</div>
           </div>
           <div class="col">
             <h3>Library Mode</h3>

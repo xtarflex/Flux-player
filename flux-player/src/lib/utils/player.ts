@@ -47,16 +47,23 @@ export function extractDominantColor(src: string): void {
  * @param duration - Total length in seconds.
  */
 export async function savePlaybackProgress(path: string, currentTime: number, duration: number): Promise<void> {
+  if (!path || duration <= 0) return;
+
   try {
-    console.log(`[PlayerUtils] Saving: ${path} @ ${Math.floor(currentTime)}s`);
+    const sec = Math.floor(currentTime);
+    const dur = Math.floor(duration);
+    
+    console.log(`[PlayerUtils] Syncing position for: ${path.split(/[\\\/]/).pop()} @ ${sec}s / ${dur}s`);
+    
     await invoke('save_playback_progress', {
       path,
-      seconds: Math.floor(currentTime),
-      duration: Math.floor(duration),
+      seconds: sec,
+      duration: dur,
     });
-    // Update local store so library UI progress bars stay in sync
+
+    // Update local store so library UI progress bars and WATCHED filters stay in sync
     const { updateLocalProgress } = await import('$lib/stores/media');
-    updateLocalProgress(path, Math.floor(currentTime));
+    updateLocalProgress(path, sec);
   } catch (e) {
     console.warn('[PlayerUtils] Failed to save progress:', e);
   }

@@ -11,7 +11,7 @@
   import EmptyState from '../ui/EmptyState.svelte';
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
-  import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState, toggleFavorite } from '$lib/stores/media';
+  import { mediaItems, selectedMediaId, loadLibraryFromDb, libraryLoadState, toggleFavorite, toggleWatched } from '$lib/stores/media';
   import { setMedia } from '$lib/stores/playback';
   import { playWithAutoQueue, hydrateQueue } from '$lib/stores/queue';
   import { goto } from '$app/navigation';
@@ -325,7 +325,15 @@
           if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Media Info', icon: 'library' } })); }
           break;
         case 'w':
-          if (isCardFocused) { e.preventDefault(); window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Toggled Watched', icon: 'playing' } })); }
+          if (isCardFocused) { 
+            e.preventDefault(); 
+            // Get the item ID from the focused element
+            const id = active.getAttribute('data-id');
+            if (id) {
+              const item = $mediaItems.find(i => i.id === id);
+              if (item) toggleWatched(item.path);
+            }
+          }
           break;
       }
     }
@@ -417,6 +425,9 @@
       case 'favorite':
         toggleFavorite(menuTarget.id);
         break;
+      case 'watched':
+        toggleWatched(menuTarget.path);
+        break;
       case 'details':
         $selectedMediaId = menuTarget.id;
         viewMode = 'detail';
@@ -435,6 +446,7 @@
       { label: 'Play Now', action: () => handleMenuAction('play') },
       { label: 'Add to Queue', action: () => handleMenuAction('queue') },
       { separator: true },
+      { label: currentItem?.is_watched ? 'Mark as Unwatched' : 'Mark as Watched', action: () => handleMenuAction('watched') },
       { label: isSelectionMode ? 'Exit Selection Mode' : 'Batch Select', action: () => isSelectionMode ? exitSelectionMode() : enterSelectionMode(menuTarget.id) },
       { 
         label: 'Add to Playlist', 

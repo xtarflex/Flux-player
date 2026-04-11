@@ -5,7 +5,7 @@
   import QueueStack from './footer/QueueStack.svelte';
   import RightActions from './footer/RightActions.svelte';
   import { activeMedia, playbackState } from '$lib/stores/playback';
-  import { mediaItems, toggleFavorite } from '$lib/stores/media';
+  import { mediaItems, toggleFavorite, toggleWatched } from '$lib/stores/media';
   import { nextTrack as nextAction, prevTrack as prevAction, queue as queueStore, toggleShuffle } from '$lib/stores/queue';
   import { onMount } from 'svelte';
   import { onboarding, triggerTour } from '$lib/stores/onboarding';
@@ -128,6 +128,13 @@
         playbackState.update(s => ({ ...s, shuffleState: nextShuffle }));
         toggleShuffle(nextShuffle);
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: nextShuffle ? 'Shuffle On' : 'Shuffle Off', icon: 'shuffle' } }));
+        break;
+      case 'w':
+      case 'W':
+        e.preventDefault();
+        if ($activeMedia) {
+          toggleWatched($activeMedia.path);
+        }
         break;
       case 'r':
       case 'R':
