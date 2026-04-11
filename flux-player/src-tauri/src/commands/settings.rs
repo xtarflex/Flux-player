@@ -254,74 +254,56 @@ pub async fn capture_screenshot<R: tauri::Runtime>(
     use base64::{engine::general_purpose, Engine as _};
     use std::io::Cursor;
     use tauri::Manager;
-    use xcap::Window;
 
-    // Get current process ID for exact targeting
-    let current_pid = std::process::id();
+    // 1. Get exact window position and size from Tauri
+    let main_window = app.get_webview_window("main").ok_or_else(|| AppError::NotFound("Main window not found".into()))?;
+    let pos = main_window.outer_position().map_err(|e| AppError::Internal(e.to_string()))?;
+    let size = main_window.outer_size().map_err(|e| AppError::Internal(e.to_string()))?;
 
-    // Find the Flux window belonging to THIS process
-    let windows = Window::all().map_err(|e| AppError::Internal(e.to_string()))?;
+    // 2. Find the monitor that contains the center of our window
+    let monitors = xcap::Monitor::all().map_err(|e| AppError::Internal(e.to_string()))?;
+    let center_x = pos.x + (size.width as i32 / 2);
+    let center_y = pos.y + (size.height as i32 / 2);
+    
+    let target_monitor = monitors.into_iter().find(|m| {
+        let mx = m.x().unwrap_or(0);
+        let my = m.y().unwrap_or(0);
+        let mw = m.width().unwrap_or(0) as i32;
+        let mh = m.height().unwrap_or(0) as i32;
+        center_x >= mx && center_x < mx + mw && center_y >= my && center_y < my + mh
+    }).ok_or_else(|| AppError::NotFound("Could not find monitor for Flux window".into()))?;
 
-    println!("--- [Flux Diagnostic] Available Windows ---");
-    let mut best_window = None;
-    let mut best_score = -1;
+    let mon_w = target_monitor.width().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mon_h = target_monitor.height().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mon_x = target_monitor.x().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mon_y = target_monitor.y().map_err(|e| AppError::Internal(e.to_string()))?;
 
-    for w in &windows {
-        let pid = w.pid().unwrap_or(0);
-        let title = w.title().unwrap_or_default();
-        let app_name = w.app_name().unwrap_or_default();
-        let is_min = w.is_minimized().unwrap_or(false);
-        let id = w.id().unwrap_or(0);
+    println!("[Flux Diagnostic] Capturing from Monitor: {}x{} at {},{}", mon_w, mon_h, mon_x, mon_y);
 
-        println!(
-            "Window found: ID={}, PID={}, Title='{}', App='{}', Minimized={}",
-            id, pid, title, app_name, is_min
-        );
+    // 3. Capture the full monitor
+    let full_image = target_monitor.capture_image().map_err(|e| AppError::Internal(format!("Monitor capture failed: {}", e)))?;
+    
+    // 4. Calculate relative crop coordinates (clamping to monitor bounds)
+    let mon_w_u32 = mon_w;
+    let mon_h_u32 = mon_h;
 
-        let title_lower = title.to_lowercase();
-        let app_lower = app_name.to_lowercase();
+    let crop_x = (pos.x - mon_x).max(0) as u32;
+    let crop_y = (pos.y - mon_y).max(0) as u32;
+    let mut width = size.width;
+    let mut height = size.height;
 
-        let pid_match = pid == current_pid;
-        // Exact match for "flux" or broad match if it looks like our app
-        let is_flux_app = app_lower == "flux" || app_lower == "flux-player" || app_lower == "flux_player";
-        let title_match = title_lower == "flux" || (title_lower.contains("flux") && !title_lower.contains("antigravity"));
-
-        if pid_match || title_match || is_flux_app {
-            let mut score = 0;
-            if !is_min { score += 50; }
-            if pid_match { score += 100; }
-            if is_flux_app { score += 75; }
-            if title_match { score += 25; }
-
-            if score > best_score {
-                best_score = score;
-                best_window = Some(w.clone());
-            }
-        }
+    // Adjust crop area if it goes beyond monitor edges
+    if crop_x + width > mon_w_u32 {
+        width = mon_w_u32 - crop_x;
     }
-    println!("-------------------------------------------");
+    if crop_y + height > mon_h_u32 {
+        height = mon_h_u32 - crop_y;
+    }
 
-    let flux_window = best_window.ok_or_else(|| {
-        let window_list = windows.iter()
-            .map(|w| format!("{} ({})", w.title().unwrap_or_default(), w.app_name().unwrap_or_default()))
-            .collect::<Vec<_>>()
-            .join(", ");
-        AppError::NotFound(format!("Flux window not found. Seen: [{}]", window_list))
-    })?;
-
-    let id = flux_window.id().unwrap_or(0);
-    let title = flux_window.title().unwrap_or_default();
-    println!(
-        "[Flux Diagnostic] Selected Window: ID={}, Title='{}', PID={:?}",
-        id,
-        title,
-        flux_window.pid().unwrap_or(0)
-    );
-
-    // Capture the window
-    let image = flux_window
-        .capture_image()
-        .map_err(|e| AppError::Internal(format!("Failed to capture window image: {}", e)))?;
+    // 5. Crop the image to just the Flux window area
+    let mut dynamic_img = image::DynamicImage::ImageRgba8(full_image);
+    let cropped_image = dynamic_img.crop(crop_x, crop_y, width, height);
+    let image = cropped_image.to_rgba8();
 
     // Prepare filename
     let now = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
