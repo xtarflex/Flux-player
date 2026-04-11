@@ -668,3 +668,15 @@ For each flagged item:
 
 ### 4. Preservation of User Edits
 If a user has manually edited a `title` or `year`, the enrichment logic MUST prioritize the user's input as the search query and NOT overwrite those specific fields with TMDB data if they differ significantly from the filename.
+
+## 5. Background Healing Sync (Offline Recovery)
+
+* **The Recovery Mechanism**: When offline or when TMDB API quotas are exceeded, media is stored in the database with `needs_tmdb_scan = 1`. A background process called `healing_sync` exists to gracefully recover this missing metadata.
+* **The Process**: The scanner reads the SQLite database for flagged videos, sequentially attempts to fetch TMDB metadata using `process_video`, and immediately updates the library.
+* **Events**: It emits `flux-heal-progress` (current index vs total) for UI loading states, and `flux-library-updated` upon successful metadata saves.
+
+## 6. Hardware Audio Device Classification
+
+* **OS-Level Awareness**: The backend integrates with the host OS to extract hardware device states, going beyond basic browser APIs.
+* **Mute Sync**: `get_system_mute_status` reads the exact system mute state via Windows COM interfaces (IMMDeviceEnumerator).
+* **Device Classification**: The `classify_device` command parses hardware device strings into distinct UI categories: `bluetooth`, `headphone`, `hdmi`, and `usb`, allowing the frontend to dynamically render appropriate hardware icons.

@@ -692,3 +692,9 @@ src: "asset://localhost/C:/Users/User/AppData/Roaming/flux-player/cache/converte
 ### Background Queue (V3)
 
 To prevent CPU thermal throttling, the background queue (Option B) executes one job at a time. The Rust backend manages a `VecDeque` of tracks and uses a crossbeam channel to signal completion and start the next job.
+## 18. Mini Player & PiP Overlay Architecture
+
+**Goal:** Provide persistent, unobtrusive viewing while navigating the rest of the application.
+
+*   **Mini Player Overlay (`MiniPlayerOverlay.svelte`)**: An in-app, section-switching picture-in-picture component. It allows the video to continue playing in a draggable, floating container within the DOM when the user navigates away from the main PlayerEngine view to sections like the Library or Settings.
+*   **OS-Level PiP (`PiPOverlay.svelte`)**: Handles the handoff to the native operating system's Picture-in-Picture window, ensuring the media stream detaches entirely from the app shell to float above all other OS windows.
