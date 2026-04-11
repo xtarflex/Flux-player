@@ -101,6 +101,87 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    fn test_clean_stale_media() {
+        let dir = tempdir().expect("Failed to create temp dir");
+        let db_path = dir.path().join("test_flux.db");
+        let mut conn = rusqlite::Connection::open(&db_path).unwrap();
+        initialize_database_for_tests(&conn);
+
+        // 1. Create a real file in our temp dir
+        let real_file_path = dir.path().join("real_video.mkv");
+        std::fs::write(&real_file_path, "dummy data").unwrap();
+        let real_path_str = real_file_path.to_string_lossy().to_string();
+
+        // 2. Create a fake path that simulates a deleted file
+        let fake_file_path = dir.path().join("deleted_video.mkv");
+        let fake_path_str = fake_file_path.to_string_lossy().to_string();
+
+        // 3. Insert both into the database
+        conn.execute(
+            "INSERT INTO media (path, title, media_type, added_at) VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![&real_path_str, "Real Video", "video", 12345],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO media (path, title, media_type, added_at) VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![&fake_path_str, "Fake Video", "video", 12345],
+        )
+        .unwrap();
+
+        // 4. Run cleanup logic directly (since we cant mock AppHandle easily, we replicate the logic)
+        let dir_path_str = dir.path().to_string_lossy().to_string();
+        let mut dir_str = dir_path_str.clone();
+        if !dir_str.ends_with(std::path::MAIN_SEPARATOR) {
+            dir_str.push(std::path::MAIN_SEPARATOR);
+        }
+        let like_pattern = format!("{}%", dir_str);
+
+        let mut paths_to_check = Vec::new();
+        {
+            let mut stmt = conn
+                .prepare("SELECT path FROM media WHERE path LIKE ?1")
+                .unwrap();
+            let mut rows = stmt.query([&like_pattern]).unwrap();
+            while let Ok(Some(row)) = rows.next() {
+                if let Ok(path) = row.get::<_, String>(0) {
+                    paths_to_check.push(path);
+                }
+            }
+        }
+
+        let mut stale_paths = Vec::new();
+        for path in paths_to_check {
+            if !std::path::Path::new(&path).exists() {
+                stale_paths.push(path);
+            }
+        }
+
+        if !stale_paths.is_empty() {
+            let tx = conn.transaction().unwrap();
+            for path in stale_paths {
+                tx.execute("DELETE FROM media WHERE path = ?1", rusqlite::params![path])
+                    .unwrap();
+            }
+            tx.commit().unwrap();
+        }
+
+        // 5. Verify results
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM media", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1, "Should only have 1 item left");
+
+        let remaining_path: String = conn
+            .query_row("SELECT path FROM media", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(
+            remaining_path, real_path_str,
+            "The remaining item should be the real file"
+        );
+    }
+
+    #[test]
     fn test_do_no_harm_metadata_protection() {
         let dir = tempdir().expect("Failed to create temp dir");
         let db_path = dir.path().join("test_flux.db");
