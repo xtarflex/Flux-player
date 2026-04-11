@@ -279,3 +279,10 @@ Ensured scanning reliability and user transparency for Beta release.
     - **HUD**: Created `FeedbackHUD.svelte` (triggered via `Ctrl+Shift+F`) for integrated bug reporting and diagnostic collection.
     - **DIAGNOSTICS**: Automated the collection of system metadata (OS version, CPU architecture) for precise issue triaging.
 - **RATIONALE**: Prepares Flux for community contribution while providing high-fidelity diagnostic tools for the upcoming Beta cycle.
+
+## 2024-04-11: Implement hybrid window targeting for screenshot capture
+- Updated `capture_screenshot` command in `src-tauri/src/commands/settings.rs` to use a multi-criteria approach instead of strictly requiring an exact PID match.
+- This addresses issues where Tauri 2 uses separate processes for the backend and the webview UI, making the strict PID match fail.
+- The new logic iterates through all windows and scores them based on PID match, Title match ("flux"), and window visibility (minimized or not). The highest scoring window is selected.
+- Added comprehensive diagnostic logging (`println!`) to the terminal to detail all windows found and the final selected window.
+- Updated the frontend `captureScreenshot` method in `FeedbackHUD.svelte` to better parse and log the backend error (`err`), helping clearly distinguish between "NotFound" and "Internal" errors.
