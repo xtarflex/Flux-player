@@ -2,7 +2,7 @@
 
 Flux Player is a high-performance, glassmorphic media suite for local and streaming content. Built from the ground up for desktop environments, it leverages the speed of Rust, the lightness of Svelte 5, and the power of Tauri 2.0.
 
-![Flux Player Interface](docs/assets/flux.png)
+![Flux Player Interface](https://github.com/xtarflex/Flux-player/blob/main/docs%2Fassets%2Flibrary%20main%20view%20.png)
 
 ## 🌟 Features
 
