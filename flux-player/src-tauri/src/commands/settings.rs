@@ -256,33 +256,55 @@ pub async fn capture_screenshot<R: tauri::Runtime>(
     use tauri::Manager;
 
     // 1. Get exact window position and size from Tauri
-    let main_window = app.get_webview_window("main").ok_or_else(|| AppError::NotFound("Main window not found".into()))?;
-    let pos = main_window.outer_position().map_err(|e| AppError::Internal(e.to_string()))?;
-    let size = main_window.outer_size().map_err(|e| AppError::Internal(e.to_string()))?;
+    let main_window = app
+        .get_webview_window("main")
+        .ok_or_else(|| AppError::NotFound("Main window not found".into()))?;
+    let pos = main_window
+        .outer_position()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let size = main_window
+        .outer_size()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // 2. Find the monitor that contains the center of our window
     let monitors = xcap::Monitor::all().map_err(|e| AppError::Internal(e.to_string()))?;
     let center_x = pos.x + (size.width as i32 / 2);
     let center_y = pos.y + (size.height as i32 / 2);
-    
-    let target_monitor = monitors.into_iter().find(|m| {
-        let mx = m.x().unwrap_or(0);
-        let my = m.y().unwrap_or(0);
-        let mw = m.width().unwrap_or(0) as i32;
-        let mh = m.height().unwrap_or(0) as i32;
-        center_x >= mx && center_x < mx + mw && center_y >= my && center_y < my + mh
-    }).ok_or_else(|| AppError::NotFound("Could not find monitor for Flux window".into()))?;
 
-    let mon_w = target_monitor.width().map_err(|e| AppError::Internal(e.to_string()))?;
-    let mon_h = target_monitor.height().map_err(|e| AppError::Internal(e.to_string()))?;
-    let mon_x = target_monitor.x().map_err(|e| AppError::Internal(e.to_string()))?;
-    let mon_y = target_monitor.y().map_err(|e| AppError::Internal(e.to_string()))?;
+    let target_monitor = monitors
+        .into_iter()
+        .find(|m| {
+            let mx = m.x().unwrap_or(0);
+            let my = m.y().unwrap_or(0);
+            let mw = m.width().unwrap_or(0) as i32;
+            let mh = m.height().unwrap_or(0) as i32;
+            center_x >= mx && center_x < mx + mw && center_y >= my && center_y < my + mh
+        })
+        .ok_or_else(|| AppError::NotFound("Could not find monitor for Flux window".into()))?;
 
-    println!("[Flux Diagnostic] Capturing from Monitor: {}x{} at {},{}", mon_w, mon_h, mon_x, mon_y);
+    let mon_w = target_monitor
+        .width()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let mon_h = target_monitor
+        .height()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let mon_x = target_monitor
+        .x()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let mon_y = target_monitor
+        .y()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    println!(
+        "[Flux Diagnostic] Capturing from Monitor: {}x{} at {},{}",
+        mon_w, mon_h, mon_x, mon_y
+    );
 
     // 3. Capture the full monitor
-    let full_image = target_monitor.capture_image().map_err(|e| AppError::Internal(format!("Monitor capture failed: {}", e)))?;
-    
+    let full_image = target_monitor
+        .capture_image()
+        .map_err(|e| AppError::Internal(format!("Monitor capture failed: {}", e)))?;
+
     // 4. Calculate relative crop coordinates (clamping to monitor bounds)
     let mon_w_u32 = mon_w;
     let mon_h_u32 = mon_h;
