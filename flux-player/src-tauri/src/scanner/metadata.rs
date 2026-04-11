@@ -292,6 +292,8 @@ pub async fn process_video<R: Runtime>(
                     .or(tmdb_meta.name)
                     .unwrap_or(metadata.title.clone());
 
+                let mut image_download_failed = false;
+
                 // Use TMDB Poster if available
                 if let Some(poster) = tmdb_meta.poster_path {
                     let poster_url = super::tmdb::get_image_url(&poster, "w500");
@@ -303,7 +305,10 @@ pub async fn process_video<R: Runtime>(
                     .await
                     {
                         Ok(cached_path) => metadata.poster_path = Some(cached_path),
-                        Err(_) => embed_fallback = true,
+                        Err(_) => {
+                            embed_fallback = true;
+                            image_download_failed = true;
+                        }
                     }
                 } else {
                     embed_fallback = true;
@@ -312,13 +317,16 @@ pub async fn process_video<R: Runtime>(
                 // Use TMDB Backdrop
                 if let Some(backdrop) = tmdb_meta.backdrop_path {
                     let backdrop_url = super::tmdb::get_image_url(&backdrop, "original");
-                    metadata.backdrop_path = crate::commands::library::cache_tmdb_image(
+                    match crate::commands::library::cache_tmdb_image(
                         app.clone(),
                         backdrop_url,
                         "backdrops".to_string(),
                     )
                     .await
-                    .ok();
+                    {
+                        Ok(cached_path) => metadata.backdrop_path = Some(cached_path),
+                        Err(_) => image_download_failed = true,
+                    }
                 }
 
                 // Fetch Rich Details (Genres, Director, Starring)
@@ -345,7 +353,7 @@ pub async fn process_video<R: Runtime>(
                     }
                 }
 
-                metadata.needs_tmdb_scan = false;
+                metadata.needs_tmdb_scan = image_download_failed;
             }
             Ok(None) => {
                 // 404 Not Found. Never try again.
