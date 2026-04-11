@@ -4,10 +4,22 @@ use crate::scanner;
 use crate::utils::error::AppResult;
 use crate::utils::os;
 use std::io::Write;
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 #[tauri::command]
 pub async fn start_library_scan<R: Runtime>(app: AppHandle<R>, dir: String) -> AppResult<()> {
+    // 1. Clean up stale media items for this directory
+    if let Ok(deleted) = database::queries::clean_stale_media(&app, &dir) {
+        if deleted > 0 {
+            println!(
+                "[Flux Scanner] Cleaned up {} stale entries in {}",
+                deleted, dir
+            );
+            let _ = app.emit("flux-library-updated", ());
+        }
+    }
+
+    // 2. Scan and add new/updated media items
     let items = scanner::scan_directory(app.clone(), dir).await;
     database::queries::save_media_items(&app, items)?;
     Ok(())
