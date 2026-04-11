@@ -266,7 +266,7 @@ pub async fn capture_screenshot<R: tauri::Runtime>(
     let mut best_window = None;
     let mut best_score = -1;
 
-    for w in windows {
+    for w in &windows {
         let pid = w.pid().unwrap_or(0);
         let title = w.title().unwrap_or_default();
         let app_name = w.app_name().unwrap_or_default();
@@ -282,30 +282,32 @@ pub async fn capture_screenshot<R: tauri::Runtime>(
         let app_lower = app_name.to_lowercase();
 
         let pid_match = pid == current_pid;
-        let title_match = title_lower.contains("flux") || app_lower.contains("flux");
+        // Exact match for "flux" or broad match if it looks like our app
+        let is_flux_app = app_lower == "flux" || app_lower == "flux-player" || app_lower == "flux_player";
+        let title_match = title_lower == "flux" || (title_lower.contains("flux") && !title_lower.contains("antigravity"));
 
-        if pid_match || title_match {
+        if pid_match || title_match || is_flux_app {
             let mut score = 0;
-            if !is_min {
-                score += 20;
-            }
-            if pid_match {
-                score += 10;
-            }
-            if title_match {
-                score += 5;
-            }
+            if !is_min { score += 50; }
+            if pid_match { score += 100; }
+            if is_flux_app { score += 75; }
+            if title_match { score += 25; }
 
             if score > best_score {
                 best_score = score;
-                best_window = Some(w);
+                best_window = Some(w.clone());
             }
         }
     }
     println!("-------------------------------------------");
 
-    let flux_window =
-        best_window.ok_or_else(|| AppError::NotFound("Flux window not found".into()))?;
+    let flux_window = best_window.ok_or_else(|| {
+        let window_list = windows.iter()
+            .map(|w| format!("{} ({})", w.title().unwrap_or_default(), w.app_name().unwrap_or_default()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        AppError::NotFound(format!("Flux window not found. Seen: [{}]", window_list))
+    })?;
 
     let id = flux_window.id().unwrap_or(0);
     let title = flux_window.title().unwrap_or_default();
