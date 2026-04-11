@@ -1,8 +1,8 @@
 use crate::database;
-use crate::scanner;
-use crate::utils::os;
-use crate::utils::error::AppResult;
 use crate::database::models::LibraryItem;
+use crate::scanner;
+use crate::utils::error::AppResult;
+use crate::utils::os;
 use std::io::Write;
 use tauri::{AppHandle, Manager, Runtime};
 
@@ -30,12 +30,12 @@ pub async fn cache_tmdb_image<R: Runtime>(
     image_type: String, // "posters" or "backdrops" or "album-art"
 ) -> AppResult<String> {
     if url.is_empty() {
-        return Err(crate::utils::error::AppError::InvalidInput("EMPTY_URL".into()));
+        return Err(crate::utils::error::AppError::InvalidInput(
+            "EMPTY_URL".into(),
+        ));
     }
 
-    let app_dir = app
-        .path()
-        .app_data_dir()?;
+    let app_dir = app.path().app_data_dir()?;
     let cache_dir = app_dir.join("cache").join("images").join(image_type);
 
     if !cache_dir.exists() {
@@ -46,7 +46,7 @@ pub async fn cache_tmdb_image<R: Runtime>(
     let mut hasher = Sha256::new();
     hasher.update(url.as_bytes());
     let hash = format!("{:x}", hasher.finalize())[..16].to_string();
-    let file_extension = url.split('.').last().unwrap_or("jpg");
+    let file_extension = url.split('.').next_back().unwrap_or("jpg");
     let file_name = format!("{}.{}", hash, file_extension);
     let target_path = cache_dir.join(&file_name);
 
@@ -61,10 +61,7 @@ pub async fn cache_tmdb_image<R: Runtime>(
 }
 
 #[tauri::command]
-pub async fn refresh_media_metadata<R: Runtime>(
-    app: AppHandle<R>,
-    path: String,
-) -> AppResult<()> {
+pub async fn refresh_media_metadata<R: Runtime>(app: AppHandle<R>, path: String) -> AppResult<()> {
     let p = std::path::Path::new(&path);
     let _name = p
         .file_name()
@@ -86,12 +83,11 @@ pub async fn refresh_media_metadata<R: Runtime>(
     let (ex_title, ex_artist, ex_album) = {
         let db_path = crate::database::connection::get_db_path(&app)?;
         let conn = rusqlite::Connection::open(db_path)?;
-        
-        let mut stmt = conn
-            .prepare("SELECT title, artist, album FROM media WHERE path = ?1")?;
-            
+
+        let mut stmt = conn.prepare("SELECT title, artist, album FROM media WHERE path = ?1")?;
+
         let mut rows = stmt.query([&path])?;
-        
+
         if let Some(row) = rows.next()? {
             let t: Option<String> = row.get(0).ok();
             let a: Option<String> = row.get(1).ok();
@@ -114,7 +110,9 @@ pub async fn refresh_media_metadata<R: Runtime>(
         database::queries::save_media_items(&app, vec![meta])?;
         Ok(())
     } else {
-        Err(crate::utils::error::AppError::Internal("FAILED_TO_PROCESS".into()))
+        Err(crate::utils::error::AppError::Internal(
+            "FAILED_TO_PROCESS".into(),
+        ))
     }
 }
 
@@ -132,7 +130,11 @@ pub async fn update_media_field<R: Runtime>(
         "title" => "UPDATE media SET title = ?1 WHERE path = ?2",
         "artist" => "UPDATE media SET artist = ?1 WHERE path = ?2",
         "album" => "UPDATE media SET album = ?1 WHERE path = ?2",
-        _ => return Err(crate::utils::error::AppError::InvalidInput("INVALID_FIELD".into())),
+        _ => {
+            return Err(crate::utils::error::AppError::InvalidInput(
+                "INVALID_FIELD".into(),
+            ))
+        }
     };
 
     conn.execute(query, (&value, &path))?;
@@ -154,7 +156,7 @@ pub fn save_playback_progress<R: Runtime>(
 
     // Calculate watched status: 90% completion rule
     let is_watched = duration > 0 && (seconds as f64 / duration as f64) >= 0.9;
-    
+
     // Smart Progress: If it's already watched (near end), reset next start position to 0
     let last_position = if is_watched { 0 } else { seconds };
 
@@ -168,10 +170,7 @@ pub fn save_playback_progress<R: Runtime>(
 
 /// Fetches the stored playback position (seconds) for a media file.
 #[tauri::command]
-pub fn get_playback_progress<R: Runtime>(
-    app: AppHandle<R>,
-    path: String,
-) -> AppResult<i64> {
+pub fn get_playback_progress<R: Runtime>(app: AppHandle<R>, path: String) -> AppResult<i64> {
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path)?;
 
@@ -243,18 +242,25 @@ pub async fn get_all_media<R: Runtime>(app: AppHandle<R>) -> AppResult<Vec<Libra
 
 /// Toggles the favorite status of a media item.
 #[tauri::command]
-pub async fn toggle_favorite_status<R: Runtime>(app: AppHandle<R>, path: String) -> AppResult<bool> {
+pub async fn toggle_favorite_status<R: Runtime>(
+    app: AppHandle<R>,
+    path: String,
+) -> AppResult<bool> {
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path)?;
 
-    let current_status: i64 = conn.query_row(
-        "SELECT is_favorite FROM media WHERE path = ?1",
-        [&path],
-        |row| row.get(0),
-    ).map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => crate::utils::error::AppError::NotFound("MEDIA_NOT_FOUND".into()),
-        _ => crate::utils::error::AppError::Database(e),
-    })?;
+    let current_status: i64 = conn
+        .query_row(
+            "SELECT is_favorite FROM media WHERE path = ?1",
+            [&path],
+            |row| row.get(0),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                crate::utils::error::AppError::NotFound("MEDIA_NOT_FOUND".into())
+            }
+            _ => crate::utils::error::AppError::Database(e),
+        })?;
 
     let new_status = if current_status == 1 { 0 } else { 1 };
 

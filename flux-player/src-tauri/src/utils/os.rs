@@ -81,11 +81,11 @@ mod tests {
         // Create a file larger than 131072 bytes (to trigger start and end hashing)
         let mut tmp_file = NamedTempFile::new().unwrap();
         let mut content = vec![0u8; 200000];
-        
+
         // Add some data at the start and end
         content[0] = 1;
         content[199999] = 1;
-        
+
         tmp_file.write_all(&content).unwrap();
 
         let path = tmp_file.path().to_str().unwrap();
@@ -94,4 +94,3 @@ mod tests {
         assert_eq!(hash.len(), 16);
     }
 }
-

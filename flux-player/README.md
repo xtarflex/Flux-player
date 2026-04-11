@@ -1,3 +1,7 @@
+# Flux Player Developer Guide
+
+For the general user overview and project features, please see the [Root README](../README.md).
+
 # Flux Player (v0.2.0)
 
 Flux is a high-performance, glassmorphic media suite for local and streaming content, built with **Tauri 2.0**, **Svelte 5**, and **Rust**.
