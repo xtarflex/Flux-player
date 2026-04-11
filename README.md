@@ -2,7 +2,7 @@
 
 Flux Player is a high-performance, glassmorphic media suite for local and streaming content. Built from the ground up for desktop environments, it leverages the speed of Rust, the lightness of Svelte 5, and the power of Tauri 2.0.
 
-![Flux Player Interface](flux-player/flux.png)
+![Flux Player Interface](docs/assets/flux.png)
 
 ## 🌟 Features
 
@@ -31,7 +31,7 @@ If you want to try Flux Player or contribute to its development, follow these st
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/flux-player.git
+   git clone https://github.com/xtarflex/flux-player.git
    cd flux-player
    cd flux-player
    ```
