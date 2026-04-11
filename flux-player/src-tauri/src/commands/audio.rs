@@ -27,9 +27,9 @@ pub fn get_system_mute_status() -> AppResult<bool> {
                 AppError::Internal(format!("Failed to get default audio endpoint: {}", e))
             })?;
 
-        // 0.52.0 Activate signature expects Option<*const PROPVARIANT>
+        // Activate the volume control interface
         let audio_endpoint_volume: IAudioEndpointVolume = endpoint
-            .Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None)
+            .Activate(CLSCTX_ALL, None)
             .map_err(|e| {
                 AppError::Internal(format!("Failed to activate audio endpoint volume: {}", e))
             })?;

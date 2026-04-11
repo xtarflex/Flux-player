@@ -155,20 +155,28 @@ pub fn save_playback_progress<R: Runtime>(
     let conn = rusqlite::Connection::open(db_path)?;
 
     // 1. Resolve watched threshold (Default 90 if not set)
-    let threshold_val: i64 = conn.query_row(
-        "SELECT value FROM settings WHERE key = 'watchedThreshold'",
-        [],
-        |row| row.get(0).and_then(|v: String| v.parse::<i64>().map_err(|_| rusqlite::Error::InvalidQuery)),
-    ).unwrap_or(90);
+    let threshold_val: i64 = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'watchedThreshold'",
+            [],
+            |row| {
+                row.get(0).and_then(|v: String| {
+                    v.parse::<i64>().map_err(|_| rusqlite::Error::InvalidQuery)
+                })
+            },
+        )
+        .unwrap_or(90);
 
     let threshold_factor = threshold_val as f64 / 100.0;
 
     // 2. Fetch existing status and position to handle "Threshold Crossing"
-    let (prev_is_watched, prev_position): (i64, i64) = conn.query_row(
-        "SELECT is_watched, last_position FROM media WHERE path = ?1",
-        [&path],
-        |row| Ok((row.get(0).unwrap_or(0), row.get(1).unwrap_or(0))),
-    ).unwrap_or((0, 0));
+    let (prev_is_watched, prev_position): (i64, i64) = conn
+        .query_row(
+            "SELECT is_watched, last_position FROM media WHERE path = ?1",
+            [&path],
+            |row| Ok((row.get(0).unwrap_or(0), row.get(1).unwrap_or(0))),
+        )
+        .unwrap_or((0, 0));
 
     let threshold_seconds = (duration as f64 * threshold_factor) as i64;
 
@@ -183,10 +191,14 @@ pub fn save_playback_progress<R: Runtime>(
     } else {
         prev_is_watched // Respect manual overrides
     };
-    
-    // 4. Smart Progress: If it's finished (reset to 0 by frontend) or crosses threshold, 
+
+    // 4. Smart Progress: If it's finished (reset to 0 by frontend) or crosses threshold,
     // handle the last_position accordingly.
-    let last_position = if seconds == 0 && is_watched == 1 { 0 } else { seconds };
+    let last_position = if seconds == 0 && is_watched == 1 {
+        0
+    } else {
+        seconds
+    };
 
     conn.execute(
         "UPDATE media SET last_position = ?1, is_watched = ?2 WHERE path = ?3",
@@ -205,14 +217,18 @@ pub async fn toggle_media_watched_status<R: Runtime>(
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path)?;
 
-    let current_status: i64 = conn.query_row(
-        "SELECT is_watched FROM media WHERE path = ?1",
-        [&path],
-        |row| row.get(0),
-    ).map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => crate::utils::error::AppError::NotFound("MEDIA_NOT_FOUND".into()),
-        _ => crate::utils::error::AppError::Database(e),
-    })?;
+    let current_status: i64 = conn
+        .query_row(
+            "SELECT is_watched FROM media WHERE path = ?1",
+            [&path],
+            |row| row.get(0),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                crate::utils::error::AppError::NotFound("MEDIA_NOT_FOUND".into())
+            }
+            _ => crate::utils::error::AppError::Database(e),
+        })?;
 
     let new_status = if current_status == 1 { 0 } else { 1 };
 
