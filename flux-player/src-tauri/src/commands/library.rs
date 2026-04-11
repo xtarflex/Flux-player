@@ -180,16 +180,13 @@ pub fn save_playback_progress<R: Runtime>(
 
     let threshold_seconds = (duration as f64 * threshold_factor) as i64;
 
-    // 3. Threshold Crossing & Stickiness Logic:
-    // Once WATCHED, it stays WATCHED (Stickiness).
-    // If UNWATCHED, it only becomes WATCHED if the progress crosses the threshold line from below.
-    // This ensures that manual 'W' unmarking is respected even if you are near the end.
-    let is_watched = if prev_is_watched == 1 {
-        1
-    } else if duration > 0 && prev_position < threshold_seconds && seconds >= threshold_seconds {
+    // 3. Calculate New Watched Status (Threshold Crossing Logic)
+    let is_watched = if prev_is_watched == 1
+        || (duration > 0 && prev_position < threshold_seconds && seconds >= threshold_seconds)
+    {
         1
     } else {
-        prev_is_watched // Respect manual overrides
+        prev_is_watched
     };
 
     // 4. Smart Progress: If it's finished (reset to 0 by frontend) or crosses threshold,
