@@ -29,6 +29,8 @@
   let showApiLimitModal = $state(false);
   let showFeedbackHUD = $state(false);
 
+  let isHud = $derived($page.url.pathname === '/hud');
+
 
   // ── Theater & PiP Mode State ──────────────────────────────────────────────
   let isTheaterMode = $derived($playbackState.isTheaterMode);
@@ -237,101 +239,105 @@
   });
 </script>
 
-<div 
-  class="app-container"
-  class:player-mode={isTheaterMode}
-  class:pip-mode={isPiP}
-  class:sidebar-reveal={sidebarReveal && isTheaterMode}
-  class:footer-reveal={footerReveal && isTheaterMode}
-  class:ui-idle={uiIdle && isTheaterMode}
-  onmousemove={handleTheaterMouseMove}
-  role="presentation"
->
-  <div data-titlebar class="titlebar-slot"><Titlebar /></div>
-  <div data-sidebar class="sidebar-slot"><Sidebar /></div>
-  {#if !isPiP}
-    <DynamicIsland />
-  {/if}
-  <main class="main-content" class:is-settings-page={$page.url.pathname.startsWith('/settings')}>
-    {@render children()}
-  </main>
-  <div data-footer class="footer-slot"><PlaybackFooter /></div>
-  <PlayerEngine />
-  <AudioEngine />
-  <Tooltip />
+{#if isHud}
+  {@render children()}
+{:else}
+  <div 
+    class="app-container"
+    class:player-mode={isTheaterMode}
+    class:pip-mode={isPiP}
+    class:sidebar-reveal={sidebarReveal && isTheaterMode}
+    class:footer-reveal={footerReveal && isTheaterMode}
+    class:ui-idle={uiIdle && isTheaterMode}
+    onmousemove={handleTheaterMouseMove}
+    role="presentation"
+  >
+    <div data-titlebar class="titlebar-slot"><Titlebar /></div>
+    <div data-sidebar class="sidebar-slot"><Sidebar /></div>
+    {#if !isPiP}
+      <DynamicIsland />
+    {/if}
+    <main class="main-content" class:is-settings-page={$page.url.pathname.startsWith('/settings')}>
+      {@render children()}
+    </main>
+    <div data-footer class="footer-slot"><PlaybackFooter /></div>
+    <PlayerEngine />
+    <AudioEngine />
+    <Tooltip />
 
-  {#if $onboarding.isActive && $onboarding.currentSection === 'welcome'}
-    <WelcomeSplash />
-  {:else if $onboarding.isActive}
-    <OnboardingOverlay />
-  {/if}
+    {#if $onboarding.isActive && $onboarding.currentSection === 'welcome'}
+      <WelcomeSplash />
+    {:else if $onboarding.isActive}
+      <OnboardingOverlay />
+    {/if}
 
-  {#if showApiLimitModal}
-    <ApiLimitModal onclose={() => showApiLimitModal = false} />
-  {/if}
+    {#if showApiLimitModal}
+      <ApiLimitModal onclose={() => showApiLimitModal = false} />
+    {/if}
 
-  <FeedbackHUD bind:show={showFeedbackHUD} />
+    <FeedbackHUD bind:show={showFeedbackHUD} />
 
-  <!-- Shortcuts Reference Modal -->
-  {#if showShortcutsRef}
-    <div 
-      class="shortcuts-overlay" 
-      onclick={() => showShortcutsRef = false}
-      onkeydown={(e) => e.key === 'Escape' && (showShortcutsRef = false)}
-      role="button"
-      tabindex="-1"
-      aria-label="Close shortcuts"
-    >
+    <!-- Shortcuts Reference Modal -->
+    {#if showShortcutsRef}
       <div 
-        class="shortcuts-card glass" 
-        onclick={(e) => e.stopPropagation()} 
-        role="none"
+        class="shortcuts-overlay" 
+        onclick={() => showShortcutsRef = false}
+        onkeydown={(e) => e.key === 'Escape' && (showShortcutsRef = false)}
+        role="button"
+        tabindex="-1"
+        aria-label="Close shortcuts"
       >
-        <h2>Keyboard Shortcuts</h2>
-        <div class="shortcuts-grid">
-          <div class="col">
-            <h3>App & Nav</h3>
-            <div class="row"><span>Ctrl + L</span> Library</div>
-            <div class="row"><span>Ctrl + D</span> Discovery</div>
-            <div class="row"><span>Ctrl + P</span> Playlists</div>
-            <div class="row"><span>Ctrl + Q</span> Queue</div>
-            <div class="row"><span>Ctrl + ,</span> Settings</div>
-            <div class="row"><span>Ctrl + R</span> Refresh Context</div>
-            <div class="row"><span>Ctrl+Shift+R</span> Global Reload</div>
-            <div class="row"><span>Ctrl + F</span> Search</div>
-            <div class="row"><span>Ctrl + N</span> New Playlist</div>
-            <div class="row"><span>Ctrl + O</span> Import Folder</div>
-            <div class="row"><span>Ctrl + S</span> Save Queue</div>
-            <div class="row"><span>Ctrl + B</span> Toggle Sidebar</div>
-            <div class="row"><span>Ctrl+Shift+F</span> Feedback HUD</div>
+        <div 
+          class="shortcuts-card glass" 
+          onclick={(e) => e.stopPropagation()} 
+          role="none"
+        >
+          <h2>Keyboard Shortcuts</h2>
+          <div class="shortcuts-grid">
+            <div class="col">
+              <h3>App & Nav</h3>
+              <div class="row"><span>Ctrl + L</span> Library</div>
+              <div class="row"><span>Ctrl + D</span> Discovery</div>
+              <div class="row"><span>Ctrl + P</span> Playlists</div>
+              <div class="row"><span>Ctrl + Q</span> Queue</div>
+              <div class="row"><span>Ctrl + ,</span> Settings</div>
+              <div class="row"><span>Ctrl + R</span> Refresh Context</div>
+              <div class="row"><span>Ctrl+Shift+R</span> Global Reload</div>
+              <div class="row"><span>Ctrl + F</span> Search</div>
+              <div class="row"><span>Ctrl + N</span> New Playlist</div>
+              <div class="row"><span>Ctrl + O</span> Import Folder</div>
+              <div class="row"><span>Ctrl + S</span> Save Queue</div>
+              <div class="row"><span>Ctrl + B</span> Toggle Sidebar</div>
+              <div class="row"><span>Ctrl+Shift+F</span> Feedback HUD</div>
+            </div>
+            <div class="col">
+              <h3>Library Mode</h3>
+              <div class="row"><span>Ctrl + A</span> Select All</div>
+              <div class="row"><span>V</span> Cycle View</div>
+              <div class="row"><span>Enter</span> Open Details</div>
+              <div class="row"><span>Ctrl + E</span> Play Item</div>
+              <div class="row"><span>Arrows</span> Grid Nav</div>
+              <div class="row"><span>Shift + Click</span> Range Select</div>
+              <div class="row"><span>ESC</span> Clear / Exit</div>
+            </div>
+            <div class="col">
+              <h3>Playback</h3>
+              <div class="row"><span>Space / K</span> Play/Pause</div>
+              <div class="row"><span>Arrows ←/→</span> Seek 5%</div>
+              <div class="row"><span>J / L</span> Seek 10%</div>
+              <div class="row"><span>Shift + ←/→</span> Next/Prev</div>
+              <div class="row"><span>Arrows ↑/↓</span> Volume</div>
+              <div class="row"><span>M</span> Mute</div>
+              <div class="row"><span>0-9</span> Jump to %</div>
+              <div class="row"><span>F / F11</span> Fullscreen</div>
+            </div>
           </div>
-          <div class="col">
-            <h3>Library Mode</h3>
-            <div class="row"><span>Ctrl + A</span> Select All</div>
-            <div class="row"><span>V</span> Cycle View</div>
-            <div class="row"><span>Enter</span> Open Details</div>
-            <div class="row"><span>Ctrl + E</span> Play Item</div>
-            <div class="row"><span>Arrows</span> Grid Nav</div>
-            <div class="row"><span>Shift + Click</span> Range Select</div>
-            <div class="row"><span>ESC</span> Clear / Exit</div>
-          </div>
-          <div class="col">
-            <h3>Playback</h3>
-            <div class="row"><span>Space / K</span> Play/Pause</div>
-            <div class="row"><span>Arrows ←/→</span> Seek 5%</div>
-            <div class="row"><span>J / L</span> Seek 10%</div>
-            <div class="row"><span>Shift + ←/→</span> Next/Prev</div>
-            <div class="row"><span>Arrows ↑/↓</span> Volume</div>
-            <div class="row"><span>M</span> Mute</div>
-            <div class="row"><span>0-9</span> Jump to %</div>
-            <div class="row"><span>F / F11</span> Fullscreen</div>
-          </div>
+          <button class="close-ref" onclick={() => showShortcutsRef = false}>✕</button>
         </div>
-        <button class="close-ref" onclick={() => showShortcutsRef = false}>✕</button>
       </div>
-    </div>
-  {/if}
-</div>
+    {/if}
+  </div>
+{/if}
 
 {#if $activeMenu}
   <ContextMenu 

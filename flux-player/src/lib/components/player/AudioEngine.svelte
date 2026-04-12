@@ -9,6 +9,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+  import { emit } from '@tauri-apps/api/event';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { resolveResource } from '$lib/utils/media';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
@@ -76,9 +78,7 @@
       }
 
       // 1. Emit HUD Event (for custom Slanted Desktop HUD)
-      import('@tauri-apps/api/event').then(ev => {
-        ev.emit('flux-track-change', item);
-      });
+      emit('flux-track-change', item);
 
       if (!('mediaSession' in navigator)) return;
 
@@ -173,10 +173,8 @@
       }
 
       // Update Window Title (Blueprint §2)
-      import('@tauri-apps/api/window').then(v => {
-        const title = media ? `${media.title} — ${media.artist || 'Flux'} | Flux` : 'Flux';
-        v.getCurrentWindow().setTitle(title);
-      });
+      const title = media ? `${media.title} — ${media.artist || 'Flux'} | Flux` : 'Flux';
+      getCurrentWindow().setTitle(title);
 
       if (!media || media.type !== 'audio') return;
 
@@ -212,7 +210,8 @@
       const d = audioEl.duration || 0;
       const t = audioEl.currentTime;
       if (d > 0) {
-        playbackState.update(s => ({ ...s, progress: t / d }));
+        const p = t / d;
+        playbackState.update(s => ({ ...s, progress: p }));
         scheduleSave(media.path, t, d);
       }
     }

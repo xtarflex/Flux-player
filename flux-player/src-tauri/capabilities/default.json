@@ -3,7 +3,8 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "main",
+    "hud"
   ],
   "permissions": [
     "core:default",
@@ -30,6 +31,8 @@
     "core:window:allow-set-position",
     "core:window:allow-center",
     "core:window:allow-unmaximize",
+    "core:window:allow-hide",
+    "core:window:allow-set-ignore-cursor-events",
     "dialog:default",
     "dialog:allow-open"
   ]

@@ -333,6 +333,7 @@ Ensured scanning reliability and user transparency for Beta release.
 
 ---
 
+
 ## [2026-04-12] - Milestone 2.6: Precision Volume Control & Persistence
 
 - **ACTION**: Refined the volume control ecosystem for a more premium, integrated experience.
@@ -341,3 +342,30 @@ Ensured scanning reliability and user transparency for Beta release.
 - **WHEEL SUPPORT**: Implemented a responsive `onwheel` listener in `RightActions.svelte`, enabling intuitive volume scrolling over the footer's volume pill.
 - **PERSISTENCE**: Integrated the `playbackState` with the globally persistent `settings` store. The app now preserves volume levels and mute states across restarts by syncing state to `localStorage`.
 - **RATIONALE**: Addresses user feedback regarding "increment work" by providing higher resolution control and visual precision, while maintaining native hardware key behavior as requested.
+
+---
+
+## [2026-04-12] - Phase 3: Beta 1 Launch (Windows Optimization)
+
+- **ACTION**: Formally transitioned Flux Player into the **Beta 1** phase.
+- **VERSION**: Bumped to `0.2.0-beta.1` across `package.json` and documentation.
+- **OPTIMIZATION**: Finalized the **Windows-First** hardening strategy, ensuring high-fidelity windowing and native feedback tools are 100% reliable on Win 10/11.
+- **DOCS**: Updated `README.md`, `CHANGELOG.md`, and `package.json` to reflect the current project status and focus.
+- **RATIONALE**: Prepares the project for early-access testers focusing on the core cinematic engine and library persistence.
+
+---
+
+## [2026-04-12] - Milestone 2.7: HUD Stabilization & Layout Isolation
+
+- **ACTION**: Resolved functional failures/race conditions in the slanted Desktop HUD for queue-based playback.
+- **TAURI CAPABILITIES**: Found and fixed a critical Tauri v2 capability restriction in `default.json`. Granted the `hud` window permissions to emit/listen to events and manage window positioning, which was previously causing pure invisibility.
+- **LAYOUT ISOLATION**: Implemented conditional rendering in `src/routes/+layout.svelte` via an `isHud` derivation.
+    - **UI CLEANUP**: The HUD window now bypasses the `app-container` and its global decorations (Sidebar, Dynamic Island, Titlebar, Footer).
+    - **VISIBILITY FIX**: This isolation resolved the "forever visible" bug where layout elements would persist even after the HUD card faded out.
+- **ANIMATION RE-TRIGGERING**: Wrapped the HUD metadata card in a Svelte 5 `{#key currentMedia.id}` block. This forces entry animations (fly/fade) to re-run on every track change, even if the window remains open.
+- **TIMER REFACTOR**: Implemented `clearTimers()` to robustly manage hide/exit timeouts, eliminating race conditions where previous track "hide" calls would prematurely collapse the current track's HUD.
+- **RATIONALE**: Restores the intended "premium overlay" feel for the music player, ensuring reliable and non-intrusive metadata feedback during automatic queue advancement.
+
+---
+
+

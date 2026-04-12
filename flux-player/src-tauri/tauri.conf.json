@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Flux",
-  "version": "0.2.0",
+  "version": "0.2.0-beta.1",
   "identifier": "com.sunny.flux-player",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -46,13 +46,22 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "msi"],
+    "licenseFile": "assets/LICENSE_NSIS.txt",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perMachine",
+        "sidebarImage": "assets/installer-banner.png",
+        "displayLanguageSelector": true
+      }
+    }
   }
 }

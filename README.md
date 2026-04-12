@@ -2,6 +2,18 @@
 
 Flux Player is a high-performance, glassmorphic media suite for local and streaming content. Built from the ground up for desktop environments, it leverages the speed of Rust, the lightness of Svelte 5, and the power of Tauri 2.0.
 
+---
+
+### 🟢 Project Status: Beta (Windows-First)
+
+Flux Player has officially entered its **Beta 1** phase. While the core engine is cross-platform, current development is heavily optimized for **Windows 10/11**, focusing on:
+- **High-Fidelity Windowing**: Undecorated glassmorphic chassis with native snapping.
+- **Native Feedback Engine**: Coordinate-based monitor capture for bug reporting.
+- **Deep OS Integration**: Shell-level thumbnail extraction and playback HUDs.
+
+---
+
+
 ![Flux Player Interface](https://github.com/xtarflex/Flux-player/blob/main/docs%2Fassets%2Flibrary%20main%20view%20.png)
 
 ## 🌟 Features

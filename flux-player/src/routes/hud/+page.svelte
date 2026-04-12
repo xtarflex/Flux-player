@@ -10,6 +10,12 @@
   let currentMedia = $state<MediaItem | null>(null);
   let isVisible = $state(false);
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
+  let exitTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function clearTimers() {
+    if (hideTimer) clearTimeout(hideTimer);
+    if (exitTimer) clearTimeout(exitTimer);
+  }
 
   async function showHUD(media: MediaItem) {
     const win = getCurrentWindow();
@@ -20,23 +26,35 @@
       if (monitor) {
         const { width, height } = monitor.size;
         const scaleFactor = monitor.scaleFactor;
-        // Logical HUD size is 380x100
-        const x = (width / scaleFactor) - 400; // 20px padding
-        const y = (height / scaleFactor) - 130; // 30px padding
+        const x = (width / scaleFactor) - 400; 
+        const y = (height / scaleFactor) - 130; 
         await win.setPosition(new LogicalPosition(x, y));
+      } else {
+        // Fallback for multi-monitor or detection failure
+        await win.setPosition(new LogicalPosition(100, 100));
       }
-    } catch (e) { console.error('HUD Position error:', e); }
+    } catch (e) { 
+      console.error('HUD Position error:', e); 
+      // Last resort fallback
+      await win.setPosition(new LogicalPosition(0, 0));
+    }
 
+    // 2. State & Timer Management
+    clearTimers();
     currentMedia = media;
     isVisible = true;
 
     await win.show();
+    await win.setAlwaysOnTop(true);
+    await win.setFocus();
+
     
-    if (hideTimer) clearTimeout(hideTimer);
-    hideTimer = setTimeout(async () => {
+    hideTimer = setTimeout(() => {
       isVisible = false;
-      // Wait for exit animation
-      setTimeout(() => win.hide(), 500);
+      // 500ms allows the 'fade' out transition to complete before calling win.hide()
+      exitTimer = setTimeout(() => {
+        win.hide().catch(() => {});
+      }, 500);
     }, 4000);
   }
 
@@ -48,8 +66,6 @@
     // Set click-through behavior so HUD doesn't block the user (Blueprint §8)
     win.setIgnoreCursorEvents(true).catch(e => console.error('Click-through error:', e));
 
-    // Listen for global track changes emitted from the main window 
-    // using an IIFE since onMount must be synchronous
     (async () => {
       unlisten = await listen<MediaItem>('flux-track-change', (event) => {
         showHUD(event.payload);
@@ -58,42 +74,49 @@
 
     return () => {
       if (unlisten) unlisten();
-      if (hideTimer) clearTimeout(hideTimer);
+      clearTimers();
     };
   });
 </script>
 
 {#if isVisible && currentMedia}
-  <main 
-    class="hud-container" 
-    in:fly={{ y: 20, duration: 400 }} 
-    out:fade={{ duration: 300 }}
-  >
-    <!-- Layer 1: Blurred Background Image -->
-    <div 
-      class="blurred-bg" 
-      style:background-image="url({resolveResource(currentMedia.album_art || currentMedia.poster)})"
-    ></div>
+  {#key currentMedia.id}
+    <main 
+      class="hud-container" 
+      in:fly={{ y: 20, duration: 400 }} 
+      out:fade={{ duration: 300 }}
+    >
+      <!-- Layer 1: Blurred Background Image -->
+      <div 
+        class="blurred-bg" 
+        style:background-image="url({resolveResource(currentMedia.album_art || currentMedia.poster)})"
+      ></div>
 
-    <!-- Layer 2: Slanted Gradient Overlay (Transparent left, Colored right) -->
-    <div class="slanted-overlay"></div>
+      <!-- Layer 2: Slanted Gradient Overlay (Transparent left, Colored right) -->
+      <div class="slanted-overlay"></div>
 
-    <!-- Layer 3: Content -->
-    <div class="content">
-      <div class="metadata-section">
-        <h1 class="title">{currentMedia.title}</h1>
-        <p class="artist">{currentMedia.artist || 'Unknown Artist'}</p>
+      <!-- Layer 3: Content -->
+      <div class="content">
+        <div class="metadata-section">
+          <h1 class="title">{currentMedia.title}</h1>
+          <p class="artist-album">
+            {currentMedia.artist || 'Unknown Artist'} 
+            {#if currentMedia.album}
+              <span class="album-sep">•</span> {currentMedia.album}
+            {/if}
+          </p>
+        </div>
+
+        <div class="artwork-section">
+          <img 
+            src={resolveResource(currentMedia.album_art || currentMedia.poster)} 
+            alt="Artwork" 
+            class="sharp-artwork"
+          />
+        </div>
       </div>
-
-      <div class="artwork-section">
-        <img 
-          src={resolveResource(currentMedia.album_art || currentMedia.poster)} 
-          alt="Artwork" 
-          class="sharp-artwork"
-        />
-      </div>
-    </div>
-  </main>
+    </main>
+  {/key}
 {/if}
 
 <style>
@@ -176,7 +199,7 @@
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   }
 
-  .artist {
+  .artist-album {
     margin: 0;
     font-size: 13px;
     font-weight: 500;
@@ -184,6 +207,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .album-sep {
+    opacity: 0.4;
+    font-size: 10px;
   }
 
   .artwork-section {
