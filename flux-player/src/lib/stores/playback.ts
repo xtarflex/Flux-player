@@ -8,6 +8,7 @@
 import { writable, get } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { MediaItem } from './media';
+import { settings, updateSetting } from './settings';
 
 // ── Re-export MediaItem so consumers can import from one place ──────────────
 export type { MediaItem };
@@ -63,11 +64,13 @@ export interface PlaybackState {
 /** The media item currently loaded into the player engine */
 export const activeMedia = writable<MediaItem | null>(null);
 
+const initialSettings = get(settings);
+
 export const playbackState = writable<PlaybackState>({
   isPlaying: false,
   progress: 0,
-  volume: 0.7,
-  isMuted: false,
+  volume: initialSettings.volume ?? 0.7,
+  isMuted: initialSettings.isMuted ?? false,
   speed: 1,
   isPiP: false,
   isFullscreen: false,
@@ -81,6 +84,21 @@ export const playbackState = writable<PlaybackState>({
   fullscreenRequest: null,
   pipRequest: null,
 });
+
+// ── Persistence Sync ─────────────────────────────────────────────────────────
+
+/**
+ * Syncs playback volume/mute back to globally persistent settings.
+ */
+if (typeof window !== 'undefined') {
+  playbackState.subscribe(s => {
+    const current = get(settings);
+    if (current.volume !== s.volume || current.isMuted !== s.isMuted) {
+      updateSetting('volume', s.volume);
+      updateSetting('isMuted', s.isMuted);
+    }
+  });
+}
 
 /**
  * Holds a reference to the live Video.js player instance.

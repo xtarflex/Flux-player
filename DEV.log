@@ -330,3 +330,14 @@ Ensured scanning reliability and user transparency for Beta release.
     - **UNIVERSAL OVERRIDE**: Implemented **`Ctrl + Arrow`** as a global playback layer. Users can now adjust volume or seek even while a card is focused by holding the `Ctrl` (or `Cmd`) modifier.
     - **SAFE SEEKING**: Reinforced **`J`** and **`L`** as primary, non-conflicting seek keys that work universally without risking navigation focus.
 - **RATIONALE**: Synchronizes the user's mental model with the app's behavior—navigation feels natural in the grid, while playback remains under total control via modifiers or dedicated keys.
+
+---
+
+## [2026-04-12] - Milestone 2.6: Precision Volume Control & Persistence
+
+- **ACTION**: Refined the volume control ecosystem for a more premium, integrated experience.
+- **GRANULARITY**: Reduced volume step from 10% to **5%** (0.05) across keyboard shortcuts and mouse wheel interactions, allowing for finer sonic adjustments.
+- **FEEDBACK**: Enhanced the global toast system to display real-time numerical volume percentages (e.g., "Volume: 65%"), replacing generic "Volume Up/Down" labels.
+- **WHEEL SUPPORT**: Implemented a responsive `onwheel` listener in `RightActions.svelte`, enabling intuitive volume scrolling over the footer's volume pill.
+- **PERSISTENCE**: Integrated the `playbackState` with the globally persistent `settings` store. The app now preserves volume levels and mute states across restarts by syncing state to `localStorage`.
+- **RATIONALE**: Addresses user feedback regarding "increment work" by providing higher resolution control and visual precision, while maintaining native hardware key behavior as requested.

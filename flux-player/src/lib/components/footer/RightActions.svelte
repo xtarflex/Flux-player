@@ -100,6 +100,14 @@
     isDraggingVolume = false;
     (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
+
+  function handleWheel(e: WheelEvent) {
+    if (!controlsEnabled) return;
+    // deltaY is positive when scrolling down (pulling towards user)
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    volume = Math.round(Math.max(0, Math.min(1, volume + delta)) * 100) / 100;
+    isMuted = volume === 0;
+  }
 </script>
 
 <div class="right-section">
@@ -197,6 +205,7 @@
       onpointermove={onPointerMove}
       onpointerup={onPointerUp}
       onpointercancel={onPointerUp}
+      onwheel={handleWheel}
       ondblclick={toggleMute}
       aria-label="Volume Slider"
       role="slider"

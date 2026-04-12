@@ -207,21 +207,25 @@
       case 'ArrowUp':
         if (hasModifier || !activeEl.closest('.media-card')) {
           e.preventDefault();
+          let newVol: number = 0;
           playbackState.update(s => {
-            const newVol = Math.min(1, s.volume + 0.1);
+            newVol = Math.round(Math.min(1, s.volume + 0.05) * 100) / 100;
             return { ...s, volume: newVol, isMuted: newVol > 0 ? false : s.isMuted };
           });
-          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Up`, icon: 'volume-up' } }));
+          const percent = Math.round(newVol * 100);
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume: ${percent}%`, icon: 'volume-up' } }));
         }
         break;
       case 'ArrowDown':
         if (hasModifier || !activeEl.closest('.media-card')) {
           e.preventDefault();
+          let newVol: number = 0;
           playbackState.update(s => {
-            const newVol = Math.max(0, s.volume - 0.1);
+            newVol = Math.round(Math.max(0, s.volume - 0.05) * 100) / 100;
             return { ...s, volume: newVol, isMuted: newVol === 0 ? true : s.isMuted };
           });
-          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Down`, icon: 'volume-down' } }));
+          const percent = Math.round(newVol * 100);
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume: ${percent}%`, icon: 'volume-down' } }));
         }
         break;
       case 'ArrowRight':
