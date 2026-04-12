@@ -31,7 +31,7 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
 
     let paths = crawler::walk_directory(&dir_path);
     let mut new_paths = Vec::new();
-    
+
     for path in paths {
         let path_str = path.to_string_lossy().to_string();
         if !existing_paths.contains(&path_str) {
@@ -52,11 +52,14 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
             let ext_lower = ext.to_lowercase();
             let is_v = metadata::is_video(&ext_lower);
             let is_a = metadata::is_audio(&ext_lower);
-            
+
             if is_v || is_a {
-                let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+                let file_stem = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default();
                 let (cleaned_title, year, series) = metadata::clean_media_title(file_stem);
-                
+
                 skeletons.push(MediaMetadata {
                     path: path.to_string_lossy().to_string(),
                     title: cleaned_title,
@@ -67,7 +70,11 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
                     backdrop_path: None,
                     album_art_path: None,
                     duration: None,
-                    media_type: if is_v { "video".to_string() } else { "audio".to_string() },
+                    media_type: if is_v {
+                        "video".to_string()
+                    } else {
+                        "audio".to_string()
+                    },
                     synopsis: None,
                     rating: None,
                     genres: Vec::new(),
@@ -99,7 +106,10 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
         if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
             let ext_lower = ext.to_lowercase();
             if metadata::is_video(&ext_lower) {
-                let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+                let file_stem = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default();
                 let (cleaned_title, _, extracted_series) = metadata::clean_media_title(file_stem);
 
                 let cached_show = if extracted_series.is_some() {
@@ -114,7 +124,7 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
                     if extracted_series.is_some() && !show_cache.contains_key(&cleaned_title) {
                         show_cache.insert(cleaned_title, meta.clone());
                     }
-                    
+
                     // Save individual item to DB
                     let _ = crate::database::queries::save_media_items(&app, vec![meta.clone()]);
                     let _ = app.emit("flux-item-enriched", meta.clone());
@@ -180,7 +190,8 @@ pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
         std::collections::HashMap::new();
     let mut results = Vec::new();
 
-    for (index, (path_str, added_at, ex_title, ex_poster)) in paths_to_heal.into_iter().enumerate() {
+    for (index, (path_str, added_at, ex_title, ex_poster)) in paths_to_heal.into_iter().enumerate()
+    {
         let _ = app.emit("flux-heal-progress", (index + 1, total_to_heal));
 
         let path = std::path::Path::new(&path_str);

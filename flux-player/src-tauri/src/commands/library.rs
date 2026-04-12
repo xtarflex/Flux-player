@@ -96,7 +96,8 @@ pub async fn refresh_media_metadata<R: Runtime>(app: AppHandle<R>, path: String)
         let db_path = crate::database::connection::get_db_path(&app)?;
         let conn = rusqlite::Connection::open(db_path)?;
 
-        let mut stmt = conn.prepare("SELECT title, artist, album, poster_path FROM media WHERE path = ?1")?;
+        let mut stmt =
+            conn.prepare("SELECT title, artist, album, poster_path FROM media WHERE path = ?1")?;
 
         let mut rows = stmt.query([&path])?;
 
