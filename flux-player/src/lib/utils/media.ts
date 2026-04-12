@@ -51,15 +51,19 @@ export function resolveResource(src: string | null | undefined, fallback: string
   // HOWEVER, the safest way is to check for drive letters or the file:// flag we just set.
   
   const isWindowsAbsolute = /^[a-zA-Z]:[\\/]/.test(cleanPath);
+  const isUNCPath = cleanPath.startsWith('\\\\?\\');
   
-  // On Windows, a path starting with / is almost certainly a web asset (e.g. /flux2d.png).
-  // On Unix, a path starting with / is likely a local filesystem path.
-  // We handle this by checking if we explicitly found a file:// protocol or a drive letter.
-  if (isLocalFile || isWindowsAbsolute) {
+  if (isLocalFile || isWindowsAbsolute || isUNCPath) {
     try {
-      return convertFileSrc(cleanPath);
+      const resolved = convertFileSrc(cleanPath);
+      // We don't log successful resolutions to avoid spamming, 
+      // but we add a trace if it's an unusual path type.
+      if (isUNCPath) {
+        console.info(`[resolveResource] Resolved UNC path: ${cleanPath} -> ${resolved}`);
+      }
+      return resolved;
     } catch (e) {
-      console.warn(`[resolveResource] Failed to convert path: ${src}`, e);
+      console.error(`[resolveResource] Failed to convert path: ${src}`, e);
       return fallback;
     }
   }

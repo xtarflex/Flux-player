@@ -29,3 +29,12 @@ Thumbs.db
 # Tauri specific
 src-tauri/target/
 src-tauri/gen/
+
+# SvelteKit specific
+.svelte-kit/
+.vercel/
+
+# Project specific
+Flux_*.exe
+!c:\Flux\Flux_0.2.0-beta.1_x64-setup.exe
+

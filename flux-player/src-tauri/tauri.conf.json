@@ -19,7 +19,8 @@
         "minWidth": 800,
         "minHeight": 600,
         "decorations": false,
-        "transparent": true
+        "transparent": true,
+        "devtools": true
       },
       {
         "label": "hud",
@@ -33,20 +34,21 @@
         "visible": false,
         "resizable": false,
         "fullscreen": false,
-        "shadow": false
+        "shadow": false,
+        "devtools": true
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self';",
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost blob: data:; media-src 'self' asset: https://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://* http://*;",
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": ["$APPDATA/**", "$DOCUMENTS/**", "$DOWNLOADS/**", "$MUSIC/**", "$PICTURES/**", "$VIDEOS/**", "$HOME/**", "C:/**", "D:/**", "E:/**", "F:/**"]
       }
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": ["nsis"],
     "licenseFile": "assets/LICENSE_NSIS.txt",
     "icon": [
       "icons/32x32.png",
@@ -59,7 +61,7 @@
       "nsis": {
         "installerIcon": "icons/icon.ico",
         "installMode": "perMachine",
-        "sidebarImage": "assets/installer-banner.png",
+        "sidebarImage": "assets/installer-banner.bmp",
         "displayLanguageSelector": true
       }
     }

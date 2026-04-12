@@ -18,6 +18,32 @@
     "core:window:allow-start-dragging",
     "sql:default",
     "store:default",
+    "fs:allow-app-write-recursive",
+    "fs:allow-video-read-recursive",
+    "fs:allow-audio-read-recursive",
+    "fs:allow-picture-read-recursive",
+    "fs:allow-download-read-recursive",
+    {
+      "identifier": "fs:allow-read",
+      "allow": [
+        { "path": "C:/**" },
+        { "path": "D:/**" },
+        { "path": "E:/**" },
+        { "path": "F:/**" },
+        { "path": "$HOME/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        { "path": "C:/**" },
+        { "path": "D:/**" },
+        { "path": "E:/**" },
+        { "path": "F:/**" },
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
+      ]
+    },
     "core:event:allow-emit",
     "core:event:allow-listen",
     "core:image:allow-from-path",
