@@ -205,26 +205,31 @@
         window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Jump to End', icon: 'skip-next' } }));
         break;
       case 'ArrowUp':
-        e.preventDefault();
-        playbackState.update(s => {
-          const newVol = Math.min(1, s.volume + 0.1);
-          return { ...s, volume: newVol, isMuted: newVol > 0 ? false : s.isMuted };
-        });
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Up`, icon: 'volume-up' } }));
+        if (hasModifier || !activeEl.closest('.media-card')) {
+          e.preventDefault();
+          playbackState.update(s => {
+            const newVol = Math.min(1, s.volume + 0.1);
+            return { ...s, volume: newVol, isMuted: newVol > 0 ? false : s.isMuted };
+          });
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Up`, icon: 'volume-up' } }));
+        }
         break;
       case 'ArrowDown':
-        e.preventDefault();
-        playbackState.update(s => {
-          const newVol = Math.max(0, s.volume - 0.1);
-          return { ...s, volume: newVol, isMuted: newVol === 0 ? true : s.isMuted };
-        });
-        window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Down`, icon: 'volume-down' } }));
+        if (hasModifier || !activeEl.closest('.media-card')) {
+          e.preventDefault();
+          playbackState.update(s => {
+            const newVol = Math.max(0, s.volume - 0.1);
+            return { ...s, volume: newVol, isMuted: newVol === 0 ? true : s.isMuted };
+          });
+          window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: `Volume Down`, icon: 'volume-down' } }));
+        }
         break;
       case 'ArrowRight':
-        e.preventDefault();
         if (e.shiftKey) {
+          e.preventDefault();
           nextTrack();
-        } else {
+        } else if (e.ctrlKey || e.metaKey || !activeEl.closest('.media-card')) {
+          e.preventDefault();
           playbackState.update(s => {
             const dur = $activeMedia?.duration || 0;
             const currentTime = dur * s.progress;
@@ -234,10 +239,11 @@
         }
         break;
       case 'ArrowLeft':
-        e.preventDefault();
         if (e.shiftKey) {
+          e.preventDefault();
           prevTrack();
-        } else {
+        } else if (e.ctrlKey || e.metaKey || !activeEl.closest('.media-card')) {
+          e.preventDefault();
           playbackState.update(s => {
             const dur = $activeMedia?.duration || 0;
             const currentTime = dur * s.progress;

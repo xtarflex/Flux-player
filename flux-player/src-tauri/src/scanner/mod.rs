@@ -9,7 +9,6 @@ use tauri::{AppHandle, Emitter, Runtime};
 use std::collections::HashSet;
 
 pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> Vec<MediaMetadata> {
-    let mut results = Vec::new();
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -30,28 +29,77 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
         }
     }
 
+    let paths = crawler::walk_directory(&dir_path);
+    let mut new_paths = Vec::new();
+    
+    for path in paths {
+        let path_str = path.to_string_lossy().to_string();
+        if !existing_paths.contains(&path_str) {
+            new_paths.push(path);
+        }
+    }
+
+    let total_new = new_paths.len();
+    if total_new == 0 {
+        return Vec::new();
+    }
+
+    // --- STAGE 1: Fast Pass (Skeletons) ---
+    // Create skeleton metadata for all new files and save immediately
+    let mut skeletons = Vec::new();
+    for path in &new_paths {
+        if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+            let ext_lower = ext.to_lowercase();
+            let is_v = metadata::is_video(&ext_lower);
+            let is_a = metadata::is_audio(&ext_lower);
+            
+            if is_v || is_a {
+                let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+                let (cleaned_title, year, series) = metadata::clean_media_title(file_stem);
+                
+                skeletons.push(MediaMetadata {
+                    path: path.to_string_lossy().to_string(),
+                    title: cleaned_title,
+                    year,
+                    artist: None,
+                    album: None,
+                    poster_path: None,
+                    backdrop_path: None,
+                    album_art_path: None,
+                    duration: None,
+                    media_type: if is_v { "video".to_string() } else { "audio".to_string() },
+                    synopsis: None,
+                    rating: None,
+                    genres: Vec::new(),
+                    director: None,
+                    starring: None,
+                    series_tag: series,
+                    is_watched: false,
+                    added_at: now,
+                    needs_tmdb_scan: is_v, // Only videos strictly need TMDB enrichment by default
+                });
+            }
+        }
+    }
+
+    if !skeletons.is_empty() {
+        let _ = crate::database::queries::save_media_items(&app, skeletons.clone());
+        let _ = app.emit("flux-library-updated", ());
+    }
+
+    // --- STAGE 2: Slow Pass (Incremental Enrichment) ---
+    let mut enriched_results = Vec::new();
     let mut show_cache: std::collections::HashMap<String, MediaMetadata> =
         std::collections::HashMap::new();
 
-    let paths = crawler::walk_directory(&dir_path);
-    let total_found = paths.len();
-
-    for (index, path) in paths.into_iter().enumerate() {
+    for (index, path) in new_paths.into_iter().enumerate() {
         // Emit progress to frontend
-        let _ = app.emit("flux-scan-progress", (index + 1, total_found));
-
-        let path_str = path.to_string_lossy().to_string();
-        if existing_paths.contains(&path_str) {
-            continue; // O(1) skip to save API quota
-        }
+        let _ = app.emit("flux-scan-progress", (index + 1, total_new));
 
         if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
             let ext_lower = ext.to_lowercase();
             if metadata::is_video(&ext_lower) {
-                let file_stem = path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or_default();
+                let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
                 let (cleaned_title, _, extracted_series) = metadata::clean_media_title(file_stem);
 
                 let cached_show = if extracted_series.is_some() {
@@ -61,23 +109,30 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
                 };
 
                 if let Some(meta) =
-                    metadata::process_video(&app, &path, now, None, cached_show).await
+                    metadata::process_video(&app, &path, now, None, None, cached_show).await
                 {
                     if extracted_series.is_some() && !show_cache.contains_key(&cleaned_title) {
                         show_cache.insert(cleaned_title, meta.clone());
                     }
-                    results.push(meta);
+                    
+                    // Save individual item to DB
+                    let _ = crate::database::queries::save_media_items(&app, vec![meta.clone()]);
+                    let _ = app.emit("flux-item-enriched", meta.clone());
+                    enriched_results.push(meta);
                 }
             } else if metadata::is_audio(&ext_lower) {
                 if let Some(meta) =
                     metadata::process_audio(&app, &path, now, None, None, None).await
                 {
-                    results.push(meta);
+                    let _ = crate::database::queries::save_media_items(&app, vec![meta.clone()]);
+                    let _ = app.emit("flux-item-enriched", meta.clone());
+                    enriched_results.push(meta);
                 }
             }
         }
     }
-    results
+
+    enriched_results
 }
 
 pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
@@ -91,7 +146,7 @@ pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
             Ok(c) => c,
             Err(_) => return 0,
         };
-        let mut stmt = match conn.prepare("SELECT path, added_at, title FROM media WHERE needs_tmdb_scan = 1 AND media_type = 'video'") {
+        let mut stmt = match conn.prepare("SELECT path, added_at, title, poster_path FROM media WHERE needs_tmdb_scan = 1 AND media_type = 'video'") {
             Ok(s) => s,
             Err(_) => return 0,
         };
@@ -106,7 +161,8 @@ pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
             let p: String = row.get(0).unwrap_or_default();
             let a: i64 = row.get(1).unwrap_or_default();
             let t: Option<String> = row.get(2).ok();
-            paths.push((p, a as u64, t));
+            let po: Option<String> = row.get(3).ok();
+            paths.push((p, a as u64, t, po));
         }
         paths
     };
@@ -124,7 +180,7 @@ pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
         std::collections::HashMap::new();
     let mut results = Vec::new();
 
-    for (index, (path_str, added_at, ex_title)) in paths_to_heal.into_iter().enumerate() {
+    for (index, (path_str, added_at, ex_title, ex_poster)) in paths_to_heal.into_iter().enumerate() {
         let _ = app.emit("flux-heal-progress", (index + 1, total_to_heal));
 
         let path = std::path::Path::new(&path_str);
@@ -145,7 +201,7 @@ pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
         };
 
         if let Some(meta) =
-            metadata::process_video(&app, path, added_at, ex_title, cached_show).await
+            metadata::process_video(&app, path, added_at, ex_title, ex_poster, cached_show).await
         {
             let quota_exceeded = meta.needs_tmdb_scan;
             if !quota_exceeded {

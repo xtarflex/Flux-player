@@ -1,6 +1,6 @@
 use crate::utils::error::{AppError, AppResult};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use tauri::{AppHandle, Emitter, Runtime, State};
+use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tauri_plugin_store::StoreExt;
 
 pub struct TmdbState {
@@ -442,5 +442,59 @@ pub async fn send_feedback_report(
             "Formspree rejected report: {}",
             err_text
         )))
+    }
+}
+
+#[derive(serde::Serialize)]
+pub struct StorageStats {
+    pub cache_size: String,
+    pub db_size: String,
+}
+
+/// Calculates the size of the image cache and the main database file.
+#[tauri::command]
+pub async fn get_storage_stats<R: Runtime>(app: AppHandle<R>) -> AppResult<StorageStats> {
+    let app_dir = app.path().app_data_dir()?;
+    let cache_dir = app_dir.join("cache");
+    let db_path = app_dir.join("flux.db");
+
+    let cache_size_bytes = get_dir_size(&cache_dir).unwrap_or(0);
+    let db_size_bytes = std::fs::metadata(db_path).map(|m| m.len()).unwrap_or(0);
+
+    Ok(StorageStats {
+        cache_size: format_size(cache_size_bytes),
+        db_size: format_size(db_size_bytes),
+    })
+}
+
+fn get_dir_size(path: &std::path::Path) -> std::io::Result<u64> {
+    let mut size = 0;
+    if path.is_dir() {
+        for entry in std::fs::read_dir(path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                size += get_dir_size(&path)?;
+            } else {
+                size += entry.metadata()?.len();
+            }
+        }
+    }
+    Ok(size)
+}
+
+fn format_size(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+
+    if bytes >= GB {
+        format!("{:.2} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.2} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.2} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
     }
 }

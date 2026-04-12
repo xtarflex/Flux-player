@@ -43,6 +43,7 @@ export const mediaItems = writable<MediaItem[]>([]);
 export const selectedMediaId = writable<string | null>(null);
 export const libraryLoadState = writable<LibraryLoadState>('idle');
 export const isScanning = writable<boolean>(false);
+export const scanProgress = writable<{ current: number; total: number } | null>(null);
 
 /**
  * Fetches all media items from the database via the Rust command.
@@ -176,8 +177,6 @@ export function updateLocalProgress(path: string, position: number) {
       const prevWatched = item.is_watched || false;
       const thresholdPos = threshold * item.duration;
 
-      // Threshold Crossing Logic (Blueprint Fix): 
-      // Only auto-mark if we cross from below to above the line.
       if (!prevWatched && prevPos < thresholdPos && position >= thresholdPos) {
         item.is_watched = true;
       }
@@ -185,5 +184,40 @@ export function updateLocalProgress(path: string, position: number) {
       item.last_position = position;
     }
     return [...items];
+  });
+}
+
+// --- Event Listeners ---
+if (typeof window !== 'undefined') {
+  import('@tauri-apps/api/event').then(({ listen }) => {
+    listen('flux-scan-progress', (event: any) => {
+      const [current, total] = event.payload;
+      scanProgress.set({ current, total });
+    });
+
+    listen('flux-item-enriched', (event: any) => {
+      const enrichedItem = event.payload;
+      mediaItems.update(items => {
+        const index = items.findIndex(i => i.path === enrichedItem.path);
+        if (index !== -1) {
+          // Preserve some UI-only state if necessary, but here we mostly want the fresh metadata
+          items[index] = {
+            ...items[index],
+            ...enrichedItem,
+            id: enrichedItem.path, // ensure ID is correct
+            poster: enrichedItem.poster_path, // map backend names to frontend names
+            backdrop: enrichedItem.backdrop_path,
+            album_art: enrichedItem.album_art_path,
+            type: enrichedItem.media_type,
+            is_watched: enrichedItem.is_watched,
+          };
+        }
+        return [...items];
+      });
+    });
+
+    listen('flux-library-updated', () => {
+      loadLibraryFromDb();
+    });
   });
 }

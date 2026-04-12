@@ -3,6 +3,8 @@
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
   import { tooltip } from '$lib/actions/tooltip';
+  import { fade, scale } from 'svelte/transition';
+  import { backOut, quintOut } from 'svelte/easing';
   import { toggleFavorite as toggleFavoriteAction } from '$lib/stores/media';
 
   let { 
@@ -86,9 +88,16 @@
   {/if}
   <div class="poster-container">
     {#if hasPoster}
-      <img src={resolvedPoster} alt={item.title} class="poster-image" />
+      {#key resolvedPoster}
+        <img 
+          src={resolvedPoster} 
+          alt={item.title} 
+          class="poster-image" 
+          in:fade={{ duration: 400 }}
+        />
+      {/key}
     {:else}
-      <div class="placeholder-logo">
+      <div class="placeholder-logo" in:scale={{ duration: 400, start: 0.9, easing: backOut }}>
         <img src="/flux2d.png" alt="Flux" />
       </div>
     {/if}

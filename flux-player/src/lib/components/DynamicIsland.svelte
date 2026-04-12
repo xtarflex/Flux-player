@@ -7,7 +7,7 @@
   import IslandControls from "./island/IslandControls.svelte";
   import IslandStatus from "./island/IslandStatus.svelte";
   import IslandMedia from "./island/IslandMedia.svelte";
-  import { isScanning } from "$lib/stores/media";
+  import { isScanning, scanProgress } from "$lib/stores/media";
   import { activeMedia, playbackState } from "$lib/stores/playback";
   import { connectivity, getConnectivityDetails } from "$lib/stores/connectivity";
 
@@ -189,6 +189,7 @@
       {mediaState} 
       {bufferingProgress} 
       isScanning={$isScanning}
+      scanProgress={$scanProgress}
       toast={currentToast}
       onClose={() => { 
         currentToast = null;

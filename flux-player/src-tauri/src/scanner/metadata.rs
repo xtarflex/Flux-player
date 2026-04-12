@@ -205,6 +205,7 @@ pub async fn process_video<R: Runtime>(
     path: &std::path::Path,
     added_at: u64,
     existing_title: Option<String>,
+    existing_poster: Option<String>,
     cached_show: Option<MediaMetadata>,
 ) -> Option<MediaMetadata> {
     let file_stem = path.file_stem()?.to_str()?;
@@ -304,7 +305,16 @@ pub async fn process_video<R: Runtime>(
                     )
                     .await
                     {
-                        Ok(cached_path) => metadata.poster_path = Some(cached_path),
+                        Ok(cached_path) => {
+                            // If we found a new TMDB poster and had a fallback one, delete the fallback
+                            if let Some(old_poster) = existing_poster {
+                                if old_poster.ends_with(".png") && old_poster != cached_path {
+                                    let _ = std::fs::remove_file(&old_poster);
+                                    println!("[Flux Scanner] Deleted old fallback poster: {}", old_poster);
+                                }
+                            }
+                            metadata.poster_path = Some(cached_path);
+                        }
                         Err(_) => {
                             embed_fallback = true;
                             image_download_failed = true;

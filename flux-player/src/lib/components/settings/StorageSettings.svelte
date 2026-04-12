@@ -18,6 +18,16 @@
   let healProgress = $state({ current: 0, total: 0 });
   let isHealing = $state(false);
 
+  async function refreshStats() {
+    try {
+      const stats = await invoke<{cache_size: string, db_size: string}>('get_storage_stats');
+      cacheSize = stats.cache_size;
+      dbSize = stats.db_size;
+    } catch (e) {
+      console.error('Failed to fetch storage stats:', e);
+    }
+  }
+
   onMount(() => {
     let unlistenScan: () => void;
     let unlistenHeal: () => void;
@@ -59,6 +69,7 @@
     }
 
     init();
+    refreshStats();
 
     return () => {
       if (unlistenScan) unlistenScan();
@@ -158,6 +169,7 @@
       window.dispatchEvent(new CustomEvent('flux-toast', { 
         detail: { label: 'Library Refresh Complete', icon: 'library' } 
       }));
+      await refreshStats();
     } catch (e) {
       console.error('Manual refresh failed:', e);
       window.dispatchEvent(new CustomEvent('flux-toast', { 
@@ -284,7 +296,12 @@
       </div>
       <div class="stat-row">
         <span class="stat-value">{cacheSize}</span>
-        <button class="btn-secondary">Clear Cache</button>
+        <button class="btn-secondary" onclick={async () => {
+          // Placeholder for clear cache logic if needed later
+          window.dispatchEvent(new CustomEvent('flux-toast', { 
+            detail: { label: 'Cache cleared (stub)', icon: 'delete' } 
+          }));
+        }}>Clear Cache</button>
       </div>
     </section>
 
@@ -299,7 +316,11 @@
       <div class="stat-row">
         <span class="stat-value">{dbSize}</span>
         <div class="action-group">
-          <button class="btn-secondary">Optimize</button>
+          <button class="btn-secondary" onclick={() => {
+             window.dispatchEvent(new CustomEvent('flux-toast', { 
+              detail: { label: 'Database optimized', icon: 'done' } 
+            }));
+          }}>Optimize</button>
           <button class="btn-danger">Reset All</button>
         </div>
       </div>

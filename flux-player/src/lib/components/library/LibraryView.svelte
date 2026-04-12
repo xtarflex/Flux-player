@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
-  import { fade, slide, crossfade } from 'svelte/transition';
+  import { fade, slide, crossfade, fly } from 'svelte/transition';
+  import { quintOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
   import { onboarding, triggerTour } from '$lib/stores/onboarding';
   import MediaCard from './MediaCard.svelte';
@@ -612,40 +613,53 @@
             />
           </div>
         {:else if viewMode !== 'detail'}
-          {#each filteredItems as item (item.id)}
-            <MediaCard 
-              {item} 
-              {viewMode} 
-              selected={$selectedMediaId === item.id}
-              selectionMode={isSelectionMode}
-              batchSelected={selectedBatchIds.includes(item.id)}
-              onclick={(e: MouseEvent) => selectItem(item.id, e)}
-              ondblclick={() => handleDoubleClick(item.id)}
-              onmenu={(e: MouseEvent) => openMenu(e, item)}
-              onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
-            />
+          {#each filteredItems as item, i (item.id)}
+            <div 
+              style="display: contents;" 
+              in:fly={{ y: 24, duration: 600, delay: Math.min(i * 35, 1200), easing: quintOut }}
+            >
+              <MediaCard 
+                {item} 
+                {viewMode} 
+                selected={$selectedMediaId === item.id}
+                selectionMode={isSelectionMode}
+                batchSelected={selectedBatchIds.includes(item.id)}
+                onclick={(e: MouseEvent) => selectItem(item.id, e)}
+                ondblclick={() => handleDoubleClick(item.id)}
+                onmenu={(e: MouseEvent) => openMenu(e, item)}
+                onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
+              />
+            </div>
           {/each}
         {:else}
           <!-- In detail mode, left pane always shows as list -->
-          {#each filteredItems as item (item.id)}
-            <MediaCard 
-              {item} 
-              viewMode="list" 
-              selected={$selectedMediaId === item.id}
-              selectionMode={isSelectionMode}
-              batchSelected={selectedBatchIds.includes(item.id)}
-              onclick={(e: MouseEvent) => selectItem(item.id, e)}
-              ondblclick={() => handleDoubleClick(item.id)}
-              onmenu={(e: MouseEvent) => openMenu(e, item)}
-              onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
-            />
+          {#each filteredItems as item, i (item.id)}
+            <div 
+              style="display: contents;" 
+              in:fly={{ y: 16, duration: 500, delay: Math.min(i * 25, 1000), easing: quintOut }}
+            >
+              <MediaCard 
+                {item} 
+                viewMode="list" 
+                selected={$selectedMediaId === item.id}
+                selectionMode={isSelectionMode}
+                batchSelected={selectedBatchIds.includes(item.id)}
+                onclick={(e: MouseEvent) => selectItem(item.id, e)}
+                ondblclick={() => handleDoubleClick(item.id)}
+                onmenu={(e: MouseEvent) => openMenu(e, item)}
+                onrightclick={(e: MouseEvent) => handleCardContextMenu(e, item.id)}
+              />
+            </div>
           {/each}
         {/if}
       </div>
     </div>
 
     {#if viewMode === 'detail'}
-      <div class="blank-detail-panel">
+      <div 
+        class="blank-detail-panel" 
+        in:fly={{ x: 20, duration: 600, delay: 200, easing: quintOut }}
+      >
         <DetailPanel />
       </div>
     {/if}

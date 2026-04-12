@@ -92,11 +92,11 @@ pub async fn refresh_media_metadata<R: Runtime>(app: AppHandle<R>, path: String)
 
     // Fetch existing title, artist, album if they were manually edited
     // Use a strict block to drop the non-Send SQLite connection before the .await
-    let (ex_title, ex_artist, ex_album) = {
+    let (ex_title, ex_artist, ex_album, ex_poster) = {
         let db_path = crate::database::connection::get_db_path(&app)?;
         let conn = rusqlite::Connection::open(db_path)?;
 
-        let mut stmt = conn.prepare("SELECT title, artist, album FROM media WHERE path = ?1")?;
+        let mut stmt = conn.prepare("SELECT title, artist, album, poster_path FROM media WHERE path = ?1")?;
 
         let mut rows = stmt.query([&path])?;
 
@@ -104,14 +104,15 @@ pub async fn refresh_media_metadata<R: Runtime>(app: AppHandle<R>, path: String)
             let t: Option<String> = row.get(0).ok();
             let a: Option<String> = row.get(1).ok();
             let al: Option<String> = row.get(2).ok();
-            (t, a, al)
+            let po: Option<String> = row.get(3).ok();
+            (t, a, al, po)
         } else {
-            (None, None, None)
+            (None, None, None, None)
         }
     };
 
     let result = if scanner::metadata::is_video(&ext) {
-        scanner::metadata::process_video(&app, p, added_at, ex_title, None).await
+        scanner::metadata::process_video(&app, p, added_at, ex_title, ex_poster, None).await
     } else if scanner::metadata::is_audio(&ext) {
         scanner::metadata::process_audio(&app, p, added_at, ex_title, ex_artist, ex_album).await
     } else {

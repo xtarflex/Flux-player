@@ -285,3 +285,48 @@ Ensured scanning reliability and user transparency for Beta release.
 - **RATIONALE**: Tauri's undecorated/transparent windows weren't always appearing in the OS window list. By querying Tauri for the exact window coordinates and cropping a monitor capture, we achieved 100% targeting accuracy.
 - **FIX**: Explicitly handled `Result` types for monitor dimensions and resolved "Protected Folder Access" conflicts with Windows Security.
 - **UX**: Verified "Clean Capture" (blink effect + HUD hiding) produces perfectly framed, unblurred feedback images.
+
+---
+
+## [2026-04-12] - Scanner Hardening & TMDB Reliability Integration
+
+- **ACTION**: Merged final two stabilization branches into `main`.
+- **STALE MEDIA**: Integrated `fix-stale-media-cleanup`. The scanner now performs a post-scan transaction to delete database entries for file paths that are no longer reachable on disk, maintaining library hygiene.
+- **TMDB FIX**: Integrated `jules-153...-c72690d3`. Resolved a bug where media items with interrupted image downloads (posters/backdrops) were being marked as "Scanned." Now, `needs_tmdb_scan` remains true if image caching fails, ensuring the enrichment is retried.
+- **CI**: Resolved a Rust formatting regression in `settings.rs` and initiated build verification on `origin/main`.
+
+*KI: Always use transactions for batch deletions during library scans to prevent database fragmentation and ensure atomicity if the scanner is interrupted.*
+*KI: Always run `cargo fmt --all` before pushing to ensure CI compliance with the project's strict formatting standards.*
+
+---
+
+## [2026-04-12] - Milestone 2.4: Two-Stage Scanning & Incremental Enrichment
+
+- **ACTION**: Overhauled the library scanner to prioritize immediate visual feedback for large media collections.
+- **TWO-STAGE SCAN**: Refactored `scan_directory` (Rust) into a "Skeleton & Enrichment" model.
+    - **Stage 1 (Fast)**: Instantly crawls directories, creates minimal "skeleton" records, and saves them to the DB.
+    - **Stage 2 (Slow)**: Performs incremental background enrichment (TMDB metadata, posters, thumbnails) item-by-item.
+- **REAL-TIME SYNC**:
+    - **Backend**: Emits `flux-item-enriched` for every successfully processed item.
+    - **Frontend**: `media.ts` listens for these events and performs in-place updates on individual items in the store gallery. This allows posters and titles to "snap" into place as the scan progresses.
+- **DYNAMIC ISLAND**: Updated `IslandStatus.svelte` to show granular enrichment progress.
+    - **UI**: Added a `(current/total)` counter and a signature "Slanted Gradient" progress bar beneath the status message.
+- **RATIONALE**: Eliminates the "Scanning..." black hole UX. Users can browse and interact with their library immediately after adding a folder, while the rich details fill in dynamically.
+
+*KI: When implementing two-stage scans, ensure the secondary pass (enrichment) is fully incremental and emits per-item events. This prevents large memory spikes and allows the UI to stay responsive during long-running background tasks.*
+
+---
+
+## [2026-04-12] - Milestone 2.5: Cinematic Detail Mode & Context-Aware Shortcuts
+
+- **DETAIL VIEW ANIMATIONS**: Extended the high-fidelity animation system to the Library Detail mode.
+    - **Panel Entrance**: Added a 600ms `fly` transition to the right-side information panel, providing a smooth slide-in from the right.
+    - **Internal Stagger**: Implemented item-specific transitions triggered by selection changes:
+        - **Poster**: "Pop" entrance with `backOut` easing.
+        - **Backdrop**: Smooth 800ms fade for high-res imagery.
+        - **Metadata**: Bottom-up fly-in for titles and descriptions to establish visual hierarchy.
+- **CONTEXT-AWARE SHORTCUTS**: Resolved the recurring conflict between grid navigation and playback controls.
+    - **DEFERRAL**: Bare arrow keys (`Up`, `Down`, `Left`, `Right`) now automatically defer to library navigation when a media card is focused.
+    - **UNIVERSAL OVERRIDE**: Implemented **`Ctrl + Arrow`** as a global playback layer. Users can now adjust volume or seek even while a card is focused by holding the `Ctrl` (or `Cmd`) modifier.
+    - **SAFE SEEKING**: Reinforced **`J`** and **`L`** as primary, non-conflicting seek keys that work universally without risking navigation focus.
+- **RATIONALE**: Synchronizes the user's mental model with the app's behavior—navigation feels natural in the grid, while playback remains under total control via modifiers or dedicated keys.

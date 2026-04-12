@@ -5,10 +5,18 @@
 
   let connectivityDetails = $derived(getConnectivityDetails($connectivity));
 
-  let { mediaState, bufferingProgress, isScanning = false, toast = null, onClose } = $props<{ 
-    mediaState: string; 
+  let { 
+    mediaState, 
+    bufferingProgress, 
+    isScanning = false, 
+    scanProgress = null,
+    toast = null, 
+    onClose 
+  } = $props<{
+    mediaState: string;
     bufferingProgress: number;
     isScanning?: boolean;
+    scanProgress?: { current: number; total: number } | null;
     toast?: { icon: string, label: string } | null;
     onClose: () => void;
   }>();
@@ -29,7 +37,20 @@
             <path class="flux-spin-violet" d="M12 2 A10 10 0 0 1 12 22 A5 5 0 0 1 12 12 A5 5 0 0 0 12 2 Z" fill="var(--primary)"/>
           </svg>
         </div>
-        <span class="status-msg">SCANNING LIBRARY...</span>
+        <div class="scan-info">
+          <span class="status-msg">
+            {#if scanProgress}
+              ENRICHING LIBRARY ({scanProgress.current}/{scanProgress.total})
+            {:else}
+              SCANNING LIBRARY...
+            {/if}
+          </span>
+          {#if scanProgress}
+            <div class="scan-bar-container">
+              <div class="scan-bar" style="width: {(scanProgress.current / scanProgress.total) * 100}%"></div>
+            </div>
+          {/if}
+        </div>
       </div>
     {:else if mediaState === "loading"}
       <div class="loading-state">
@@ -105,6 +126,27 @@
     font-size: 0.6rem;
     color: var(--text-white);
     letter-spacing: 0.1em;
+  }
+
+  .scan-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+  }
+
+  .scan-bar-container {
+    width: 100%;
+    height: 3px;
+    background: var(--glass-bg-high);
+    border-radius: 1.5px;
+    overflow: hidden;
+  }
+
+  .scan-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary), var(--primary));
+    transition: width 0.3s ease;
   }
 
   .spinner-box {

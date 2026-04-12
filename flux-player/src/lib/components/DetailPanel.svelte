@@ -7,6 +7,8 @@
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
   import { derived } from 'svelte/store';
+  import { fade, fly, scale } from 'svelte/transition';
+  import { quintOut, backOut } from 'svelte/easing';
   import AnimatedPlayPause from './ui/animated-icons/AnimatedPlayPause.svelte';
   import { playWithAutoQueue } from '$lib/stores/queue';
   import { tooltip } from '$lib/actions/tooltip';
@@ -115,6 +117,7 @@
           <div 
             class="backdrop-image" 
             style="background-image: url('{$resolvedBackdrop}')"
+            in:fade={{ duration: 800 }}
           ></div>
           <div class="backdrop-overlay"></div>
         </div>
@@ -122,7 +125,10 @@
       <!-- Content Layer: Poster + Title Info -->
       <div class="hero-row">
         <!-- Poster -->
-        <div class="poster">
+        <div 
+          class="poster" 
+          in:scale={{ duration: 600, start: 0.9, delay: 150, easing: backOut }}
+        >
           {#if $resolvedPoster && !$selectedItem.poster?.includes('flux2d')}
             <img src={$resolvedPoster} alt={$selectedItem.title} class="poster-img" />
           {:else}
@@ -133,7 +139,10 @@
         </div>
 
         <!-- Title / Meta -->
-        <div class="title-block">
+        <div 
+          class="title-block"
+          in:fly={{ y: 20, duration: 600, delay: 300, easing: quintOut }}
+        >
           <h2 class="title">{$selectedItem.title}</h2>
 
           {#if $selectedItem.type === 'audio'}

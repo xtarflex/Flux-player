@@ -45,6 +45,7 @@ pub fn run() {
             commands::settings::get_diagnostic_report,
             commands::settings::capture_screenshot,
             commands::settings::send_feedback_report,
+            commands::settings::get_storage_stats,
             utils::folders::get_default_media_folders,
             commands::audio::get_system_mute_status,
         ])
