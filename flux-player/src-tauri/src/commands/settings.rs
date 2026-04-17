@@ -97,7 +97,24 @@ pub async fn get_tmdb_key<R: Runtime>(
 
     let idx = (state.rotation_index.fetch_add(1, Ordering::SeqCst) % 3) + 1;
     let key_var = format!("TMDB_KEY_{}", idx);
-    std::env::var(key_var).map_err(|_| AppError::NotFound("API_KEY_NOT_FOUND".into()))
+    
+    match std::env::var(&key_var) {
+        Ok(key) => Ok(key),
+        Err(_) => {
+            // Fallback to hardcoded Community Pool keys for Beta production builds
+            let fallback = match idx {
+                1 => "dc88def0a6432a3f1cd3cf80b22e98f6",
+                2 => "c0b2495ddcc1f5467d52b85786578447",
+                3 => "38aee052645c9125c20c01b48668d95b",
+                _ => "dc88def0a6432a3f1cd3cf80b22e98f6",
+            };
+            Ok(fallback.to_string())
+        }
+    }
+}
+
+pub fn get_tmdb_rat_fallback() -> String {
+    std::env::var("TMDB_RAT").unwrap_or_else(|_| "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzOGFlZTA1MjY0NWM5MTI1YzIwYzAxYjQ4NjY4ZDk1YiIsIm5iZiI6MTc3MjE5NzM4MC45OTgwMDAxLCJzdWIiOiI2OWExOTYwNDdhOTEwYTdiMjFhYjRlM2MiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.kPugj7clRVxSnJdawDKXB65hPnEl68JSPhLdl5LjR-8".to_string())
 }
 
 #[tauri::command]
@@ -497,4 +514,67 @@ fn format_size(bytes: u64) -> String {
     } else {
         format!("{} B", bytes)
     }
+}
+
+#[tauri::command]
+pub async fn show_hud<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
+    if let Some(window) = app.get_webview_window("hud") {
+        // Explicitly show and re-assert topmost status to force Z-order priority
+        // without requiring focus (prevents focus stealing).
+        window.show().map_err(|e| AppError::Internal(e.to_string()))?;
+        window
+            .set_always_on_top(true)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn factory_reset<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
+    let app_dir = app.path().app_data_dir().map_err(|e| AppError::Internal(e.to_string()))?;
+    
+    // 1. Close database connections if possible (not strictly necessary for delete if file is closed)
+    // 2. Delete the app data directory
+    if app_dir.exists() {
+        std::fs::remove_dir_all(&app_dir).map_err(|e| AppError::Internal(e.to_string()))?;
+    }
+    
+    // 3. Re-create the folder structure for a clean start on next boot
+    std::fs::create_dir_all(&app_dir).map_err(|e| AppError::Internal(e.to_string()))?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
+    #[cfg(target_os = "windows")]
+    {
+        let exe_path = std::env::current_exe().map_err(|e| AppError::Internal(e.to_string()))?;
+        let install_dir = exe_path.parent().ok_or_else(|| AppError::Internal("Could not find install dir".into()))?;
+        let uninstaller_path = install_dir.join("uninstall.exe");
+        
+        if uninstaller_path.exists() {
+            // Launch uninstaller and exit
+            std::process::Command::new(uninstaller_path)
+                .spawn()
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            
+            app.exit(0);
+        } else {
+            // Fallback to the ps1 script if exe isn't found (likely dev environment)
+            let ps1_path = install_dir.parent().unwrap().join("uninstall.ps1");
+             if ps1_path.exists() {
+                std::process::Command::new("powershell")
+                    .arg("-File")
+                    .arg(ps1_path)
+                    .spawn()
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+                app.exit(0);
+             } else {
+                return Err(AppError::NotFound("Uninstaller not found".into()));
+             }
+        }
+    }
+    
+    Ok(())
 }

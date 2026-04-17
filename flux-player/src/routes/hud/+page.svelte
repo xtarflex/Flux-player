@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
-  import { convertFileSrc } from '@tauri-apps/api/core';
+  import { convertFileSrc, invoke } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
-  import { getCurrentWindow, LogicalPosition, LogicalSize, primaryMonitor } from '@tauri-apps/api/window';
+  import { getCurrentWindow, LogicalPosition, LogicalSize, primaryMonitor, Window } from '@tauri-apps/api/window';
   import { fly, fade } from 'svelte/transition';
   import type { MediaItem } from '$lib/stores/playback';
 
@@ -20,6 +20,13 @@
   async function showHUD(media: MediaItem) {
     const win = getCurrentWindow();
     
+    // 0. Only show HUD if main window is minimized (Blueprint §18)
+    const mainWin = await Window.getByLabel('main');
+    if (mainWin) {
+      const minimized = await mainWin.isMinimized();
+      if (!minimized) return;
+    }
+
     // 1. Position HUD in bottom-right of primary monitor
     try {
       const monitor = await primaryMonitor();
@@ -44,9 +51,8 @@
     currentMedia = media;
     isVisible = true;
 
-    await win.show();
-    await win.setAlwaysOnTop(true);
-    await win.setFocus();
+    // Use hardened Rust command to show and re-assert 'Always on Top' Z-order
+    await invoke('show_hud');
 
     
     hideTimer = setTimeout(() => {

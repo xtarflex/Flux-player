@@ -9,7 +9,7 @@
   import AnimatedSettings from './ui/animated-icons/AnimatedSettings.svelte';
   import Icon from "./ui/Icon.svelte";
   import { tooltip } from '$lib/actions/tooltip';
-  import { isSidebarCollapsed } from '$lib/stores/ui';
+  import { isSidebarCollapsed, hasUpdateAvailable } from '$lib/stores/ui';
 
   function triggerImport() {
     window.dispatchEvent(new CustomEvent('flux-import-folder'));
@@ -54,6 +54,9 @@
           <item.Icon 
             active={$page.url.pathname.startsWith('/' + item.id)} 
           />
+          {#if item.id === 'settings' && $hasUpdateAvailable}
+            <div class="update-indicator"></div>
+          {/if}
         </div>
         {#if !$isSidebarCollapsed}
           <span class="nav-label">{item.label}</span>
@@ -254,6 +257,19 @@
 
   .nav-label {
     font-size: 1.05rem;
+  }
+
+  .update-indicator {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: var(--secondary);
+    border-radius: 50%;
+    border: 1.5px solid var(--bg-base);
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+    pointer-events: none;
   }
 
   /* Spacer */

@@ -369,3 +369,15 @@ Ensured scanning reliability and user transparency for Beta release.
 ---
 
 
+
+---
+
+## [2026-04-16] - HUD Hardening & Maintenance Infrastructure (Beta 1.1)
+
+- **HUD Z-ORDER**: Migrated visibility toggling to the Rust backend (`show_hud`).
+    - **RATIONALE**: Direct JS calls were losing Z-order priority when the main app was minimized. Calling `set_always_on_top(true)` immediately after `window.show()` in Rust ensures the OS respects the HUD's priority regardless of focus state.
+- **CINEMATIC FEEDBACK**: Implemented smooth transitions for the real-time "Watched" filter.
+    - **UI**: Added `animate:flip` and `out:fade` to the library grid. Media items now gracefully exit the view when marked as watched while other items slide to fill the gap.
+- **INFRASTRUCTURE**: Initialized the "Maintenance Hub" architecture.
+    - **TODO**: Created `TODO.md` for technical task tracking.
+    - **UNINSTALL**: Designed the interactive `uninstall.ps1` and the blueprint for the in-app Factory Reset.

@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { fade, slide, crossfade, fly } from 'svelte/transition';
-  import { quintOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
+  import { quintOut } from 'svelte/easing';
   import { onboarding, triggerTour } from '$lib/stores/onboarding';
   import MediaCard from './MediaCard.svelte';
   import Icon from '../ui/Icon.svelte';
@@ -615,8 +615,9 @@
         {:else if viewMode !== 'detail'}
           {#each filteredItems as item, i (item.id)}
             <div 
-              style="display: contents;" 
+              animate:flip={{ duration: 500, easing: quintOut }}
               in:fly={{ y: 24, duration: 600, delay: Math.min(i * 35, 1200), easing: quintOut }}
+              out:fade={{ duration: 300 }}
             >
               <MediaCard 
                 {item} 
@@ -635,8 +636,9 @@
           <!-- In detail mode, left pane always shows as list -->
           {#each filteredItems as item, i (item.id)}
             <div 
-              style="display: contents;" 
+              animate:flip={{ duration: 400, easing: quintOut }}
               in:fly={{ y: 16, duration: 500, delay: Math.min(i * 25, 1000), easing: quintOut }}
+              out:fade={{ duration: 250 }}
             >
               <MediaCard 
                 {item} 

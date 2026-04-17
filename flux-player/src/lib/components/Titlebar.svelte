@@ -18,6 +18,7 @@
   let pcName = $state("FLUX-DEVICE");
   let displayName = $state("");
   let isMuted = $state(false);
+  let audioDevice = $state({ name: "System Speaker", category: "speaker" });
 
   // ── Network State Logic ─────────────────────────────────────────────
   let netStatus = $derived.by(() => {
@@ -54,9 +55,12 @@
     }
   }
 
-  async function checkMuteStatus() {
+  async function checkAudioStatus() {
     try {
       isMuted = await invoke('get_system_mute_status');
+      
+      const info = await invoke<{ name: string, category: string }>('get_current_audio_device');
+      if (info) audioDevice = info;
     } catch (e) {
       // Silence errors to prevent console spamming if command fails
     }
@@ -76,12 +80,12 @@
 
   onMount(() => {
     loadProfile();
-    checkMuteStatus();
+    checkAudioStatus();
     updateNetworkStatus();
     
     console.log("Flux Titlebar: Initialized");
 
-    const muteInterval = setInterval(checkMuteStatus, 5000);
+    const audioInterval = setInterval(checkAudioStatus, 5000);
     
     window.addEventListener('online', updateNetworkStatus);
     window.addEventListener('offline', updateNetworkStatus);
@@ -92,7 +96,7 @@
     window.addEventListener('flux-settings-updated', loadProfile);
     
     return () => {
-      clearInterval(muteInterval);
+      clearInterval(audioInterval);
       window.removeEventListener('online', updateNetworkStatus);
       window.removeEventListener('offline', updateNetworkStatus);
       if (conn) conn.removeEventListener('change', updateNetworkStatus);
@@ -148,16 +152,28 @@
         <Icon name={connectivityIcon} size={22} strokeWidth={2.5} />
       </div>
 
-      <button class="audio-device-btn" aria-label="System Speakers" use:tooltip={{ content: isMuted ? 'System Muted' : 'System Speakers (Realtek HD Audio)', placement: 'bottom' }}>
+      <button 
+        class="audio-device-btn" 
+        aria-label={audioDevice.name} 
+        use:tooltip={{ content: isMuted ? 'System Muted' : `${audioDevice.name}`, placement: 'bottom' }}
+      >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           {#if isMuted}
             <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="#ff4444" />
             <line x1="23" y1="9" x2="17" y2="15" stroke="#ff4444" />
             <line x1="17" y1="9" x2="23" y2="15" stroke="#ff4444" />
           {:else}
-            <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="var(--secondary)" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="var(--primary)" opacity="0.8" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke="var(--primary)" opacity="0.4" />
+            {#if audioDevice.category === 'bluetooth' || audioDevice.category === 'headphone'}
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke="var(--secondary)" />
+              <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" fill="var(--primary)" stroke="none" opacity="0.8" />
+            {:else if audioDevice.category === 'hdmi'}
+              <path d="M20 7h-7L9 11H4v5h5l4 4h7V7z" stroke="var(--secondary)" />
+              <rect x="2" y="9" width="2" height="6" rx="1" fill="var(--primary)" opacity="0.8" />
+            {:else}
+              <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="var(--secondary)" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="var(--primary)" opacity="0.8" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke="var(--primary)" opacity="0.4" />
+            {/if}
           {/if}
         </svg>
       </button>

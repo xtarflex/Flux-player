@@ -27,7 +27,7 @@
    * @param current - Current time in seconds.
    * @param duration - Total duration in seconds.
    */
-  function scheduleSave(path: string, current: number, duration: number) {
+  function scheduleSave(path: string, current: number, duration: number, isFinished: boolean = false) {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       try {
@@ -36,9 +36,10 @@
           path,
           seconds: Math.floor(current),
           duration: Math.floor(duration),
+          isFinished,
         });
-        // Update local store so library UI progress bars stay in sync
-        import('$lib/stores/media').then(m => m.updateLocalProgress(path, Math.floor(current)));
+        // Update local store so library UI progress bars and filters stay in sync
+        import('$lib/stores/media').then(m => m.updateLocalProgress(path, Math.floor(current), isFinished));
       } catch (e) {
         console.warn('[AudioEngine] save failed:', e);
       }
@@ -48,7 +49,7 @@
   /**
    * Immediate, non-debounced save for critical events (pause, end).
    */
-  async function saveNow(path: string, current: number, duration: number) {
+  async function saveNow(path: string, current: number, duration: number, isFinished: boolean = false) {
     if (saveTimer) {
       clearTimeout(saveTimer);
       saveTimer = null;
@@ -59,9 +60,10 @@
         path,
         seconds: Math.floor(current),
         duration: Math.floor(duration),
+        isFinished,
       });
-      // Update local store so library UI progress bars stay in sync
-      import('$lib/stores/media').then(m => m.updateLocalProgress(path, Math.floor(current)));
+      // Update local store so library UI progress bars and filters stay in sync
+      import('$lib/stores/media').then(m => m.updateLocalProgress(path, Math.floor(current), isFinished));
     } catch (e) {
       console.warn('[AudioEngine] Immediate save failed:', e);
     }
@@ -242,7 +244,7 @@
       const media = get(activeMedia);
       const isAudioOwner = media?.type === 'audio';
       if (media && isAudioOwner) {
-        saveNow(media.path, 0, audioEl.duration); // Reset to 0 for Smart Progress (Fix 11.2)
+        saveNow(media.path, 0, audioEl.duration, true); // Reset to 0 and mark finished (Fix 11.2)
       }
 
       // Milestone 2.2: Auto-advance to next track in queue

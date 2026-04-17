@@ -9,6 +9,7 @@ export interface ActiveMenu {
 
 export const activeMenu = writable<ActiveMenu | null>(null);
 export const isSidebarCollapsed = writable<boolean>(false);
+export const hasUpdateAvailable = writable<boolean>(false);
 
 /**
  * Opens a global context menu at the specified coordinates.

@@ -23,6 +23,7 @@
   import FeedbackHUD from '$lib/components/ui/FeedbackHUD.svelte';
   import { onboarding, triggerTour } from '$lib/stores/onboarding';
   import { listen } from '@tauri-apps/api/event';
+  import { checkForUpdates } from '$lib/utils/version';
 
   let { children } = $props();
   let showShortcutsRef = $state(false);
@@ -124,6 +125,8 @@
   }
 
   function handleGlobalKeydown(e: KeyboardEvent) {
+    if (isHud) return; // Disable all shortcuts in HUD window (Fix Bug 1)
+
     const target = e.target as HTMLElement;
     const isEditing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
     if (isEditing) {
@@ -210,7 +213,10 @@
       }
     });
 
-    window.addEventListener('keydown', handleGlobalKeydown);
+    if (!isHud) {
+      window.addEventListener('keydown', handleGlobalKeydown);
+      checkForUpdates(); // Startup beta version check
+    }
     
     // API Limit Listener (Milestone 2.5)
     const unsubLimit = listen('flux-require-api-key', () => {

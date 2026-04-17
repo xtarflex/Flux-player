@@ -117,17 +117,24 @@ pub async fn search_metadata_advanced<R: Runtime>(
 
     match req.send().await {
         Ok(response) => {
-            if response.status().is_client_error() || response.status().is_server_error() {
-                return Err(format!("HTTP_ERROR: {}", response.status()));
+            let status = response.status();
+            if status.is_client_error() || status.is_server_error() {
+                log::error!("[TMDB] HTTP Error {} for query '{}'", status, query);
+                return Err(format!("HTTP_ERROR: {}", status));
             }
-            if let Ok(search_data) = response.json::<TmdbSearchResponse>().await {
+            let body_text = response.text().await.map_err(|e| e.to_string())?;
+            if let Ok(search_data) = serde_json::from_str::<TmdbSearchResponse>(&body_text) {
                 let result = search_data.results.into_iter().next();
                 Ok(result.map(|r| (r, api_key)))
             } else {
+                log::error!("[TMDB] JSON Parse Error for query '{}'. Body: {}", query, body_text);
                 Err("JSON_PARSE_ERROR".into())
             }
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => {
+            log::error!("[TMDB] Network Error for query '{}': {}", query, e);
+            Err(e.to_string())
+        }
     }
 }
 

@@ -4,7 +4,7 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
-  import { loadLibraryFromDb, isScanning } from '$lib/stores/media';
+  import { loadLibraryFromDb, isScanning, scanProgress as scanProgressStore } from '$lib/stores/media';
 
   type FolderEntry = { path: string; type: 'video' | 'audio' };
 
@@ -14,7 +14,7 @@
   let isLoading = $state(true);
   let cacheSize = $state("—");
   let dbSize = $state("—");
-  let scanProgress = $state({ current: 0, total: 0 });
+  let localScanProgress = $state({ current: 0, total: 0 });
   let healProgress = $state({ current: 0, total: 0 });
   let isHealing = $state(false);
 
@@ -59,7 +59,7 @@
       // 2. Listen for Progress Updates
       unlistenScan = await listen('flux-scan-progress', (event: any) => {
         const [current, total] = event.payload;
-        scanProgress = { current, total };
+        localScanProgress = { current, total };
       });
 
       unlistenHeal = await listen('flux-heal-progress', (event: any) => {
@@ -110,7 +110,7 @@
         
         // Kick off the scan and refresh the library
         isScanning.set(true);
-        // Global scanning state handles feedback
+        scanProgressStore.set(null); // Reset global UI state
 
         try {
           await invoke('start_library_scan', { dir: selected });
@@ -125,6 +125,7 @@
           }));
         } finally {
           isScanning.set(false);
+          scanProgressStore.set(null);
         }
       }
     } catch (err) {
@@ -149,8 +150,10 @@
     if ($isScanning) return;
     
     isScanning.set(true);
+    scanProgressStore.set(null); // Reset global UI state
+
     isHealing = true;
-    scanProgress = { current: 0, total: 0 };
+    localScanProgress = { current: 0, total: 0 };
     healProgress = { current: 0, total: 0 };
 
     try {
@@ -177,6 +180,7 @@
       }));
     } finally {
       isScanning.set(false);
+      scanProgressStore.set(null);
     }
   }
 
@@ -220,8 +224,8 @@
               <span class="scanning-text">
                 {#if isHealing && healProgress.total > 0}
                   Heal: {healProgress.current}/{healProgress.total}
-                {:else if scanProgress.total > 0}
-                  Scan: {scanProgress.current}/{scanProgress.total}
+                {:else if localScanProgress.total > 0}
+                  Scan: {localScanProgress.current}/{localScanProgress.total}
                 {:else}
                   Working...
                 {/if}

@@ -164,11 +164,14 @@ pub fn save_playback_progress<R: Runtime>(
     path: String,
     seconds: i64,
     duration: i64,
+    is_finished: bool,
 ) -> AppResult<()> {
     let db_path = crate::database::connection::get_db_path(&app)?;
     let conn = rusqlite::Connection::open(db_path)?;
 
     // 1. Resolve watched threshold (Default 90 if not set)
+    // Note: This key must match the frontend camelCase. 
+    // We update init.rs to ensure it's initialized correctly.
     let threshold_val: i64 = conn
         .query_row(
             "SELECT value FROM settings WHERE key = 'watchedThreshold'",
@@ -195,7 +198,8 @@ pub fn save_playback_progress<R: Runtime>(
     let threshold_seconds = (duration as f64 * threshold_factor) as i64;
 
     // 3. Calculate New Watched Status (Threshold Crossing Logic)
-    let is_watched = if prev_is_watched == 1
+    let is_watched = if is_finished 
+        || prev_is_watched == 1
         || (duration > 0 && prev_position < threshold_seconds && seconds >= threshold_seconds)
     {
         1
@@ -203,9 +207,9 @@ pub fn save_playback_progress<R: Runtime>(
         prev_is_watched
     };
 
-    // 4. Smart Progress: If it's finished (reset to 0 by frontend) or crosses threshold,
+    // 4. Smart Progress: If it's finished or crosses threshold,
     // handle the last_position accordingly.
-    let last_position = if seconds == 0 && is_watched == 1 {
+    let last_position = if (is_finished || seconds == 0) && is_watched == 1 {
         0
     } else {
         seconds

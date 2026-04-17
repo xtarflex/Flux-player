@@ -55,11 +55,12 @@ export function resolveResource(src: string | null | undefined, fallback: string
   
   if (isLocalFile || isWindowsAbsolute || isUNCPath) {
     try {
-      const resolved = convertFileSrc(cleanPath);
-      // We don't log successful resolutions to avoid spamming, 
-      // but we add a trace if it's an unusual path type.
+      // Normalize backslashes to forward slashes for the asset protocol
+      const normalizedPath = cleanPath.replace(/\\/g, '/');
+      const resolved = convertFileSrc(normalizedPath);
+      
       if (isUNCPath) {
-        console.info(`[resolveResource] Resolved UNC path: ${cleanPath} -> ${resolved}`);
+        console.info(`[resolveResource] Resolved UNC path: ${normalizedPath} -> ${resolved}`);
       }
       return resolved;
     } catch (e) {

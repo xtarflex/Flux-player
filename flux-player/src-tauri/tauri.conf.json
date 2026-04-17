@@ -32,6 +32,7 @@
         "transparent": true,
         "alwaysOnTop": true,
         "visible": false,
+        "focus": false,
         "resizable": false,
         "fullscreen": false,
         "shadow": false,
@@ -39,7 +40,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost blob: data:; media-src 'self' asset: https://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://* http://*;",
+      "csp": "default-src 'self'; img-src 'self' http://asset.localhost https://asset.localhost asset: blob: data:; media-src 'self' http://asset.localhost https://asset.localhost asset:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://* http://*;",
       "assetProtocol": {
         "enable": true,
         "scope": ["$APPDATA/**", "$DOCUMENTS/**", "$DOWNLOADS/**", "$MUSIC/**", "$PICTURES/**", "$VIDEOS/**", "$HOME/**", "C:/**", "D:/**", "E:/**", "F:/**"]

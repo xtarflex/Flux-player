@@ -60,6 +60,10 @@ pub fn run() {
             commands::settings::get_storage_stats,
             utils::folders::get_default_media_folders,
             commands::audio::get_system_mute_status,
+            commands::audio::get_current_audio_device,
+            commands::settings::show_hud,
+            commands::settings::factory_reset,
+            commands::settings::open_uninstaller,
         ])
         .setup(|app| {
             // ── Database Initialization (Sequential) ─────────────────────────

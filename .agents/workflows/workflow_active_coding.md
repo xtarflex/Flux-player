@@ -16,13 +16,19 @@ Before writing a single line of code, you must ingest the current project state 
 
 3. **Read History:** Check `DEV.log` to see what was just completed and ensure you aren't repeating a recently fixed bug.
 
-4. **Read Architecture:** Review `docs/ARCHITECTURE.md` or `docs/UX_JOURNEYS.md` specific to the feature you are touching.
+4. **Search Skill Library:** Scan `c:\Users\sunny\.agents\skills` for task-specific expertise (e.g., `git`, `senior-backend`, `ui-design-system`). **Explicitly state which skills you have loaded in your plan.**
 
-## Step 2: Planning & Approval (The Think Phase)
+5. **Read Architecture & Standards:** Review `docs/ARCHITECTURE.md`, `docs/UX_JOURNEYS.md`, and **strictly** align with `docs/ENGINEERING_STANDARD.md`.
 
-1. **Draft the Plan:** Formulate a step-by-step technical plan of how you intend to build or fix the feature.
+6. **Verify Blueprint:** Check `docs/forensic_blueprint.md` for any performance "magic" required for this feature.
 
-2. **Stop and Confirm:** Present this plan to the human developer. **Do not write the actual code yet.** Wait for the user to say "Approved" or "Proceed."
+## Step 2: Isolation & Planning (The Think Phase)
+
+1. **Create Branch:** Immediately checkout a new feature branch: `git checkout -b feat/task-name` or `fix/task-name`.
+
+2. **Draft the Plan:** Formulate a step-by-step technical plan of how you intend to build or fix the feature, including an ADR if architectural changes are required.
+
+3. **Stop and Confirm:** Present this plan to the human developer. **Do not write the actual code yet.** Wait for the user to say "Approved" or "Proceed."
 
 ## Step 3: Execution (The Write Phase)
 
@@ -46,12 +52,16 @@ Before concluding your output, perform a self-audit:
 
 4. Prompt the human developer with specific manual verification steps (e.g., *"Please resize the window to ensure the Detail Panel drawer still slides smoothly."*).
 
-## Step 5: Documentation (The Log Phase)
+5. **Premium UX Audit:** Conduct a final check against the `ENGINEERING_STANDARD.md` §5 (Sleight of Hand) to ensure 60fps compliance.
 
-You must formally record your actions so the next agent (or your future self) has context:
+## Step 5: Propose & Document (The Log Phase)
 
-1. **Update `DEV.log`:** Write a concise, chronological entry explaining *what* you changed, and more importantly, *why* you made specific architectural choices.
+1. **Automated Push:** Execute `git add .` and `git commit -m "feat/fix: [description]"` followed by `git push origin [branch-name]`.
 
-2. **Generate Knowledge Items (KIs):** If you solved a complex bug (like a race condition or a CSS layout thrashing issue), log it at the bottom of the `DEV.log` as a KI so it is never repeated.
+2. **Propose Initial Review:** Notify the human developer that the branch is ready and trigger the `workflow_initial_review.md` for another agent to audit.
 
-3. **Propose Commit:** Provide the user with a suggested small, atomic Git commit message (e.g., `git commit -m "feat(ui): implement 0ms local search via css masking"`).
+3. **Update `DEV.log`:** Write a concise, chronological entry explaining *what* you changed, and more importantly, the *Rationale* behind specific architectural choices.
+
+3. **Generate Knowledge Items (KIs):** If you solved a complex bug (like a race condition or a CSS layout thrashing issue), log it at the bottom of the `DEV.log` as a KI so it is never repeated.
+
+4. **Suggest Commit:** Provide the user with a suggested small, atomic Git commit message (e.g., `git commit -m "feat(ui): implement 0ms local search via css masking"`).

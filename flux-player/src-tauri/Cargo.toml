@@ -25,7 +25,6 @@ tauri-plugin-opener = "2"
 tauri-plugin-sql = { version = "=2.3.2", features = ["sqlite"] }
 tauri-plugin-store = "=2.4.2"
 tauri-plugin-log = "2"
-log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", features = ["json", "stream", "multipart"] }
@@ -58,7 +57,9 @@ windows = { version = "0.52", features = [
     "Win32_System_Variant",
     "Win32_Media_Audio",
     "Win32_Media_Audio_Endpoints",
+    "Win32_Devices_Properties",
     "Win32_Devices_FunctionDiscovery",
     "Win32_UI_Shell",
+    "Win32_UI_Shell_PropertiesSystem",
     "Win32_UI_WindowsAndMessaging",
 ] }

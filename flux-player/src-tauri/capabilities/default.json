@@ -14,6 +14,7 @@
     "core:window:allow-minimize",
     "core:window:allow-maximize",
     "core:window:allow-close",
+    "core:window:allow-is-minimized",
     "core:window:allow-toggle-maximize",
     "core:window:allow-start-dragging",
     "sql:default",
@@ -26,20 +27,13 @@
     {
       "identifier": "fs:allow-read",
       "allow": [
-        { "path": "C:/**" },
-        { "path": "D:/**" },
-        { "path": "E:/**" },
-        { "path": "F:/**" },
-        { "path": "$HOME/**" }
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
       ]
     },
     {
       "identifier": "fs:allow-exists",
       "allow": [
-        { "path": "C:/**" },
-        { "path": "D:/**" },
-        { "path": "E:/**" },
-        { "path": "F:/**" },
         { "path": "$HOME/**" },
         { "path": "$APPDATA/**" }
       ]
@@ -60,6 +54,7 @@
     "core:window:allow-hide",
     "core:window:allow-set-ignore-cursor-events",
     "dialog:default",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "core:webview:allow-internal-toggle-devtools"
   ]
 }

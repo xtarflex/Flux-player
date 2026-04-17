@@ -249,18 +249,24 @@ pub async fn process_video<R: Runtime>(
         needs_tmdb_scan: false,
     };
 
-    // Attempt to extract embedded artwork from Video (similar to audio but limited formats) - This is our BACKUP
+    // Attempt to extract embedded artwork and duration from Loft (Core metadata)
     let mut embedded_art = None;
-    if let Ok(tagged_file) = lofty::read_from_path(path) {
-        if let Some(tag) = tagged_file
-            .primary_tag()
-            .or_else(|| tagged_file.first_tag())
-        {
-            if let Some(picture) = tag.pictures().first() {
-                embedded_art = cache_album_art(app, picture.data(), None, Some(&metadata.title));
+    match lofty::read_from_path(path) {
+        Ok(tagged_file) => {
+            if let Some(tag) = tagged_file.primary_tag().or_else(|| tagged_file.first_tag()) {
+                if let Some(picture) = tag.pictures().first() {
+                    embedded_art = cache_album_art(app, picture.data(), None, Some(&metadata.title));
+                }
             }
+            metadata.duration = Some(tagged_file.properties().duration().as_secs() as u32);
         }
-        metadata.duration = Some(tagged_file.properties().duration().as_secs() as u32);
+        Err(e) => {
+            log::warn!(
+                "[Flux Scanner] Core metadata extraction failed (Loft) for {}: {:?}",
+                path.display(),
+                e
+            );
+        }
     }
 
     // Attempt to enrich with TV Show Cache or TMDB
@@ -373,8 +379,9 @@ pub async fn process_video<R: Runtime>(
                 embed_fallback = true;
                 metadata.needs_tmdb_scan = false;
             }
-            Err(_) => {
+            Err(e) => {
                 // Network Error / 500 / Rate Limit. Mark for retry.
+                log::warn!("[Flux Scanner] TMDB search failed for '{}': {}. Marking for retry.", search_query, e);
                 embed_fallback = true;
                 metadata.needs_tmdb_scan = true;
             }
@@ -439,37 +446,43 @@ pub async fn process_audio<R: Runtime>(
         needs_tmdb_scan: false,
     };
 
-    if let Ok(tagged_file) = lofty::read_from_path(path) {
-        if let Some(tag) = tagged_file
-            .primary_tag()
-            .or_else(|| tagged_file.first_tag())
-        {
-            if metadata.title.is_empty() {
-                if let Some(t) = tag.title().map(|s| s.to_string()) {
-                    metadata.title = t;
+    match lofty::read_from_path(path) {
+        Ok(tagged_file) => {
+            if let Some(tag) = tagged_file.primary_tag().or_else(|| tagged_file.first_tag()) {
+                if metadata.title.is_empty() {
+                    if let Some(t) = tag.title().map(|s| s.to_string()) {
+                        metadata.title = t;
+                    }
                 }
-            }
-            if metadata.artist.is_none() {
-                metadata.artist = tag.artist().map(|s| s.to_string());
-            }
-            if metadata.album.is_none() {
-                metadata.album = tag.album().map(|s| s.to_string());
-            }
-            metadata.year = tag.year();
+                if metadata.artist.is_none() {
+                    metadata.artist = tag.artist().map(|s| s.to_string());
+                }
+                if metadata.album.is_none() {
+                    metadata.album = tag.album().map(|s| s.to_string());
+                }
+                metadata.year = tag.year();
 
-            if let Some(picture) = tag.pictures().first() {
-                if let Some(art_path) = cache_album_art(
-                    app,
-                    picture.data(),
-                    metadata.artist.as_deref(),
-                    metadata.album.as_deref(),
-                ) {
-                    metadata.album_art_path = Some(art_path.clone());
-                    metadata.poster_path = Some(art_path);
+                if let Some(picture) = tag.pictures().first() {
+                    if let Some(art_path) = cache_album_art(
+                        app,
+                        picture.data(),
+                        metadata.artist.as_deref(),
+                        metadata.album.as_deref(),
+                    ) {
+                        metadata.album_art_path = Some(art_path.clone());
+                        metadata.poster_path = Some(art_path);
+                    }
                 }
             }
+            metadata.duration = Some(tagged_file.properties().duration().as_secs() as u32);
         }
-        metadata.duration = Some(tagged_file.properties().duration().as_secs() as u32);
+        Err(e) => {
+            log::warn!(
+                "[Flux Scanner] Audio metadata extraction failed (Loft) for {}: {:?}",
+                path.display(),
+                e
+            );
+        }
     }
 
     Some(metadata)

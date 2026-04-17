@@ -8,6 +8,7 @@
   import StreamingSettings from '$lib/components/settings/StreamingSettings.svelte';
   import ShortcutSettings from '$lib/components/settings/ShortcutSettings.svelte';
   import SupportSettings from '$lib/components/settings/SupportSettings.svelte';
+  import MaintenanceSettings from '$lib/components/settings/MaintenanceSettings.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
@@ -20,7 +21,8 @@
     { id: 'storage', label: 'Storage', icon: 'storage', description: 'Library folders' },
     { id: 'streaming', label: 'Streaming', icon: 'streaming', description: 'TMDB & APIs' },
     { id: 'shortcuts', label: 'Shortcuts', icon: 'keyboard', description: 'Global keys' },
-    { id: 'support', label: 'Support', icon: 'help', description: 'Help & Bugs' }
+    { id: 'support', label: 'Support', icon: 'help', description: 'Help & Bugs' },
+    { id: 'maintenance', label: 'Maintenance', icon: 'settings', description: 'Updates & Reset' }
   ];
 
   function setCategory(id: string) {
@@ -74,6 +76,8 @@
         <ShortcutSettings />
       {:else if activeCategory === 'support'}
         <SupportSettings />
+      {:else if activeCategory === 'maintenance'}
+        <MaintenanceSettings />
       {/if}
     </div>
   </main>

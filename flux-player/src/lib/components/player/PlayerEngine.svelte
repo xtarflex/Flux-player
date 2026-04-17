@@ -79,14 +79,18 @@
   }
 
   // ── Persistence ────────────────────────────────────────────────────────────
+  let lastSaveTime = $state(0);
+  let hasSavedFinished = $state(false);
+
   function scheduleSave(path: string, currentTime: number, duration: number) {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => savePlaybackProgress(path, currentTime, duration), 1000);
   }
 
-  async function saveNow(path: string, currentTime: number, duration: number) {
+  async function saveNow(path: string, currentTime: number, duration: number, isFinished: boolean = false) {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
-    await savePlaybackProgress(path, currentTime, duration);
+    if (isFinished) hasSavedFinished = true;
+    await savePlaybackProgress(path, currentTime, duration, isFinished);
   }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -132,14 +136,29 @@
       onReady?.();
 
       // ── Event Binding ─────────────────────────────────────────────────────
-      player.on('timeupdate', () => {
+      player.on('timeupdate', async () => {
         const item = get(activeMedia);
-        if (!item || item.type !== 'video') return;
+        if (!item || item.type !== 'video' || hasSavedFinished) return;
+
+        // Smart Power: Skip saves if window is minimized to reduce background noise
+        try {
+          if (await getCurrentWindow().isMinimized()) return;
+        } catch (e) {
+          // Fallback if permission or API fails
+        }
+
         const t = player.currentTime() ?? 0;
         const d = player.duration() ?? 0;
+        
         if (d > 0) {
           playbackState.update(s => ({ ...s, progress: t / d }));
-          scheduleSave(item.path, t, d);
+          
+          // Throttling: Only schedule a save if it's been 30 seconds since the last one
+          const now = Date.now();
+          if (now - lastSaveTime > 30000) {
+            scheduleSave(item.path, t, d);
+            lastSaveTime = now;
+          }
         }
       });
 
@@ -152,8 +171,9 @@
       player.on('pause', () => {
         const item = get(activeMedia);
         const isVideoOwner = item?.type === 'video' || item?.type === 'mixed';
-        if (get(playbackState).repeatMode !== 2 && item && isVideoOwner) {
+        if (get(playbackState).repeatMode !== 2 && item && isVideoOwner && !hasSavedFinished) {
           saveNow(item.path, player.currentTime(), player.duration());
+          lastSaveTime = Date.now();
         }
         // Only update global play state if we still own the media session
         if (isVideoOwner) {
@@ -164,7 +184,12 @@
       player.on('ended', () => {
         const item = get(activeMedia);
         const isVideoOwner = item?.type === 'video' || item?.type === 'mixed';
-        if (item && isVideoOwner) saveNow(item.path, 0, player.duration());
+        
+        // Signal a clean finish to the backend
+        if (item && isVideoOwner) {
+          saveNow(item.path, 0, player.duration(), true);
+        }
+
         // Milestone 2.2: Auto-advance to next track in queue
         if (get(playbackState).repeatMode === 1 || get(playbackState).repeatMode === 0) {
           nextTrack();
@@ -176,8 +201,6 @@
       });
 
       player.on('fullscreenchange', () => playbackState.update(s => ({ ...s, isFullscreen: player.isFullscreen() })));
-
-      // ── Initial Sync removed — handled by activeMedia subscription below ──
 
       // ── Store Listeners ───────────────────────────────────────────────────
       unsubState = playbackState.subscribe(st => {
@@ -226,10 +249,18 @@
         if (!player) return;
 
         // ── Pre-emptive Save (The Switch Fix) ──────────────────────────────────
-        if (lastItemPath && (!item || item.path !== lastItemPath)) {
+        // Only save if we haven't just saved a "finished" status
+        if (lastItemPath && (!item || item.path !== lastItemPath) && !hasSavedFinished) {
           console.log(`[PlayerEngine] Pre-emptive save for: ${lastItemPath}`);
           saveNow(lastItemPath, player.currentTime(), player.duration());
         }
+        
+        // Reset flags for new item
+        if (item && item.path !== lastItemPath) {
+          hasSavedFinished = false;
+          lastSaveTime = Date.now();
+        }
+        
         lastItemPath = item?.path || null;
 
         // If we switch to audio or null, stop the video player instance immediately (Fix 12.1)

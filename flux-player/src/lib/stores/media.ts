@@ -167,7 +167,7 @@ export async function toggleWatched(path: string) {
  * Used for optimistic UI updates (e.g., progress bars) in the library.
  * Also calculates watched status for instant filter syncing.
  */
-export function updateLocalProgress(path: string, position: number) {
+export function updateLocalProgress(path: string, position: number, forcedWatched?: boolean) {
   const threshold = get(settings).watchedThreshold / 100;
 
   mediaItems.update(items => {
@@ -177,7 +177,8 @@ export function updateLocalProgress(path: string, position: number) {
       const prevWatched = item.is_watched || false;
       const thresholdPos = threshold * item.duration;
 
-      if (!prevWatched && prevPos < thresholdPos && position >= thresholdPos) {
+      // 1. Mark as watched if threshold crossed OR specifically forced (e.g. finished)
+      if (!prevWatched && (forcedWatched || (prevPos < thresholdPos && position >= thresholdPos))) {
         item.is_watched = true;
       }
       
@@ -191,6 +192,11 @@ export function updateLocalProgress(path: string, position: number) {
 if (typeof window !== 'undefined') {
   import('@tauri-apps/api/event').then(({ listen }) => {
     listen('flux-scan-progress', (event: any) => {
+      const [current, total] = event.payload;
+      scanProgress.set({ current, total });
+    });
+
+    listen('flux-heal-progress', (event: any) => {
       const [current, total] = event.payload;
       scanProgress.set({ current, total });
     });

@@ -46,24 +46,36 @@ export function extractDominantColor(src: string): void {
  * @param currentTime - Current position in seconds.
  * @param duration - Total length in seconds.
  */
-export async function savePlaybackProgress(path: string, currentTime: number, duration: number): Promise<void> {
-  if (!path || duration <= 0) return;
+export async function savePlaybackProgress(path: string, currentTime: number, duration: number, isFinished: boolean = false): Promise<void> {
+  // Guard against invalid or missing values (Fix 11.2 - Regression prevention)
+  if (!path || currentTime === undefined || isNaN(currentTime) || !duration || isNaN(duration) || duration <= 0) return;
 
   try {
     const sec = Math.floor(currentTime);
     const dur = Math.floor(duration);
     
-    console.log(`[PlayerUtils] Syncing position for: ${path.split(/[\\\/]/).pop()} @ ${sec}s / ${dur}s`);
+    /**
+     * NORMALIZATION: Ensure path uses platform-native separators (backslashes for Windows).
+     * This ensures the SQLite PK lookup in the backend succeeds even if frontend 
+     * utilizes forward slashes.
+     */
+    const normalizedPath = path.replace(/\//g, '\\');
+    
+    console.log(`[PlayerUtils] Syncing position for: ${normalizedPath.split(/[\\\/]/).pop()} @ ${sec}s / ${dur}s ${isFinished ? '[FINISHED]' : ''}`);
     
     await invoke('save_playback_progress', {
-      path,
+      path: normalizedPath,
       seconds: sec,
       duration: dur,
+      isFinished,
     });
 
-    // Update local store so library UI progress bars and WATCHED filters stay in sync
-    const { updateLocalProgress } = await import('$lib/stores/media');
-    updateLocalProgress(path, sec);
+    // Update local store so library UI progress bars and filters stay in sync
+    // Use an error-guarded dynamic import to handle potential circular dependency
+    const mediaStore = await import('$lib/stores/media').catch(() => null);
+    if (mediaStore?.updateLocalProgress) {
+      mediaStore.updateLocalProgress(normalizedPath, sec, isFinished);
+    }
   } catch (e) {
     console.warn('[PlayerUtils] Failed to save progress:', e);
   }

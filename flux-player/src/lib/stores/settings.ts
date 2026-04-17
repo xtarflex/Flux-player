@@ -4,7 +4,8 @@
  * Uses localStorage for simple frontend persistence of UI/UX preferences.
  */
 
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
+import { invoke } from '@tauri-apps/api/core';
 
 export type AutoQueueMode = 'Never' | 'Smart' | 'Always';
 export type TransitionBehavior = 'Return to Library' | 'Stay in Now Playing';
@@ -68,14 +69,41 @@ function saveSettings(settings: FluxSettings) {
   localStorage.setItem('flux_settings', JSON.stringify(settings));
 }
 
+/**
+ * Syncs specific settings to the backend SQLite database for consistency 
+ * with core engine logic (e.g. watchedThreshold).
+ */
+async function syncToBackend(key: string, value: any) {
+  try {
+    // Only sync keys that the backend actually uses
+    const syncableKeys = ['watchedThreshold', 'autoIndexing', 'hwAcceleration', 'ffmpegThreading', 'autoQueueMode'];
+    if (syncableKeys.includes(key)) {
+      await invoke('save_setting', { key, value: String(value) });
+    }
+  } catch (e) {
+    console.warn(`[SettingsSync] Failed to sync ${key}:`, e);
+  }
+}
+
 // ── The Store ────────────────────────────────────────────────────────────────
 
 export const settings = writable<FluxSettings>(loadSettings());
 
-// Subscribe to changes and save to localStorage
+// Subscribe to changes and save to both localStorage AND backend SQLite
 if (typeof window !== 'undefined') {
+  let lastVal: FluxSettings | null = loadSettings();
+  
   settings.subscribe(val => {
     saveSettings(val);
+    
+    // Perform differential sync to avoid redundant backend calls
+    for (const k in val) {
+      const key = k as keyof FluxSettings;
+      if (lastVal && lastVal[key] !== val[key]) {
+        syncToBackend(key, val[key]);
+      }
+    }
+    lastVal = { ...val };
   });
 }
 
