@@ -47,7 +47,14 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
     // --- STAGE 1: Fast Pass (Skeletons) ---
     // Create skeleton metadata for all new files and save immediately
     let mut skeletons = Vec::new();
-    for path in &new_paths {
+    let skeleton_total = new_paths.len();
+    
+    for (index, path) in new_paths.iter().enumerate() {
+        // Emit progress for Stage 1 (Skeleton creation)
+        // We use a prefix or float calculation if we want a single bar, 
+        // but for now we'll just emit progress normally.
+        let _ = app.emit("flux-scan-progress", (index + 1, skeleton_total));
+
         if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
             let ext_lower = ext.to_lowercase();
             let is_v = metadata::is_video(&ext_lower);
@@ -99,9 +106,12 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
     let mut show_cache: std::collections::HashMap<String, MediaMetadata> =
         std::collections::HashMap::new();
 
+    // Re-calculate total_new for Stage 2 (actual enrichment count)
+    let total_to_enrich = new_paths.len();
+
     for (index, path) in new_paths.into_iter().enumerate() {
-        // Emit progress to frontend
-        let _ = app.emit("flux-scan-progress", (index + 1, total_new));
+        // Emit progress to frontend for enrichment stage
+        let _ = app.emit("flux-scan-progress", (index + 1, total_to_enrich));
 
         if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
             let ext_lower = ext.to_lowercase();

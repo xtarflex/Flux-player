@@ -11,6 +11,11 @@
   let isVisible = $state(false);
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
   let exitTimer: ReturnType<typeof setTimeout> | null = null;
+  
+  let imageError = $state(false);
+  let backdropError = $state(false);
+  let finalArt = $derived(imageError ? "/flux2d.png" : resolveResource(currentMedia?.album_art || currentMedia?.poster));
+  let finalBackdrop = $derived(backdropError ? null : resolveResource(currentMedia?.album_art || currentMedia?.poster));
 
   function clearTimers() {
     if (hideTimer) clearTimeout(hideTimer);
@@ -50,6 +55,10 @@
     clearTimers();
     currentMedia = media;
     isVisible = true;
+
+    // Reset error states for new media
+    imageError = false;
+    backdropError = false;
 
     // Use hardened Rust command to show and re-assert 'Always on Top' Z-order
     await invoke('show_hud');
@@ -95,7 +104,8 @@
       <!-- Layer 1: Blurred Background Image -->
       <div 
         class="blurred-bg" 
-        style:background-image="url({resolveResource(currentMedia.album_art || currentMedia.poster)})"
+        style={finalBackdrop ? `background-image: url('${finalBackdrop}')` : ''}
+        onerror={() => backdropError = true}
       ></div>
 
       <!-- Layer 2: Slanted Gradient Overlay (Transparent left, Colored right) -->
@@ -115,9 +125,10 @@
 
         <div class="artwork-section">
           <img 
-            src={resolveResource(currentMedia.album_art || currentMedia.poster)} 
+            src={finalArt} 
             alt="Artwork" 
             class="sharp-artwork"
+            onerror={() => imageError = true}
           />
         </div>
       </div>

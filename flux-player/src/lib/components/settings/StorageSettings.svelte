@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Icon from "../ui/Icon.svelte";
-  import { open } from '@tauri-apps/plugin-dialog';
+  import { open, confirm } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { loadLibraryFromDb, isScanning, scanProgress as scanProgressStore } from '$lib/stores/media';
@@ -292,40 +292,82 @@
 
     <!-- Cache Management -->
     <section class="settings-card">
-      <div class="card-header">
-        <div>
-          <h3>Image Cache</h3>
-          <p class="subtitle">Offline posters, backdrops, and album art.</p>
+        <div class="card-header">
+          <Icon name="camera" size={20} />
+          <div>
+            <h3>Image Cache</h3>
+            <p class="subtitle">Offline posters, backdrops, and album art.</p>
+          </div>
         </div>
-      </div>
       <div class="stat-row">
         <span class="stat-value">{cacheSize}</span>
-        <button class="btn-secondary" onclick={async () => {
-          // Placeholder for clear cache logic if needed later
-          window.dispatchEvent(new CustomEvent('flux-toast', { 
-            detail: { label: 'Cache cleared (stub)', icon: 'delete' } 
-          }));
-        }}>Clear Cache</button>
+        <div class="action-group">
+          <button class="btn-secondary" onclick={async () => {
+             const isConfirmed = await confirm(
+               'This will purge all local posters and backdrops. Your library will show Flux logo placeholders until you manually refresh items. Continue?',
+               { title: 'Purge Image Cache', kind: 'warning' }
+             );
+             if (isConfirmed) {
+               try {
+                 await invoke('clear_image_cache');
+                 refreshStats();
+                 window.dispatchEvent(new CustomEvent('flux-toast', { 
+                   detail: { label: 'Cache purged', icon: 'check' } 
+                 }));
+                 // Soft refresh ensures UI updates immediately to handle missing assets
+                 setTimeout(() => window.location.reload(), 1000);
+               } catch (e) {
+                 console.error('Failed to clear cache:', e);
+               }
+             }
+          }}>Clear Cache</button>
+        </div>
       </div>
     </section>
 
     <!-- Database Management -->
     <section class="settings-card">
-      <div class="card-header">
-        <div>
-          <h3>Flux Database</h3>
-          <p class="subtitle">Metadata, playlists, and playback history.</p>
+        <div class="card-header">
+          <Icon name="database" size={20} />
+          <div>
+            <h3>Flux Database</h3>
+            <p class="subtitle">Metadata, playlists, and playback history.</p>
+          </div>
         </div>
-      </div>
       <div class="stat-row">
         <span class="stat-value">{dbSize}</span>
         <div class="action-group">
-          <button class="btn-secondary" onclick={() => {
-             window.dispatchEvent(new CustomEvent('flux-toast', { 
-              detail: { label: 'Database optimized', icon: 'done' } 
-            }));
+          <button class="btn-secondary" onclick={async () => {
+             try {
+               await invoke('optimize_database');
+               await refreshStats();
+               window.dispatchEvent(new CustomEvent('flux-toast', { 
+                 detail: { label: 'Database optimized successfully', icon: 'check' } 
+               }));
+             } catch (e) {
+               console.error('Optimization failed:', e);
+               window.dispatchEvent(new CustomEvent('flux-toast', { 
+                 detail: { label: 'Optimization failed', icon: 'error' } 
+               }));
+             }
           }}>Optimize</button>
-          <button class="btn-danger">Reset All</button>
+          <button class="btn-danger" onclick={async () => {
+             const isConfirmed = await confirm(
+               'CRITICAL: This will delete your entire library, playback history, and all offline assets. This CANNOT be undone. Continue?',
+               { title: 'Hard Data Reset', kind: 'error' }
+             );
+             if (isConfirmed) {
+               try {
+                 await invoke('reset_library_data');
+                 window.dispatchEvent(new CustomEvent('flux-toast', { 
+                   detail: { label: 'All data wiped. Refreshing...', icon: 'error' } 
+                 }));
+                 setTimeout(() => window.location.reload(), 2000);
+               } catch (e) {
+                 console.error('Hard reset failed:', e);
+               }
+             }
+          }}>Reset All Data</button>
         </div>
       </div>
     </section>

@@ -8,7 +8,6 @@
   import StreamingSettings from '$lib/components/settings/StreamingSettings.svelte';
   import ShortcutSettings from '$lib/components/settings/ShortcutSettings.svelte';
   import SupportSettings from '$lib/components/settings/SupportSettings.svelte';
-  import MaintenanceSettings from '$lib/components/settings/MaintenanceSettings.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
@@ -21,8 +20,7 @@
     { id: 'storage', label: 'Storage', icon: 'storage', description: 'Library folders' },
     { id: 'streaming', label: 'Streaming', icon: 'streaming', description: 'TMDB & APIs' },
     { id: 'shortcuts', label: 'Shortcuts', icon: 'keyboard', description: 'Global keys' },
-    { id: 'support', label: 'Support', icon: 'help', description: 'Help & Bugs' },
-    { id: 'maintenance', label: 'Maintenance', icon: 'settings', description: 'Updates & Reset' }
+    { id: 'support', label: 'Support', icon: 'help', description: 'Help & Maintenance' }
   ];
 
   function setCategory(id: string) {
@@ -76,8 +74,6 @@
         <ShortcutSettings />
       {:else if activeCategory === 'support'}
         <SupportSettings />
-      {:else if activeCategory === 'maintenance'}
-        <MaintenanceSettings />
       {/if}
     </div>
   </main>
@@ -258,11 +254,12 @@
 
   .nav-items-right {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     height: 100%;
     align-items: center;
     overflow-x: auto;
     scrollbar-width: none;
+    padding-right: 48px; /* Prevent last item cutoff */
   }
 
   .nav-items-right::-webkit-scrollbar { display: none; }
@@ -270,15 +267,17 @@
   .footer-nav-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-radius: 16px;
+    gap: 12px;
+    padding: 10px 18px;
+    border-radius: 18px;
     background: transparent;
     border: 1px solid transparent;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    min-width: auto;
+    min-width: fit-content;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .footer-nav-item:hover {
@@ -293,8 +292,10 @@
   }
 
   .icon-orb {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    aspect-ratio: 1/1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -306,7 +307,7 @@
   .footer-nav-item.active .icon-orb {
     background: var(--secondary);
     color: #000;
-    transform: scale(1.05);
+    transform: scale(1.08); 
   }
 
   .label-stack {
@@ -334,9 +335,13 @@
   @media (min-width: 1500px) {
     .desc-text { display: block; }
     .footer-nav-item { 
-      min-width: 160px; 
-      padding: 10px 20px;
-      gap: 14px;
+      min-width: fit-content; 
+      padding: 12px 22px;
+      gap: 16px;
+    }
+    .icon-orb {
+      width: 42px;
+      height: 42px;
     }
   }
 

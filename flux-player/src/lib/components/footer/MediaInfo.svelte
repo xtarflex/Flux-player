@@ -16,12 +16,19 @@
   function toggleLike() {
     onToggleLike?.();
   }
+  let imageError = $state(false);
   let resolvedPoster = $derived(resolveResource(currentMedia?.poster));
+  let finalSrc = $derived(imageError || !resolvedPoster ? "/flux2d.png" : resolvedPoster);
+
+  $effect(() => {
+    // Reset error state when the media changes
+    if (currentMedia?.title) imageError = false;
+  });
 </script>
 
 <div class="left-section">
   <div class="thumbnail squircle">
-    <img src={resolvedPoster} alt="Poster" />
+    <img src={finalSrc} alt="Poster" onerror={() => imageError = true} />
   </div>
   <div class="media-info">
     <div class="title">{currentMedia?.title || 'No media playing'}</div>

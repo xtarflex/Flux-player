@@ -63,6 +63,9 @@ pub fn run() {
             commands::audio::get_current_audio_device,
             commands::settings::show_hud,
             commands::settings::factory_reset,
+            commands::settings::reset_library_data,
+            commands::settings::clear_image_cache,
+            commands::settings::optimize_database,
             commands::settings::open_uninstaller,
         ])
         .setup(|app| {

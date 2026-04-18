@@ -64,8 +64,8 @@
   3. Where the database and logs are stored during development.
 
 ### License Compatibility
-- **Finding:** Frontend `package.json` specifies `"license": "MIT"`. The Rust backend (`Cargo.toml`) lacks an explicit `license` field.
-- **Recommendation:** Add `license = "MIT"` to `src-tauri/Cargo.toml`.
+- **Finding:** Frontend `package.json` specifies `"license": "GPL-3.0"`. The Rust backend (`Cargo.toml`) also specifies `"GPL-3.0"`.
+- **Status:** COMPLIANT. License matches ground-truth `LICENSE` file.
 
 ---
 

@@ -33,9 +33,20 @@
   });
 
   let playingHovered = $state(false);
+  let imageError = $state(false);
   let isRefreshing = $state(false);
   let editingField = $state<string | null>(null);
   let editValue = $state("");
+
+  const finalPoster = derived([resolvedPoster, selectedItem], ([$rp, $item]) => {
+    if (imageError || !$rp) return "/flux2d.png";
+    return $rp;
+  });
+
+  $effect(() => {
+    // Reset error state when the item changes
+    if ($selectedMediaId) imageError = false;
+  });
 
   /**
    * Formats duration in seconds to "X min"
@@ -129,13 +140,12 @@
           class="poster" 
           in:scale={{ duration: 600, start: 0.9, delay: 150, easing: backOut }}
         >
-          {#if $resolvedPoster && !$selectedItem.poster?.includes('flux2d')}
-            <img src={$resolvedPoster} alt={$selectedItem.title} class="poster-img" />
-          {:else}
-            <div class="poster-placeholder">
-              <img src="/flux2d.png" alt="Flux" />
-            </div>
-          {/if}
+          <img 
+            src={$finalPoster} 
+            alt={$selectedItem.title} 
+            class="poster-img" 
+            onerror={() => imageError = true}
+          />
         </div>
 
         <!-- Title / Meta -->
@@ -384,13 +394,13 @@
     background-size: cover;
     background-position: center 20%;
     filter: brightness(0.6) contrast(1.15);
-    /* Balanced 8s cinematic loop */
-    animation: kenBurns 16s infinite alternate cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    /* Extended 20s slow cinematic zoom */
+    animation: kenBurns 20s infinite alternate cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes kenBurns {
-    from { transform: scale(1.0) translate(0, 0); }
-    to   { transform: scale(1.18) translate(1%, 2%); }
+    0%   { transform: scale(1.0) translate(0, 0); }
+    100% { transform: scale(1.18) translate(-1.5%, -1%); }
   }
 
   .backdrop-overlay {
@@ -443,19 +453,7 @@
     object-fit: cover;
   }
 
-  .poster-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.3;
-  }
 
-  .poster-placeholder img {
-    width: 50%;
-    object-fit: contain;
-  }
 
   /* ===================== Body Information ===================== */
   .body-content {

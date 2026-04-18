@@ -7,7 +7,6 @@ This list tracks granular technical tasks and "Premium UX" improvements followin
 - [ ] **HUD Focus Hardening**: Allow HUD to show when main window is "Not Focused" (not just minimized).
 - [ ] **Maintenance Hub**: Implementation of Factory Reset and GUI-based Uninstaller.
 - [ ] **Beta Update Badge**: Lightweight startup check for new releases via GitHub.
-- [ ] **Global Cinematic Entrance**: Apply `animate:flip` and staggered `fly` transitions to Discovery and Playlists.
 
 ## In Progress
 - [/] **Infrastructure Pass**: Updating `DEV.log`, `TODO.md`, and uninstaller scripts.

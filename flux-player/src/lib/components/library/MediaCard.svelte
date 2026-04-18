@@ -35,12 +35,14 @@
     ondblclick?: (e: MouseEvent) => void;
   }>();
 
+  let imageError = $state(false);
+
   function toggleFavorite(e?: Event) {
     if (e) e.stopPropagation();
     toggleFavoriteAction(item.id);
   }
 
-  let hasPoster = $derived(!!item.poster);
+  let hasPoster = $derived(!!item.poster && !imageError);
   let resolvedPoster = $derived(resolveResource(item.poster));
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
@@ -87,17 +89,17 @@
     </div>
   {/if}
   <div class="poster-container">
-    {#if hasPoster}
+    {#if hasPoster && !imageError}
       {#key resolvedPoster}
         <img 
           src={resolvedPoster} 
           alt={item.title} 
           class="poster-image" 
-          in:fade={{ duration: 400 }}
+          onerror={() => (imageError = true)}
         />
       {/key}
     {:else}
-      <div class="placeholder-logo" in:scale={{ duration: 400, start: 0.9, easing: backOut }}>
+      <div class="placeholder-logo">
         <img src="/flux2d.png" alt="Flux" />
       </div>
     {/if}

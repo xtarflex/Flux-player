@@ -16,6 +16,24 @@
   }>();
 
   let hasQueue = $derived(queue.length > 0 || queueHistory.length > 0);
+
+  let prevError = $state(false);
+  let nextError = $state(false);
+  let centerError = $state(false);
+
+  $effect(() => {
+    // Reset error states when media changes
+    if (currentMedia?.id) {
+       prevError = false;
+       nextError = false;
+       centerError = false;
+    }
+  });
+
+  function getSrc(item: MediaItem | null | undefined, isError: boolean) {
+    if (isError || !item) return "/flux2d.png";
+    return resolveResource(item.poster || item.album_art || item.backdrop);
+  }
 </script>
 
 <div class="queue-section">
@@ -36,9 +54,10 @@
         <div class="queue-card side-card prev-card">
           {#if queueHistory.length > 0}
             <img 
-              src={resolveResource(queueHistory[queueHistory.length - 1].poster || queueHistory[queueHistory.length - 1].album_art || queueHistory[queueHistory.length - 1].backdrop)} 
+              src={getSrc(queueHistory[queueHistory.length - 1], prevError)} 
               alt="Previous" 
               class="card-image" 
+              onerror={() => prevError = true}
             />
           {/if}
         </div>
@@ -46,9 +65,10 @@
         <div class="queue-card side-card next-card">
           {#if queue.length > 0}
             <img 
-              src={resolveResource(queue[0].poster || queue[0].album_art || queue[0].backdrop)} 
+              src={getSrc(queue[0], nextError)} 
               alt="Next" 
               class="card-image" 
+              onerror={() => nextError = true}
             />
           {/if}
         </div>
@@ -56,9 +76,10 @@
         <div class="queue-card center-card">
           {#if currentMedia}
             <img 
-              src={resolveResource(currentMedia.poster || currentMedia.album_art || currentMedia.backdrop)} 
+              src={getSrc(currentMedia, centerError)} 
               alt="Current" 
               class="card-image" 
+              onerror={() => centerError = true}
             />
           {/if}
         </div>

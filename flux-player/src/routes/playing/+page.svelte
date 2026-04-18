@@ -23,6 +23,18 @@
   /** The album art URL resolved to asset:// for the vinyl disc */
   let albumArtSrc = $derived(resolveResource(media?.album_art || media?.poster));
 
+  let artError = $state(false);
+  let backdropError = $state(false);
+  let finalArt = $derived(artError ? "/flux2d.png" : albumArtSrc);
+  let finalBackdrop = $derived(backdropError ? null : albumArtSrc);
+
+  $effect(() => {
+    if (media?.id) {
+      artError = false;
+      backdropError = false;
+    }
+  });
+
   /** Vinyl rotation pauses when player is paused */
   let vinylSpinning = $derived($playbackState.isPlaying && isAudio);
 
@@ -71,7 +83,8 @@
       <!-- Ambient backdrop glow -->
       <div 
         class="vinyl-backdrop"
-        style={albumArtSrc ? `background-image: url('${albumArtSrc}')` : ''}
+        style={finalBackdrop ? `background-image: url('${finalBackdrop}')` : ''}
+        onerror={() => backdropError = true}
       ></div>
 
       <!-- Turntable Deck (contains Disc & Tonearm) -->
@@ -83,13 +96,12 @@
             <div class="disc-rotator">
               <div class="disc-grooves"></div>
             <div class="disc-reflection"></div>
-              {#if albumArtSrc}
-                <img src={albumArtSrc} alt={media?.title} class="disc-art" />
-              {:else}
-                <div class="disc-art disc-art--placeholder">
-                  <img src="/flux2d.png" alt="Flux" />
-                </div>
-              {/if}
+              <img 
+                src={finalArt} 
+                alt={media?.title} 
+                class="disc-art" 
+                onerror={() => artError = true}
+              />
             </div>
 
             <div class="disc-cap"></div>
@@ -282,18 +294,6 @@
     position: relative;
     z-index: 2;
     border: 3px solid rgba(255,255,255,0.08);
-  }
-
-  .disc-art--placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.04);
-  }
-
-  .disc-art--placeholder img {
-    width: 55%;
-    opacity: 0.4;
   }
 
   /* Centre spindle cap (Static) */

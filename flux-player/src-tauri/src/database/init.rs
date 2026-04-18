@@ -87,14 +87,16 @@ pub fn initialize_database_for_tests(conn: &rusqlite::Connection) {
 
 fn ensure_default_settings(conn: &Connection) -> AppResult<()> {
     let defaults = [
-        ("autoIndexing", "true"),
-        ("scanFrequency", "30"),
+        ("auto_indexing", "true"),
+        ("scan_frequency", "30"),
         ("hwAcceleration", "true"),
         ("ffmpegThreading", "Auto"),
         ("watchedThreshold", "90"),
+        ("autoQueueMode", "Smart"),
         ("videoAudioTransition", "true"),
         ("theme", "Cyber Dark"),
         ("language", "System Default"),
+        ("display_name", ""),
     ];
 
     for (key, value) in defaults {

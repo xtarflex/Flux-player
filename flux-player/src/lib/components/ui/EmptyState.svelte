@@ -83,7 +83,7 @@
 </script>
 
 <div
-  class="empty-state"
+  class="empty-state variant-{variant}"
   bind:this={containerEl}
   onmousemove={handleMouseMove}
   onmouseleave={handleMouseLeave}
@@ -419,6 +419,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Specific sizing for the Player empty state to fill the theater container */
+  .variant-player .illustration-container {
+    width: 440px;
+    height: 440px;
+    margin-bottom: 48px;
   }
 
   .illus-svg {
@@ -565,6 +573,16 @@
     line-height: 1.7;
     margin-bottom: 32px;
     margin-top: 0;
+  }
+
+  .variant-player .empty-title {
+    font-size: 1.8rem;
+    margin-bottom: 16px;
+  }
+
+  .variant-player .empty-description {
+    font-size: 1.05rem;
+    max-width: 440px;
   }
 
   /* ==========================================

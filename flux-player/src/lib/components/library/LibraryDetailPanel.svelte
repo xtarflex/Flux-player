@@ -8,16 +8,26 @@
     onClose: () => void;
   }>();
 
+  let imageError = $state(false);
+  let backdropError = $state(false);
+
   // Mock metadata based on master guide
   let metadata = $derived({
     year: '2024',
     duration: '2h 15m',
     rating: '8.4',
     genres: ['Action', 'Sci-Fi', 'Thriller'],
-    backdrop: resolveResource(item.poster) // Uses current item poster as backdrop
+    backdrop: backdropError ? '/flux_backdrop.png' : resolveResource(item.poster, '/flux_backdrop.png')
   });
 
-  let resolvedPoster = $derived(resolveResource(item.poster));
+  let finalPoster = $derived(imageError ? "/flux2d.png" : resolveResource(item.poster));
+
+  $effect(() => {
+    if (item.id) {
+      imageError = false;
+      backdropError = false;
+    }
+  });
 </script>
 
 <div class="detail-panel glass-dark">
@@ -29,18 +39,22 @@
 
   <div class="hero-section">
     <div class="backdrop-container">
-      <img src={metadata.backdrop || '/placeholder.jpg'} alt="" class="backdrop-image" />
+      <img 
+        src={metadata.backdrop} 
+        alt="" 
+        class="backdrop-image" 
+        onerror={() => backdropError = true}
+      />
       <div class="backdrop-gradient"></div>
     </div>
     
     <div class="poster-overlay">
-      {#if item.poster}
-        <img src={resolvedPoster} alt={item.title} class="poster-image" />
-      {:else}
-        <div class="poster-placeholder">
-          <img src="/flux2d.png" alt="Flux" />
-        </div>
-      {/if}
+      <img 
+        src={finalPoster} 
+        alt={item.title} 
+        class="poster-image" 
+        onerror={() => imageError = true}
+      />
     </div>
   </div>
 
@@ -162,15 +176,7 @@
     object-fit: cover;
   }
 
-  .poster-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.3;
-  }
-  .poster-placeholder img { width: 50%; }
+
 
   /* Content Section */
   .content-section {

@@ -3,6 +3,11 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tauri_plugin_store::StoreExt;
 
+#[cfg(target_os = "windows")]
+use winreg::enums::*;
+#[cfg(target_os = "windows")]
+use winreg::RegKey;
+
 pub struct TmdbState {
     pub rotation_index: AtomicUsize,
     pub unsaved_calls: AtomicU64,
@@ -531,16 +536,68 @@ pub async fn show_hud<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
 
 #[tauri::command]
 pub async fn factory_reset<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
+    // 1. Get the path to the DB
+    let app_dir = app.path().app_data_dir().map_err(|e| AppError::Internal(e.to_string()))?;
+    let db_path = app_dir.join("flux.db");
+    
+    if db_path.exists() {
+        // 2. Clear ONLY the settings table to revert defaults without wiping the library
+        let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| AppError::Internal(format!("Failed to open DB for reset: {}", e)))?;
+        
+        conn.execute("DELETE FROM settings", [])
+            .map_err(|e| AppError::Internal(format!("Failed to clear settings: {}", e)))?;
+            
+        println!("[Flux Reset] App settings cleared. Library preserved.");
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn reset_library_data<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
     let app_dir = app.path().app_data_dir().map_err(|e| AppError::Internal(e.to_string()))?;
     
-    // 1. Close database connections if possible (not strictly necessary for delete if file is closed)
-    // 2. Delete the app data directory
+    // Hard Wipe: Delete everything (DB + Cache)
     if app_dir.exists() {
         std::fs::remove_dir_all(&app_dir).map_err(|e| AppError::Internal(e.to_string()))?;
     }
     
-    // 3. Re-create the folder structure for a clean start on next boot
+    // Re-create folder structure
     std::fs::create_dir_all(&app_dir).map_err(|e| AppError::Internal(e.to_string()))?;
+    
+    // IMMEDIATELY re-initialize schema to prevent background crashes during reload
+    let _ = crate::database::init::initialize_database(&app);
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn optimize_database<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
+    let db_path = crate::database::connection::get_db_path(&app)?;
+    let conn = rusqlite::Connection::open(&db_path)
+        .map_err(|e| AppError::Internal(format!("Failed to open DB for optimization: {}", e)))?;
+    
+    // VACUUM: Rebuilds the database file, reclaiming unused space and defragmenting.
+    conn.execute("VACUUM", [])
+        .map_err(|e| AppError::Internal(format!("VACUUM failed: {}", e)))?;
+        
+
+        
+    println!("[Flux DB] Database optimized (VACUUM + ANALYZE).");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn clear_image_cache<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
+    let app_dir = app.path().app_data_dir().map_err(|e| AppError::Internal(e.to_string()))?;
+    let cache_dir = app_dir.join("cache");
+    
+    if cache_dir.exists() {
+        std::fs::remove_dir_all(&cache_dir).map_err(|e| AppError::Internal(e.to_string()))?;
+        std::fs::create_dir_all(&cache_dir).map_err(|e| AppError::Internal(e.to_string()))?;
+        println!("[Flux Cache] Image cache purged.");
+    }
     
     Ok(())
 }
@@ -549,32 +606,65 @@ pub async fn factory_reset<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
 pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
     #[cfg(target_os = "windows")]
     {
-        let exe_path = std::env::current_exe().map_err(|e| AppError::Internal(e.to_string()))?;
-        let install_dir = exe_path.parent().ok_or_else(|| AppError::Internal("Could not find install dir".into()))?;
-        let uninstaller_path = install_dir.join("uninstall.exe");
+        // 1. TRY PRODUCTION MODE (Registry Lookup)
+        // Check both HKLM and HKCU for the uninstall string
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let identifier = "com.sunny.flux-player";
         
-        if uninstaller_path.exists() {
-            // Launch uninstaller and exit
-            std::process::Command::new(uninstaller_path)
+        let subkey = format!("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}", identifier);
+        
+        let uninstaller_cmd = hklm.open_subkey(&subkey)
+            .or_else(|_| hkcu.open_subkey(&subkey))
+            .and_then(|key| key.get_value::<String, _>("UninstallString"));
+
+        if let Ok(cmd) = uninstaller_cmd {
+            // Strip quotes if present
+            let clean_cmd = cmd.trim_matches('"').to_string();
+            println!("[Flux Uninstaller] Found via registry: {}", clean_cmd);
+            
+            std::process::Command::new(clean_cmd)
                 .spawn()
                 .map_err(|e| AppError::Internal(e.to_string()))?;
             
             app.exit(0);
-        } else {
-            // Fallback to the ps1 script if exe isn't found (likely dev environment)
-            let ps1_path = install_dir.parent().unwrap().join("uninstall.ps1");
-             if ps1_path.exists() {
-                std::process::Command::new("powershell")
-                    .arg("-File")
-                    .arg(ps1_path)
-                    .spawn()
-                    .map_err(|e| AppError::Internal(e.to_string()))?;
-                app.exit(0);
-             } else {
-                return Err(AppError::NotFound("Uninstaller not found".into()));
-             }
+            return Ok(());
         }
+
+        // 2. TRY DEVELOPMENT FALLBACK (File Traversal)
+        let exe_path = std::env::current_exe().map_err(|e| AppError::Internal(e.to_string()))?;
+        let mut current_dir = exe_path.parent();
+        
+        // Traverse up up to 6 levels to find uninstall.ps1 or uninstall.exe
+        for _ in 0..6 {
+            if let Some(dir) = current_dir {
+                let exe_test = dir.join("uninstall.exe");
+                let ps1_test = dir.join("uninstall.ps1");
+                
+                if exe_test.exists() {
+                    std::process::Command::new(exe_test).spawn().ok();
+                    app.exit(0);
+                    return Ok(());
+                }
+                
+                if ps1_test.exists() {
+                    std::process::Command::new("powershell")
+                        .arg("-File")
+                        .arg(ps1_test)
+                        .spawn()
+                        .ok();
+                    app.exit(0);
+                    return Ok(());
+                }
+                current_dir = dir.parent();
+            } else { break; }
+        }
+        
+        return Err(AppError::NotFound("Uninstaller not found in Registry or Root.".into()));
     }
     
-    Ok(())
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err(AppError::Internal("Uninstaller only supported on Windows".into()))
+    }
 }

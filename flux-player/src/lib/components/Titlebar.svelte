@@ -62,7 +62,7 @@
       const info = await invoke<{ name: string, category: string }>('get_current_audio_device');
       if (info) audioDevice = info;
     } catch (e) {
-      // Silence errors to prevent console spamming if command fails
+      console.error("Flux Titlebar: Audio Status Fetch Failed:", e);
     }
   }
 

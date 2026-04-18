@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
-  import { fade, slide, crossfade, fly } from 'svelte/transition';
+  import { fly, fade, slide, crossfade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { quintOut } from 'svelte/easing';
   import { onboarding, triggerTour } from '$lib/stores/onboarding';
@@ -613,11 +613,9 @@
             />
           </div>
         {:else if viewMode !== 'detail'}
-          {#each filteredItems as item, i (item.id)}
+          {#each filteredItems as item (item.id)}
             <div 
-              animate:flip={{ duration: 500, easing: quintOut }}
-              in:fly={{ y: 24, duration: 600, delay: Math.min(i * 35, 1200), easing: quintOut }}
-              out:fade={{ duration: 300 }}
+              transition:fade={{ duration: 200 }}
             >
               <MediaCard 
                 {item} 
@@ -634,11 +632,9 @@
           {/each}
         {:else}
           <!-- In detail mode, left pane always shows as list -->
-          {#each filteredItems as item, i (item.id)}
+          {#each filteredItems as item (item.id)}
             <div 
-              animate:flip={{ duration: 400, easing: quintOut }}
-              in:fly={{ y: 16, duration: 500, delay: Math.min(i * 25, 1000), easing: quintOut }}
-              out:fade={{ duration: 250 }}
+              transition:fade={{ duration: 200 }}
             >
               <MediaCard 
                 {item} 

@@ -1,7 +1,7 @@
 [package]
 name = "flux-player"
 version = "0.2.0"
-license = "MIT"
+license = "GPL-3.0"
 description = "Flux Player: A high-performance, glassmorphic media suite for local and streaming content."
 authors = ["Flux Development Team <flux@example.com>"]
 repository = "https://github.com/flux-player/flux"
@@ -49,6 +49,7 @@ log = "0.4.29"
 tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
+winreg = "0.52"
 windows = { version = "0.52", features = [
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
@@ -59,6 +60,7 @@ windows = { version = "0.52", features = [
     "Win32_Media_Audio_Endpoints",
     "Win32_Devices_Properties",
     "Win32_Devices_FunctionDiscovery",
+    "Win32_System_Com_StructuredStorage",
     "Win32_UI_Shell",
     "Win32_UI_Shell_PropertiesSystem",
     "Win32_UI_WindowsAndMessaging",

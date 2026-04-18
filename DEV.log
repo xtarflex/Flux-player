@@ -271,7 +271,7 @@ Ensured scanning reliability and user transparency for Beta release.
 ## [2026-04-11] - OSS Foundation & Native Feedback Ecosystem
 
 - **MERGE**: Successfully integrated PR #11 into `main`, establishing the project's Open Source core.
-- **GOVERNANCE**: Deployed foundational documents: `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `CHANGELOG.md`.
+- **GOVERNANCE**: Deployed foundational documents: `LICENSE` (GPL-3.0), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `CHANGELOG.md`.
 - **ARCHITECTURE**: Fully transitioned to a modular Rust backend structure (`commands/`, `database/`, `scanner/`, `utils/`).
 - **CI/CD**: Configured GitHub Actions for automated linting, formatting, and Tauri cross-platform build validation.
 - **FEEDBACK SYSTEM**:
@@ -381,3 +381,20 @@ Ensured scanning reliability and user transparency for Beta release.
 - **INFRASTRUCTURE**: Initialized the "Maintenance Hub" architecture.
     - **TODO**: Created `TODO.md` for technical task tracking.
     - **UNINSTALL**: Designed the interactive `uninstall.ps1` and the blueprint for the in-app Factory Reset.
+
+## [2026-04-18] - UI Resilience & Maintenance Hardening
+
+- **STABILIZATION**: Hardened the library interface to eliminate 60fps regressions and grid freezes.
+    - **UI**: Completely decommissioned `animate:flip` and staggered entrance delays in `LibraryView.svelte`. Replaced with high-performance `fade` transitions to ensure zero-latency filtering.
+    - **CLEANUP**: Excised unused `.poster-placeholder` CSS selectors from `DetailPanel` and `LibraryDetailPanel` to reduce styling overhead and resolve linting warnings.
+- **INFRASTRUCTURE**: Finalized the Settings & Database maintenance ecosystem.
+    - **SETTINGS**: Unified preference keys to underscore format (`auto_indexing`, `scan_frequency`) across backend `init.rs` and frontend stores, ensuring reliable "Reset Defaults" synchronization.
+    - **DATABASE**: Refined the "Optimize Database" command by removing `ANALYZE`, ensuring `VACUUM` results in an actual file size reduction.
+    - **SCANNER**: Enhanced real-time feedback by implementing progress emission for "Stage 1" (Skeleton creation), ensuring the UI progress bar is responsive from the initial file discovery.
+- **REBRANDING**: Transitioned project license from MIT to GPL-3.0 as part of the OSS Beta roadmap.
+- **UI REFINEMENT**:
+    - **PLAYER**: Scaled the empty state illustration to **440px** and adjusted typography for a cinematic "Standby" feel in Theater Mode.
+    - **ICONOGRAPHY**: Integrated new iconography (`community`, `rocket`, `tools`, `info`, `trash`, `database`, `github`) and streamlined the Support settings layout.
+- **BUG FIXES**:
+    - **RESET**: Resolved "Reset Defaults" persistence bug. Implemented frontend `localStorage` cleanup to prevent old settings from re-syncing to the backend after a factory reset.
+    - **CLEANUP**: Purged unused CSS selectors (`.illustration-popout`, `.popout-img`, `.poster-placeholder`) from Support and Detail components.

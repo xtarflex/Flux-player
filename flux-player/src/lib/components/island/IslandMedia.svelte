@@ -14,13 +14,21 @@
     artistName?: string;
     posterSrc?: string;
   }>();
+
+  let imageError = $state(false);
+  let finalSrc = $derived(imageError ? "/flux2d.png" : posterSrc);
 </script>
 
 <div class="island-layer" transition:fade={{ duration: 300 }}>
   {#if type === "audio"}
     <div class="audio-content">
       <div class="vinyl-container">
-        <img src={posterSrc} alt="Album Art" class="island-thumb vinyl-spin" />
+        <img 
+          src={finalSrc} 
+          alt="Album Art" 
+          class="island-thumb vinyl-spin" 
+          onerror={() => imageError = true}
+        />
       </div>
       <div class="audio-info">
         <span class="track-title">{videoTitle ?? 'NOW PLAYING'}</span>
@@ -46,7 +54,12 @@
   {:else}
     <div class="video-playing-content">
       <div class="mini-poster">
-        <img src={posterSrc} alt="Poster" class="poster-thumb" />
+        <img 
+          src={finalSrc} 
+          alt="Poster" 
+          class="poster-thumb" 
+          onerror={() => imageError = true}
+        />
       </div>
       <div class="video-meta">
         <span class="video-title">{videoTitle}</span>

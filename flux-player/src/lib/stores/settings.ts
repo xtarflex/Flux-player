@@ -76,7 +76,7 @@ function saveSettings(settings: FluxSettings) {
 async function syncToBackend(key: string, value: any) {
   try {
     // Only sync keys that the backend actually uses
-    const syncableKeys = ['watchedThreshold', 'autoIndexing', 'hwAcceleration', 'ffmpegThreading', 'autoQueueMode'];
+    const syncableKeys = ['watchedThreshold', 'hwAcceleration', 'ffmpegThreading', 'autoQueueMode', 'offlineMode'];
     if (syncableKeys.includes(key)) {
       await invoke('save_setting', { key, value: String(value) });
     }
