@@ -170,7 +170,7 @@ pub fn save_playback_progress<R: Runtime>(
     let conn = rusqlite::Connection::open(db_path)?;
 
     // 1. Resolve watched threshold (Default 90 if not set)
-    // Note: This key must match the frontend camelCase. 
+    // Note: This key must match the frontend camelCase.
     // We update init.rs to ensure it's initialized correctly.
     let threshold_val: i64 = conn
         .query_row(
@@ -198,7 +198,7 @@ pub fn save_playback_progress<R: Runtime>(
     let threshold_seconds = (duration as f64 * threshold_factor) as i64;
 
     // 3. Calculate New Watched Status (Threshold Crossing Logic)
-    let is_watched = if is_finished 
+    let is_watched = if is_finished
         || prev_is_watched == 1
         || (duration > 0 && prev_position < threshold_seconds && seconds >= threshold_seconds)
     {

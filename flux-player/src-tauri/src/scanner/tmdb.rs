@@ -127,7 +127,11 @@ pub async fn search_metadata_advanced<R: Runtime>(
                 let result = search_data.results.into_iter().next();
                 Ok(result.map(|r| (r, api_key)))
             } else {
-                log::error!("[TMDB] JSON Parse Error for query '{}'. Body: {}", query, body_text);
+                log::error!(
+                    "[TMDB] JSON Parse Error for query '{}'. Body: {}",
+                    query,
+                    body_text
+                );
                 Err("JSON_PARSE_ERROR".into())
             }
         }

@@ -28,7 +28,9 @@ impl ComGuard {
 #[cfg(target_os = "windows")]
 impl Drop for ComGuard {
     fn drop(&mut self) {
-        unsafe { CoUninitialize(); }
+        unsafe {
+            CoUninitialize();
+        }
     }
 }
 
@@ -43,7 +45,9 @@ pub fn get_system_mute_status() -> bool {
     #[cfg(target_os = "windows")]
     unsafe {
         let _com = ComGuard::new();
-        if let Ok(enumerator) = CoCreateInstance::<_, IMMDeviceEnumerator>(&MMDeviceEnumerator, None, CLSCTX_ALL) {
+        if let Ok(enumerator) =
+            CoCreateInstance::<_, IMMDeviceEnumerator>(&MMDeviceEnumerator, None, CLSCTX_ALL)
+        {
             if let Ok(endpoint) = enumerator.GetDefaultAudioEndpoint(eRender, eConsole) {
                 if let Ok(volume) = endpoint.Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None) {
                     return volume.GetMute().map(|b| b.as_bool()).unwrap_or(false);
@@ -59,7 +63,9 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
     #[cfg(target_os = "windows")]
     unsafe {
         let _com = ComGuard::new();
-        use windows::Win32::System::Com::StructuredStorage::{PropVariantClear, PropVariantToStringAlloc};
+        use windows::Win32::System::Com::StructuredStorage::{
+            PropVariantClear, PropVariantToStringAlloc,
+        };
         use windows::Win32::UI::Shell::PropertiesSystem::PROPERTYKEY;
 
         let enumerator: IMMDeviceEnumerator =
@@ -73,18 +79,33 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
                 AppError::Internal(format!("Failed to get default audio endpoint: {}", e))
             })?;
 
-        let property_store = endpoint.OpenPropertyStore(STGM_READ).map_err(|e| {
-            AppError::Internal(format!("Failed to open property store: {}", e))
-        })?;
+        let property_store = endpoint
+            .OpenPropertyStore(STGM_READ)
+            .map_err(|e| AppError::Internal(format!("Failed to open property store: {}", e)))?;
 
         // ── Discovery: Hardware Name ────────────────────────
         let mut name = String::new();
         let name_keys = [
-            (windows::core::GUID::from_u128(0xa45c2502_df9d_4c39_918a_983b0704f1fb), 14),  // PKEY_Device_FriendlyName
-            (windows::core::GUID::from_u128(0xb3f8fa74_ad30_4e0d_b44c_b7ca0155b40d), 2),   // PKEY_DeviceInterface_FriendlyName
-            (windows::core::GUID::from_u128(0xa45c2502_df9d_4c39_918a_983b0704f1fb), 2),   // PKEY_Device_DeviceDesc
-            (windows::core::GUID::from_u128(0x540b947e_4f44_4194_b0ba_330c0d183d70), 4),   // PKEY_Device_BusReportedDeviceDesc
-            (windows::core::GUID::from_u128(0x78c35b0e_151a_43a2_afbb_d050_2dec34b5), 256), // PKEY_Device_InstanceId
+            (
+                windows::core::GUID::from_u128(0xa45c2502_df9d_4c39_918a_983b0704f1fb),
+                14,
+            ), // PKEY_Device_FriendlyName
+            (
+                windows::core::GUID::from_u128(0xb3f8fa74_ad30_4e0d_b44c_b7ca0155b40d),
+                2,
+            ), // PKEY_DeviceInterface_FriendlyName
+            (
+                windows::core::GUID::from_u128(0xa45c2502_df9d_4c39_918a_983b0704f1fb),
+                2,
+            ), // PKEY_Device_DeviceDesc
+            (
+                windows::core::GUID::from_u128(0x540b947e_4f44_4194_b0ba_330c0d183d70),
+                4,
+            ), // PKEY_Device_BusReportedDeviceDesc
+            (
+                windows::core::GUID::from_u128(0x78c35b0e_151a_43a2_afbb_d050_2dec34b5),
+                256,
+            ), // PKEY_Device_InstanceId
         ];
 
         for (guid, pid) in name_keys {
@@ -95,13 +116,17 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
                         let candidate = pwsz.to_string().unwrap_or_default();
                         if !candidate.trim().is_empty() {
                             name = candidate;
-                            let _ = windows::Win32::System::Com::CoTaskMemFree(Some(pwsz.0 as *const _));
+                            let _ = windows::Win32::System::Com::CoTaskMemFree(Some(
+                                pwsz.0 as *const _,
+                            ));
                         }
                     }
                 }
-                
+
                 // Final safety internal decode
-                if name.is_empty() && prop.Anonymous.Anonymous.vt == windows::Win32::System::Variant::VT_LPWSTR {
+                if name.is_empty()
+                    && prop.Anonymous.Anonymous.vt == windows::Win32::System::Variant::VT_LPWSTR
+                {
                     let pwsz = prop.Anonymous.Anonymous.Anonymous.pwszVal;
                     if !pwsz.0.is_null() {
                         name = windows::core::PWSTR(pwsz.0).to_string().unwrap_or_default();
@@ -109,13 +134,19 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
                 }
                 let mut prop_mut = prop;
                 let _ = PropVariantClear(&mut prop_mut);
-                if !name.trim().is_empty() { break; }
+                if !name.trim().is_empty() {
+                    break;
+                }
             }
         }
 
         if name.is_empty() {
             if let Ok(id) = endpoint.GetId() {
-                name = if id.to_string().unwrap_or_default().len() > 15 { "System Speaker (ID)".into() } else { id.to_string().unwrap_or_default() };
+                name = if id.to_string().unwrap_or_default().len() > 15 {
+                    "System Speaker (ID)".into()
+                } else {
+                    id.to_string().unwrap_or_default()
+                };
             }
         }
 
@@ -125,7 +156,7 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
             fmtid: windows::core::GUID::from_u128(0x1da5d803_d492_4edd_8c23_e0c0ffee7f0e),
             pid: 0,
         };
-        
+
         let mut form_factor = 10; // UnknownFormFactor default
         if let Ok(prop) = property_store.GetValue(&pkey_form_factor) {
             form_factor = prop.Anonymous.Anonymous.Anonymous.uiVal;
@@ -144,7 +175,10 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        Ok(AudioDeviceInfo { name: "Default Device".into(), category: "speaker".into() })
+        Ok(AudioDeviceInfo {
+            name: "Default Device".into(),
+            category: "speaker".into(),
+        })
     }
 }
 
@@ -163,7 +197,7 @@ pub fn pretty_name_from_form_factor(form_factor: u32) -> String {
 
 pub fn classify_device(name: &str, form_factor: u32) -> String {
     let name_lower = name.to_lowercase();
-    
+
     // Exact Form Factor Mapping (First priority)
     // 3 = Headphones, 5 = Headset
     if form_factor == 3 || form_factor == 5 {
@@ -175,10 +209,14 @@ pub fn classify_device(name: &str, form_factor: u32) -> String {
     }
 
     // String Matching (Secondary priority / specific detection)
-    if name_lower.contains("bluetooth") || name_lower.contains("wireless") || name_lower.contains("buds") || name_lower.contains("airpods") {
+    if name_lower.contains("bluetooth")
+        || name_lower.contains("wireless")
+        || name_lower.contains("buds")
+        || name_lower.contains("airpods")
+    {
         return "bluetooth".to_string();
     }
-    
+
     if name_lower.contains("hdmi") || name_lower.contains("tv") {
         return "hdmi".to_string();
     }
@@ -205,7 +243,10 @@ mod tests {
         assert_eq!(classify_device("Generic Device", 8), "speaker");
 
         // String Matching Fallback (When FormFactor is unknown/10)
-        assert_eq!(classify_device("Sony WH-1000XM4 (Bluetooth)", 10), "bluetooth");
+        assert_eq!(
+            classify_device("Sony WH-1000XM4 (Bluetooth)", 10),
+            "bluetooth"
+        );
         assert_eq!(classify_device("Realtek HDMI Output", 10), "hdmi");
         assert_eq!(classify_device("Focusrite Scarlett 2i2 USB", 10), "usb");
 

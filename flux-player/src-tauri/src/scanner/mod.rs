@@ -48,10 +48,10 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
     // Create skeleton metadata for all new files and save immediately
     let mut skeletons = Vec::new();
     let skeleton_total = new_paths.len();
-    
+
     for (index, path) in new_paths.iter().enumerate() {
         // Emit progress for Stage 1 (Skeleton creation)
-        // We use a prefix or float calculation if we want a single bar, 
+        // We use a prefix or float calculation if we want a single bar,
         // but for now we'll just emit progress normally.
         let _ = app.emit("flux-scan-progress", (index + 1, skeleton_total));
 

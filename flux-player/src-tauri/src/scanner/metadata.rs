@@ -253,9 +253,13 @@ pub async fn process_video<R: Runtime>(
     let mut embedded_art = None;
     match lofty::read_from_path(path) {
         Ok(tagged_file) => {
-            if let Some(tag) = tagged_file.primary_tag().or_else(|| tagged_file.first_tag()) {
+            if let Some(tag) = tagged_file
+                .primary_tag()
+                .or_else(|| tagged_file.first_tag())
+            {
                 if let Some(picture) = tag.pictures().first() {
-                    embedded_art = cache_album_art(app, picture.data(), None, Some(&metadata.title));
+                    embedded_art =
+                        cache_album_art(app, picture.data(), None, Some(&metadata.title));
                 }
             }
             metadata.duration = Some(tagged_file.properties().duration().as_secs() as u32);
@@ -381,7 +385,11 @@ pub async fn process_video<R: Runtime>(
             }
             Err(e) => {
                 // Network Error / 500 / Rate Limit. Mark for retry.
-                log::warn!("[Flux Scanner] TMDB search failed for '{}': {}. Marking for retry.", search_query, e);
+                log::warn!(
+                    "[Flux Scanner] TMDB search failed for '{}': {}. Marking for retry.",
+                    search_query,
+                    e
+                );
                 embed_fallback = true;
                 metadata.needs_tmdb_scan = true;
             }
@@ -448,7 +456,10 @@ pub async fn process_audio<R: Runtime>(
 
     match lofty::read_from_path(path) {
         Ok(tagged_file) => {
-            if let Some(tag) = tagged_file.primary_tag().or_else(|| tagged_file.first_tag()) {
+            if let Some(tag) = tagged_file
+                .primary_tag()
+                .or_else(|| tagged_file.first_tag())
+            {
                 if metadata.title.is_empty() {
                     if let Some(t) = tag.title().map(|s| s.to_string()) {
                         metadata.title = t;
