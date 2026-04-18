@@ -87,23 +87,23 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
         let mut name = String::new();
         let name_keys = [
             (
-                windows::core::GUID::from_u128(0xa45c2502_df9d_4c39_918a_983b0704f1fb),
+                windows::core::GUID::from_u128(0xa45c_2502_df9d_4c39_918a_983b_0704_f1fb),
                 14,
             ), // PKEY_Device_FriendlyName
             (
-                windows::core::GUID::from_u128(0xb3f8fa74_ad30_4e0d_b44c_b7ca0155b40d),
+                windows::core::GUID::from_u128(0xb3f8_fa74_ad30_4e0d_b44c_b7ca_0155_b40d),
                 2,
             ), // PKEY_DeviceInterface_FriendlyName
             (
-                windows::core::GUID::from_u128(0xa45c2502_df9d_4c39_918a_983b0704f1fb),
+                windows::core::GUID::from_u128(0xa45c_2502_df9d_4c39_918a_983b_0704_f1fb),
                 2,
             ), // PKEY_Device_DeviceDesc
             (
-                windows::core::GUID::from_u128(0x540b947e_4f44_4194_b0ba_330c0d183d70),
+                windows::core::GUID::from_u128(0x540b_947e_4f44_4194_b0ba_330c_0d18_3d70),
                 4,
             ), // PKEY_Device_BusReportedDeviceDesc
             (
-                windows::core::GUID::from_u128(0x78c35b0e_151a_43a2_afbb_d050_2dec34b5),
+                windows::core::GUID::from_u128(0x78c3_5b0e_151a_43a2_afbb_d050_2dec_34b5),
                 256,
             ), // PKEY_Device_InstanceId
         ];
@@ -116,7 +116,7 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
                         let candidate = pwsz.to_string().unwrap_or_default();
                         if !candidate.trim().is_empty() {
                             name = candidate;
-                            let _ = windows::Win32::System::Com::CoTaskMemFree(Some(
+                            windows::Win32::System::Com::CoTaskMemFree(Some(
                                 pwsz.0 as *const _,
                             ));
                         }
@@ -153,7 +153,7 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
         // ── Discovery: Hardware Form Factor ─────────────────
         // PKEY_AudioEndpoint_FormFactor: {1da5d803-d492-4edd-8c23-e0c0ffee7f0e}, 0
         let pkey_form_factor = PROPERTYKEY {
-            fmtid: windows::core::GUID::from_u128(0x1da5d803_d492_4edd_8c23_e0c0ffee7f0e),
+            fmtid: windows::core::GUID::from_u128(0x1da5_d803_d492_4edd_8c23_e0c0_ffee_7f0e),
             pid: 0,
         };
 

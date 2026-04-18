@@ -675,13 +675,14 @@ pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
             }
         }
 
-        return Err(AppError::NotFound(
+        Err(AppError::NotFound(
             "Uninstaller not found in Registry or Root.".into(),
-        ));
+        ))
     }
 
     #[cfg(not(target_os = "windows"))]
     {
+        let _ = app;
         Err(AppError::Internal(
             "Uninstaller only supported on Windows".into(),
         ))
