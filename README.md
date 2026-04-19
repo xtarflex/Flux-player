@@ -12,7 +12,7 @@ Flux Player is a high-performance, glassmorphic media suite for local and stream
 
 ---
 
-### 🟢 Project Status: Beta (The Nebula Sync)
+### 🟢 Project Status: Beta (Windows-First)
 
 Flux Player has officially entered its **Beta 1** phase. While the core engine is cross-platform, current development is heavily optimized for **Windows 10/11**, focusing on:
 - **High-Fidelity Windowing**: Undecorated glassmorphic chassis with native snapping.
