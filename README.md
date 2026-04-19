@@ -1,10 +1,18 @@
 # Flux Player
 
+[![CI - Linux](https://github.com/xtarflex/Flux-player/actions/workflows/ci.yml/badge.svg?branch=main&job=build-linux)](https://github.com/xtarflex/Flux-player/actions)
+[![CI - Windows](https://github.com/xtarflex/Flux-player/actions/workflows/ci.yml/badge.svg?branch=main&job=build-windows)](https://github.com/xtarflex/Flux-player/actions)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 Flux Player is a high-performance, glassmorphic media suite for local and streaming content. Built from the ground up for desktop environments, it leverages the speed of Rust, the lightness of Svelte 5, and the power of Tauri 2.0.
+
+### 🔗 Quick Links
+| [📥 Download Beta](https://github.com/xtarflex/Flux-player/releases) | [📚 Info & Docs](docs/) | [🤝 Contribute](CONTRIBUTING.md) |
+| :--- | :--- | :--- |
 
 ---
 
-### 🟢 Project Status: Beta (Windows-First)
+### 🟢 Project Status: Beta (The Nebula Sync)
 
 Flux Player has officially entered its **Beta 1** phase. While the core engine is cross-platform, current development is heavily optimized for **Windows 10/11**, focusing on:
 - **High-Fidelity Windowing**: Undecorated glassmorphic chassis with native snapping.
@@ -13,8 +21,7 @@ Flux Player has officially entered its **Beta 1** phase. While the core engine i
 
 ---
 
-
-![Flux Player Interface](https://github.com/xtarflex/Flux-player/blob/main/docs%2Fassets%2Flibrary%20main%20view%20.png)
+![Flux Player Interface](docs/assets/hero_main.png)
 
 ## 🌟 Features
 

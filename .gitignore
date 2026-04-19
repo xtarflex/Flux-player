@@ -36,6 +36,7 @@ src-tauri/gen/
 .vercel/
 
 # Project specific
-Flux_*.exe
-!c:\Flux\Flux_0.2.0-beta.1_x64-setup.exe
+.flux_archive/
+releases/
+*.exe
 
