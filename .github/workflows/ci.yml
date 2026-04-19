@@ -60,7 +60,7 @@ jobs:
       run: npm ci
     - name: Build Tauri App (Windows NSIS)
       working-directory: ./flux-player
-      run: npx tauri build -- --bundles nsis
+      run: npx tauri build -- --bundle nsis
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:

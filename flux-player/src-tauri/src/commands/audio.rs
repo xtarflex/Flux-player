@@ -116,9 +116,7 @@ pub fn get_current_audio_device() -> AppResult<AudioDeviceInfo> {
                         let candidate = pwsz.to_string().unwrap_or_default();
                         if !candidate.trim().is_empty() {
                             name = candidate;
-                            windows::Win32::System::Com::CoTaskMemFree(Some(
-                                pwsz.0 as *const _,
-                            ));
+                            windows::Win32::System::Com::CoTaskMemFree(Some(pwsz.0 as *const _));
                         }
                     }
                 }
