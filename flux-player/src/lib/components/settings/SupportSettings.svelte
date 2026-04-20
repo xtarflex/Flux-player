@@ -4,6 +4,7 @@
   import { openUrl } from '@tauri-apps/plugin-opener';
   import Icon from "../ui/Icon.svelte";
   import { checkForUpdates } from "../../utils/version";
+  import BugIllustration from "../ui/BugIllustration.svelte";
   import { hasUpdateAvailable } from "../../stores/ui";
   import { confirm } from '@tauri-apps/plugin-dialog';
 
@@ -12,6 +13,7 @@
   let checking = $state(false);
   let resetting = $state(false);
   let uninstalling = $state(false);
+  let isHoveringBugButton = $state(false);
 
   onMount(() => {
     // Using standard web APIs to avoid extra Tauri plugin dependencies
@@ -163,6 +165,7 @@
       <div class="primary-column">
         <section class="support-card featured">
           <div class="card-background-glow">
+          <BugIllustration isHovering={isHoveringBugButton} />
             <div class="card-glow"></div>
           </div>
           
@@ -173,7 +176,7 @@
           
 
           <div class="featured-actions">
-            <button class="btn-primary report-btn" onclick={reportBug}>
+            <button class="btn-primary report-btn" onclick={reportBug} onmouseenter={() => isHoveringBugButton = true} onmouseleave={() => isHoveringBugButton = false}>
               <Icon name="github" size={18} />
               Report Issue on GitHub
             </button>
@@ -452,7 +455,7 @@
     border: 1px solid var(--glass-border-mid);
     border-radius: 20px;
     padding: 2.5rem;
-    overflow: hidden;
+    overflow: visible;
     min-height: 220px;
     display: flex;
     flex-direction: column;
