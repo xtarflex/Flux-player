@@ -78,15 +78,19 @@
 
   /* Aesthetic Color Mapping */
   .dark-base {
-    fill: #0a0a0c;
-    stroke: #1a1a1f;
+    fill: #1a1a1f;
+    stroke: #2a2a30;
     stroke-width: 10px;
   }
   .accent-primary {
     fill: var(--primary, #8a2be2);
+    stroke: var(--primary, #8a2be2);
+    stroke-width: 5px;
   }
   .accent-secondary {
     fill: var(--secondary, #00ffff);
+    stroke: var(--secondary, #00ffff);
+    stroke-width: 5px;
   }
   .glass-fill {
     fill: rgba(0, 255, 255, 0.15);
