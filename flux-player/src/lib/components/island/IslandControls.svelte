@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { playbackState } from "$lib/stores/playback";
+  import { nextTrack as queueNext, prevTrack as queuePrev } from "$lib/stores/queue";
 
   let { mediaState } = $props<{ mediaState: string }>();
 
@@ -9,11 +10,11 @@
   }
 
   function nextTrack() {
-    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Next Track', icon: 'skip-next' } }));
+    queueNext();
   }
 
   function prevTrack() {
-    window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Previous Track', icon: 'skip-previous' } }));
+    queuePrev();
   }
 </script>
 
