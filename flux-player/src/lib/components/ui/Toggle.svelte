@@ -20,6 +20,7 @@
     type="checkbox" 
     bind:checked={checked} 
     onchange={() => onchange(checked)}
+    aria-label={label}
   />
   <span class="slider round"></span>
 </label>

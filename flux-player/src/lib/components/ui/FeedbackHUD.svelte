@@ -263,6 +263,7 @@
             : 'Describe the feature you\'d like to see...'}
           rows={3}
           onkeydown={handleKeydown}
+          aria-label="Feedback input"
         ></textarea>
       </div>
 

@@ -45,7 +45,7 @@
           <p>You've hit the 150-call community limit for Flux's shared API keys. To keep Flux free and high-performance for everyone, users who scan large libraries need to link their own personal TMDB account.</p>
         </div>
       </div>
-      <button class="close-btn" onclick={onclose}>✕</button>
+      <button class="close-btn" onclick={onclose} aria-label="Close API Limit Modal">✕</button>
     </header>
 
     <div class="modal-body">
