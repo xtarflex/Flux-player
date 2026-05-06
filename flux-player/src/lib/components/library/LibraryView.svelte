@@ -499,6 +499,7 @@
           placeholder="Search library..." 
           bind:value={searchText}
           bind:this={searchInput}
+          aria-label="Search library"
         />
       </div>
 

@@ -243,6 +243,7 @@
               bind:value={editValue} 
               onkeydown={handleKeydown}
               use:focus 
+              aria-label="Edit Title"
             />
           {:else}
             <span class="meta-val">{$selectedItem.title}</span>
@@ -293,7 +294,7 @@
           <div class="meta-row" class:is-editing={editingField === 'artist'}>
             <span class="meta-key">ARTIST</span>
             {#if editingField === 'artist'}
-              <input type="text" class="edit-input" bind:value={editValue} onkeydown={handleKeydown} use:focus />
+              <input type="text" class="edit-input" bind:value={editValue} onkeydown={handleKeydown} use:focus aria-label="Edit Artist" />
             {:else}
               <span class="meta-val">{$selectedItem.artist || 'Unknown'}</span>
             {/if}
