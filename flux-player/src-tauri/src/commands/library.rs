@@ -139,7 +139,10 @@ pub fn clean_audio_title(title: String) -> String {
     let mut cleaned = re_url.replace_all(&title, "").to_string();
 
     // 2. Remove common pirated site tags in brackets/parentheses or standalone
-    let re_pirate = Regex::new(r"(?i)\[?(?:exclusive|music|nigeria|official music video|official video|official audio)\]?").unwrap();
+    let re_pirate = Regex::new(
+        r"(?i)\[?(?:exclusive|music|nigeria|official music video|official video|official audio)\]?",
+    )
+    .unwrap();
     cleaned = re_pirate.replace_all(&cleaned, "").to_string();
 
     // 3. Remove track numbers (e.g., "01 - ", "1. ") at the beginning
