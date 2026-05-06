@@ -125,10 +125,10 @@
       const selection = window.getSelection()?.toString();
 
       if (selection && selection.length > 0 && editValue.includes(selection)) {
-        const cleanedSelection = await invoke<string>('clean_audio_title', { title: selection });
+        const cleanedSelection = await invoke<string>('clean_audio_title', { title: selection, artist: $selectedItem?.artist });
         editValue = editValue.replace(selection, cleanedSelection);
       } else {
-        editValue = await invoke<string>('clean_audio_title', { title: editValue });
+        editValue = await invoke<string>('clean_audio_title', { title: editValue, artist: $selectedItem?.artist });
       }
     } catch (e) {
       console.error("Flux DetailPanel: Clean title failed:", e);

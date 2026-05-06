@@ -131,7 +131,7 @@ pub async fn refresh_media_metadata<R: Runtime>(app: AppHandle<R>, path: String)
 }
 
 #[tauri::command]
-pub fn clean_audio_title(title: String) -> String {
+pub fn clean_audio_title(title: String, artist: Option<String>) -> String {
     use regex::Regex;
 
     // 1. Remove URLs (www.site.com, site.com)
@@ -144,6 +144,19 @@ pub fn clean_audio_title(title: String) -> String {
     )
     .unwrap();
     cleaned = re_pirate.replace_all(&cleaned, "").to_string();
+
+    // 2.5 Remove artist name if provided
+    if let Some(artist_name) = artist {
+        if !artist_name.trim().is_empty() {
+            let escaped_artist = regex::escape(&artist_name);
+            let re_artist = Regex::new(&format!(
+                r"(?i)\s*[-_]*\s*\b{}\b\s*[-_]*\s*",
+                escaped_artist
+            ))
+            .unwrap();
+            cleaned = re_artist.replace_all(&cleaned, " ").to_string();
+        }
+    }
 
     // 3. Remove track numbers (e.g., "01 - ", "1. ") at the beginning
     let re_track = Regex::new(r"^\s*\d{1,3}\s*[-.]\s*").unwrap();
