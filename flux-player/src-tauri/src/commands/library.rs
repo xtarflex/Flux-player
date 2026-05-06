@@ -255,6 +255,32 @@ pub async fn toggle_media_watched_status<R: Runtime>(
     Ok(new_status == 1)
 }
 
+/// Sets the favorite status for a batch of media items.
+#[tauri::command]
+pub async fn batch_toggle_favorite_status<R: Runtime>(
+    app: AppHandle<R>,
+    paths: Vec<String>,
+    is_favorite: bool,
+) -> AppResult<bool> {
+    let db_path = crate::database::connection::get_db_path(&app)?;
+    let mut conn = rusqlite::Connection::open(db_path)?;
+
+    let tx = conn.transaction()?;
+
+    let new_status = if is_favorite { 1 } else { 0 };
+
+    {
+        let mut stmt = tx.prepare("UPDATE media SET is_favorite = ?1 WHERE path = ?2")?;
+        for path in paths {
+            stmt.execute(rusqlite::params![new_status, path])?;
+        }
+    }
+
+    tx.commit()?;
+
+    Ok(is_favorite)
+}
+
 /// Fetches the stored playback position (seconds) for a media file.
 #[tauri::command]
 pub fn get_playback_progress<R: Runtime>(app: AppHandle<R>, path: String) -> AppResult<i64> {
