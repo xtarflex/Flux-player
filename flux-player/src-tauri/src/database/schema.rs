@@ -130,5 +130,14 @@ pub fn get_migrations() -> Vec<Migration> {
             sql: "ALTER TABLE media ADD COLUMN needs_tmdb_scan BOOLEAN DEFAULT 0;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 14,
+            description: "add performance indexes",
+            sql: "
+                CREATE INDEX IF NOT EXISTS idx_media_added_at ON media(added_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_media_needs_scan ON media(needs_tmdb_scan, media_type);
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

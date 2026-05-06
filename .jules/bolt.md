@@ -1,0 +1,3 @@
+## 2024-12-16 - SQLite Indexes for Full Library Loads
+**Learning:** Full library loads via Tauri commands (`get_all_media`) perform full table scans and sorts (`ORDER BY added_at DESC`), which bottleneck as the user's media library grows. Creating specific SQLite indexes avoids this table scan. Similarly, background scanners searching for unscanned items (`needs_tmdb_scan = 1 AND media_type = 'video'`) require compound indexes for efficiency.
+**Action:** Always verify query paths in backend logic and implement SQLite indexes in migration scripts for large tables (like `media`) when adding features that fetch or filter across the entire collection.
