@@ -615,7 +615,7 @@
         {:else if viewMode !== 'detail'}
           {#each filteredItems as item (item.id)}
             <div 
-              transition:fade={{ duration: 200 }}
+
             >
               <MediaCard 
                 {item} 
@@ -634,7 +634,7 @@
           <!-- In detail mode, left pane always shows as list -->
           {#each filteredItems as item (item.id)}
             <div 
-              transition:fade={{ duration: 200 }}
+
             >
               <MediaCard 
                 {item} 
