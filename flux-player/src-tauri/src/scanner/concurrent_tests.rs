@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use futures::stream::{self, StreamExt};
+    use std::collections::HashMap;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
     use tokio::sync::Mutex;
-    use futures::stream::{self, StreamExt};
-    use std::collections::HashMap;
 
     // A mock item mimicking a path that needs scanning
     #[derive(Clone, Debug)]
@@ -20,9 +20,17 @@ mod tests {
         let mut files = Vec::new();
         for _i in 0..100 {
             if _i % 2 == 0 {
-                files.push(MockFile { _id: _i, is_tv_show: true, show_name: Some("Test Show".into()) });
+                files.push(MockFile {
+                    _id: _i,
+                    is_tv_show: true,
+                    show_name: Some("Test Show".into()),
+                });
             } else {
-                files.push(MockFile { _id: _i, is_tv_show: false, show_name: None });
+                files.push(MockFile {
+                    _id: _i,
+                    is_tv_show: false,
+                    show_name: None,
+                });
             }
         }
 
@@ -65,12 +73,20 @@ mod tests {
         // Run with concurrency of 10
         stream.buffer_unordered(10).collect::<Vec<()>>().await;
 
-        assert_eq!(processed_count.load(Ordering::SeqCst), 100, "Should have processed 100 items");
+        assert_eq!(
+            processed_count.load(Ordering::SeqCst),
+            100,
+            "Should have processed 100 items"
+        );
 
         // 50 Movies = 50 TMDB calls.
         // 50 Episodes of "Test Show" = 1 TMDB call (cached).
         // Total should be 51.
-        assert_eq!(tmdb_calls.load(Ordering::SeqCst), 51, "Show cache failed to prevent duplicate TMDB calls");
+        assert_eq!(
+            tmdb_calls.load(Ordering::SeqCst),
+            51,
+            "Show cache failed to prevent duplicate TMDB calls"
+        );
     }
 
     #[tokio::test]
@@ -93,6 +109,10 @@ mod tests {
 
         stream.buffer_unordered(5).collect::<Vec<()>>().await;
 
-        assert_eq!(current_progress.load(Ordering::SeqCst), total, "Did not hit 100% progress");
+        assert_eq!(
+            current_progress.load(Ordering::SeqCst),
+            total,
+            "Did not hit 100% progress"
+        );
     }
 }
