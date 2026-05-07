@@ -309,7 +309,7 @@
           <div class="meta-row" class:is-editing={editingField === 'album'}>
             <span class="meta-key">ALBUM</span>
             {#if editingField === 'album'}
-              <input type="text" class="edit-input" bind:value={editValue} onkeydown={handleKeydown} use:focus />
+              <input type="text" class="edit-input" bind:value={editValue} onkeydown={handleKeydown} use:focus aria-label="Edit Album" />
             {:else}
               <span class="meta-val">{$selectedItem.album || 'Unknown'}</span>
             {/if}
