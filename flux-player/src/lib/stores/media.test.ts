@@ -19,7 +19,7 @@ describe("updateLocalProgress", () => {
 
   test("should update last_position for a valid item", () => {
     updateLocalProgress("test-video.mp4", 50);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].last_position).toBe(50);
     expect(items[0].is_watched).toBe(false);
   });
@@ -32,7 +32,7 @@ describe("updateLocalProgress", () => {
     });
 
     updateLocalProgress("test-video.mp4", 91);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].is_watched).toBe(true);
     expect(items[0].last_position).toBe(91);
   });
@@ -45,7 +45,7 @@ describe("updateLocalProgress", () => {
     });
 
     updateLocalProgress("test-video.mp4", 50);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].is_watched).toBe(true);
     expect(items[0].last_position).toBe(50);
   });
@@ -58,13 +58,13 @@ describe("updateLocalProgress", () => {
     });
 
     updateLocalProgress("test-video.mp4", 85);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].is_watched).toBe(false);
   });
 
   test("should mark as watched if forcedWatched is true", () => {
     updateLocalProgress("test-video.mp4", 10, true);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].is_watched).toBe(true);
   });
 
@@ -72,7 +72,7 @@ describe("updateLocalProgress", () => {
     settings.set({ watchedThreshold: 50 } as any);
 
     updateLocalProgress("test-video.mp4", 51);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].is_watched).toBe(true);
   });
 
@@ -89,14 +89,14 @@ describe("updateLocalProgress", () => {
     });
 
     updateLocalProgress("test-video.mp4", 50);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].last_position).toBe(0); // Should not update if duration is null according to code
   });
 
   test("should mark as watched if threshold is 0 and any progress is made", () => {
     settings.set({ watchedThreshold: 0 } as any);
     updateLocalProgress("test-video.mp4", 1);
-    const items = get(mediaItems);
+    const items = get(mediaItems)!;
     expect(items[0].is_watched).toBe(true);
   });
 
@@ -109,7 +109,7 @@ describe("updateLocalProgress", () => {
       });
 
       updateLocalProgress("test-video.mp4", 95);
-      const items = get(mediaItems);
+      const items = get(mediaItems)!;
       expect(items[0].is_watched).toBe(false); // Because prevPos (92) was NOT < thresholdPos (90)
   });
 });
