@@ -71,7 +71,10 @@ pub async fn cache_tmdb_image<R: Runtime>(
 
     // Security: Sanitize file extension to prevent exploits
     let raw_ext = url.split('.').next_back().unwrap_or("jpg");
-    let file_extension = if raw_ext.chars().all(|c| c.is_ascii_alphanumeric()) && raw_ext.len() < 6 && !raw_ext.is_empty() {
+    let file_extension = if raw_ext.chars().all(|c| c.is_ascii_alphanumeric())
+        && raw_ext.len() < 6
+        && !raw_ext.is_empty()
+    {
         raw_ext
     } else {
         "jpg"
