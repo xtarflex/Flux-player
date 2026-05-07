@@ -323,6 +323,8 @@
         {showSubtitles} 
         {showPiP} 
         showVisualizer={isAudio}
+        visualizerEngine={$playbackState.visualizerEngine}
+        onVisualizerEngineChange={(engine: string) => playbackState.update(state => ({ ...state, visualizerEngine: engine }))}
         isPiPActive={$playbackState.isPiP} 
         isFullscreen={$playbackState.isFullscreen} 
         bind:volume={$playbackState.volume} 

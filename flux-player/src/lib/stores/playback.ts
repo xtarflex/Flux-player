@@ -5,10 +5,10 @@
  * The PlayerEngine.svelte component subscribes to this store and drives Video.js accordingly.
  */
 
-import { writable, get } from 'svelte/store';
-import { goto } from '$app/navigation';
-import type { MediaItem } from './media';
-import { settings, updateSetting } from './settings';
+import { writable, get } from "svelte/store";
+import { goto } from "$app/navigation";
+import type { MediaItem } from "./media";
+import { settings, updateSetting } from "./settings";
 
 // ── Re-export MediaItem so consumers can import from one place ──────────────
 export type { MediaItem };
@@ -57,6 +57,10 @@ export interface PlaybackState {
    */
   fullscreenRequest: boolean | null;
   pipRequest: boolean | null;
+  /**
+   * Selected visualizer engine for audio playback
+   */
+  visualizerEngine: string;
 }
 
 // ── Stores ───────────────────────────────────────────────────────────────────
@@ -83,6 +87,7 @@ export const playbackState = writable<PlaybackState>({
   isIdle: false,
   fullscreenRequest: null,
   pipRequest: null,
+  visualizerEngine: "Liquid",
 });
 
 // ── Persistence Sync ─────────────────────────────────────────────────────────
@@ -90,12 +95,12 @@ export const playbackState = writable<PlaybackState>({
 /**
  * Syncs playback volume/mute back to globally persistent settings.
  */
-if (typeof window !== 'undefined') {
-  playbackState.subscribe(s => {
+if (typeof window !== "undefined") {
+  playbackState.subscribe((s) => {
     const current = get(settings);
     if (current.volume !== s.volume || current.isMuted !== s.isMuted) {
-      updateSetting('volume', s.volume);
-      updateSetting('isMuted', s.isMuted);
+      updateSetting("volume", s.volume);
+      updateSetting("isMuted", s.isMuted);
     }
   });
 }
@@ -114,7 +119,12 @@ export const playerEngineRef = writable<any | null>(null);
  */
 export function setMedia(item: MediaItem) {
   activeMedia.set(item);
-  playbackState.update(s => ({ ...s, isPlaying: false, progress: 0, seekTo: null }));
+  playbackState.update((s) => ({
+    ...s,
+    isPlaying: false,
+    progress: 0,
+    seekTo: null,
+  }));
 }
 
 /**
@@ -126,10 +136,10 @@ export function setMedia(item: MediaItem) {
  * @param startSeconds - Optional resume position in seconds (default: 0).
  */
 export function playMediaFromItem(item: MediaItem, startSeconds: number = 0) {
-  const isVideo = item.type === 'video' || item.type === 'mixed';
+  const isVideo = item.type === "video" || item.type === "mixed";
 
   activeMedia.set(item);
-  playbackState.update(s => ({
+  playbackState.update((s) => ({
     ...s,
     isPlaying: true,
     progress: 0,
@@ -141,7 +151,7 @@ export function playMediaFromItem(item: MediaItem, startSeconds: number = 0) {
   // Audio: DO NOT navigate — user stays in the Library.
   // The persistent AudioEngine in +layout.svelte handles playback.
   if (isVideo) {
-    goto('/playing');
+    goto("/playing");
   }
 }
 
@@ -149,7 +159,7 @@ export function playMediaFromItem(item: MediaItem, startSeconds: number = 0) {
  * Toggles play/pause. No-ops if there is no active media.
  */
 export function togglePlayback() {
-  playbackState.update(s => {
+  playbackState.update((s) => {
     if (!get(activeMedia)) return s;
     return { ...s, isPlaying: !s.isPlaying };
   });
@@ -160,7 +170,11 @@ export function togglePlayback() {
  * Called by the layout's beforeNavigate interceptor.
  */
 export function activateMiniPlayer() {
-  playbackState.update(s => ({ ...s, isMiniPlayer: true, isTheaterMode: false }));
+  playbackState.update((s) => ({
+    ...s,
+    isMiniPlayer: true,
+    isTheaterMode: false,
+  }));
 }
 
 /**
@@ -169,8 +183,8 @@ export function activateMiniPlayer() {
  */
 export function deactivateMiniPlayer() {
   const media = get(activeMedia);
-  const isVideo = media?.type === 'video' || media?.type === 'mixed';
-  playbackState.update(s => ({
+  const isVideo = media?.type === "video" || media?.type === "mixed";
+  playbackState.update((s) => ({
     ...s,
     isMiniPlayer: false,
     isTheaterMode: isVideo,

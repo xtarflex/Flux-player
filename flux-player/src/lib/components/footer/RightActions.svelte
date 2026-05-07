@@ -12,7 +12,9 @@
     onSpeedChange,
     showSubtitles, 
     showPiP,
-    showVisualizer = false, 
+    showVisualizer = false,
+    visualizerEngine = 'Liquid',
+    onVisualizerEngineChange,
     isPiPActive = false, 
     isFullscreen = false, 
     volume = $bindable(0.7), 
@@ -24,6 +26,8 @@
     showSubtitles: boolean;
     showPiP: boolean;
     showVisualizer?: boolean;
+    visualizerEngine?: string;
+    onVisualizerEngineChange?: (engine: string) => void;
     isPiPActive?: boolean;
     isFullscreen?: boolean;
     volume?: number;
@@ -44,6 +48,21 @@
       action: () => onSpeedChange?.(s)
     } as MenuItem)).reverse() // Put fastest at the top
   );
+
+  const visualizerEngines = ['Off', 'Classic Bars', 'Waveform', 'Liquid'];
+  let visualizerMenuItems = $derived(
+    visualizerEngines.map(engine => ({
+      label: visualizerEngine === engine ? `✓ ${engine}` : engine,
+      action: () => onVisualizerEngineChange?.(engine)
+    } as MenuItem))
+  );
+
+  function openVisualizerMenu(e: MouseEvent) {
+    if (!controlsEnabled) return;
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    openMenu(rect.left, rect.top, visualizerMenuItems);
+  }
 
   async function togglePiP() {
     if (!showPiP) return;
@@ -158,9 +177,10 @@
   {#if showVisualizer}
     <button 
       class="icon-btn-large visualizer-btn" 
+      class:active={$activeMenu}
       aria-label="Visualizer"
       disabled={!controlsEnabled}
-      onclick={() => console.log('Open Visualizer Options')}
+      onclick={openVisualizerMenu}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2v20M17 5v14M7 8v8M22 10v4M2 11v2" stroke="currentColor" />
