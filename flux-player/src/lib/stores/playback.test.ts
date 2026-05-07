@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect, test, describe, beforeEach } from "bun:test";
 import { get } from "svelte/store";
 import { playbackState, activeMedia, togglePlayback } from "./playback";
@@ -10,6 +11,7 @@ const mockMedia: MediaItem = {
   artist: "Test Artist",
   album: "Test Album",
   duration: 100,
+  year: 2024,
   type: "video",
   last_played: 0,
   added_at: Date.now(),

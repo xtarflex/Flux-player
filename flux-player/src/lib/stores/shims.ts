@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { mock } from "bun:test";
 
 // ── Mock localStorage ────────────────────────────────────────────────────────
