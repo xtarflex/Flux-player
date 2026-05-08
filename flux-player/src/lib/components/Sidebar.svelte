@@ -68,6 +68,16 @@
   <div class="sidebar-spacer"></div>
 
   <div class="sidebar-footer">
+    <button
+      class="feedback-btn"
+      onclick={() => window.dispatchEvent(new CustomEvent('flux-toggle-feedback'))}
+      class:collapsed={$isSidebarCollapsed}
+      aria-label="Feedback"
+      use:tooltip={{ content: 'Provide Feedback', shortcut: 'Ctrl Shift F', placement: 'right' }}
+    >
+      <Icon name="feedback" size={20} strokeWidth={2} />
+      <span class="btn-text">Feedback</span>
+    </button>
     <button 
       class="add-folder-btn" 
       onclick={triggerImport} 
@@ -281,8 +291,48 @@
   .sidebar-footer {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
     margin-top: 24px;
+  }
+
+  .feedback-btn {
+    background: rgba(138, 43, 226, 0.1);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 56px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 700;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    width: 100%;
+  }
+
+  .feedback-btn:hover {
+    background: rgba(138, 43, 226, 0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.2);
+  }
+
+  .feedback-btn.collapsed {
+    padding: 0;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto;
+    gap: 0;
+  }
+
+  .feedback-btn.collapsed .btn-text {
+    opacity: 0;
+    max-width: 0;
+    margin: 0;
   }
 
   .add-folder-btn {
