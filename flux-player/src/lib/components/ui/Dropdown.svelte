@@ -1,3 +1,7 @@
+<script module>
+  let idCounter = 0;
+</script>
+
 <script lang="ts">
   /**
    * @typedef {Object} Props
@@ -21,6 +25,8 @@
   }>();
 
   let highlightedIndex = $state(-1);
+  const listboxId = `dropdown-${idCounter++}`;
+
 
   // Sync highlight with current value when opened
   $effect(() => {
@@ -90,6 +96,10 @@
     class:active={isOpen}
     onclick={() => isOpen = !isOpen}
     type="button"
+    aria-haspopup="listbox"
+    aria-expanded={isOpen}
+    aria-controls={listboxId}
+    aria-label={label || "Select option"}
   >
     <span class="selected-text">{value}</span>
     <svg 
@@ -105,7 +115,7 @@
   </button>
 
   {#if isOpen}
-    <div class="dropdown-menu glass">
+    <div class="dropdown-menu glass" role="listbox" id={listboxId}>
       {#each options as option, i}
         <button 
           class="dropdown-item" 
@@ -113,6 +123,8 @@
           class:highlighted={i === highlightedIndex}
           onclick={() => selectOption(option)}
           onmouseenter={() => highlightedIndex = i}
+          role="option"
+          aria-selected={option === value}
         >
           {option}
           {#if showCheckmark && option === value}
