@@ -318,7 +318,6 @@
   .feedback-btn:hover {
     background: rgba(138, 43, 226, 0.2);
     border-color: var(--primary);
-    box-shadow: 0 0 15px rgba(138, 43, 226, 0.2);
   }
 
   .feedback-btn.collapsed {
