@@ -156,7 +156,7 @@
 </script>
 
 <div
-  class="dynamic-island"
+  id="onboard-dynamic-island" class="dynamic-island"
   style="
     width: {$size.w}px; 
     height: {$size.h}px; 
