@@ -1,0 +1,4 @@
+## 2024-05-18 - [Path Traversal in cache_tmdb_image]
+**Vulnerability:** The `cache_tmdb_image` function in `flux-player/src-tauri/src/commands/library.rs` allowed user-controlled input (`image_type`) to be directly appended to a file path without validation, creating a Path Traversal vulnerability (e.g. using `../../../../` as `image_type`). Furthermore, the `file_extension` extracted from the URL was not sanitized and could be manipulated.
+**Learning:** File paths dynamically constructed from inputs must always validate both structural parameters (like directory names) and file extensions. Even seemingly harmless internal APIs should defend against malicious input strings.
+**Prevention:** Always validate directory path parameters against a strict allowlist. Sanitize file extensions by checking alphanumeric characters and enforcing a strict length limit (e.g. <= 5 chars).
