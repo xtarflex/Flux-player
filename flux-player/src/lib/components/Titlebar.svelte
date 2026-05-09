@@ -7,6 +7,9 @@
   import Icon from './ui/Icon.svelte';
   import { settings } from '$lib/stores/settings';
   import { tooltip } from '$lib/actions/tooltip';
+  import { page } from '$app/stores';
+  import { openMenu } from '$lib/stores/ui';
+  import type { MenuItem } from '$lib/components/ui/context-menu';
   
   let appWindow: any;
   if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window)) {
@@ -108,7 +111,41 @@
   const toggleMaximize = async () => appWindow.toggleMaximize();
   const close = async () => appWindow.close();
   const refresh = () => window.location.reload();
-  const openSettings = () => goto('/settings');
+  const openSettings = (e: MouseEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+
+    const path = $page.url.pathname;
+    let items: MenuItem[] = [];
+
+    if (path.startsWith('/library')) {
+      items = [
+        { label: 'Storage', action: () => goto('/settings?category=storage') },
+        { label: 'Appearance', action: () => goto('/settings?category=appearance') },
+        { label: 'Profile', action: () => goto('/settings?category=profile') },
+      ];
+    } else if (path.startsWith('/playing')) {
+      items = [
+        { label: 'Performance', action: () => goto('/settings?category=playback') },
+        { label: 'Streaming', action: () => goto('/settings?category=streaming') },
+      ];
+    } else if (path.startsWith('/discovery')) {
+      items = [
+        { label: 'Streaming', action: () => goto('/settings?category=streaming') },
+      ];
+    } else if (path.startsWith('/playlists')) {
+      items = [
+        { label: 'Appearance', action: () => goto('/settings?category=appearance') },
+      ];
+    }
+
+    if (items.length > 0) {
+      items.push({ separator: true });
+    }
+    items.push({ label: 'More Settings', action: () => goto('/settings') });
+
+    openMenu(rect.left - 120, rect.bottom + 8, items);
+  };
 </script>
 
 <div class="titlebar" data-tauri-drag-region>
