@@ -265,6 +265,12 @@
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
   }
 
   .description-section h3 {
