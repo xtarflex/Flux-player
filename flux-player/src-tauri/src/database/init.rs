@@ -99,7 +99,8 @@ fn ensure_default_settings(conn: &Connection) -> AppResult<()> {
         ("display_name", ""),
     ];
 
-    let mut stmt = conn.prepare("INSERT INTO settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO NOTHING")?;
+    let mut stmt = conn
+        .prepare("INSERT INTO settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO NOTHING")?;
     for (key, value) in defaults {
         stmt.execute((key, value))?;
     }

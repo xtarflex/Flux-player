@@ -85,14 +85,27 @@ pub fn save_media_items<R: Runtime>(
     for item in items {
         let genres_json = serde_json::to_string(&item.genres).unwrap_or_else(|_| "[]".to_string());
 
-        stmt.execute(
-            rusqlite::params![
-                &item.path, &item.title, item.year, &item.artist, &item.album,
-                &item.poster_path, &item.backdrop_path, &item.album_art_path,
-                item.duration, &item.media_type, item.added_at,
-                &item.synopsis, item.rating, &genres_json, &item.director, &item.starring, &item.series_tag, item.is_watched, item.needs_tmdb_scan
-            ],
-        )?;
+        stmt.execute(rusqlite::params![
+            &item.path,
+            &item.title,
+            item.year,
+            &item.artist,
+            &item.album,
+            &item.poster_path,
+            &item.backdrop_path,
+            &item.album_art_path,
+            item.duration,
+            &item.media_type,
+            item.added_at,
+            &item.synopsis,
+            item.rating,
+            &genres_json,
+            &item.director,
+            &item.starring,
+            &item.series_tag,
+            item.is_watched,
+            item.needs_tmdb_scan
+        ])?;
     }
 
     drop(stmt);
@@ -167,8 +180,7 @@ mod tests {
             let tx = conn.transaction().unwrap();
             let mut stmt = tx.prepare("DELETE FROM media WHERE path = ?1").unwrap();
             for path in stale_paths {
-                stmt.execute(rusqlite::params![path])
-                    .unwrap();
+                stmt.execute(rusqlite::params![path]).unwrap();
             }
             drop(stmt);
             tx.commit().unwrap();
