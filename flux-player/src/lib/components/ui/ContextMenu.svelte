@@ -86,6 +86,42 @@
   {#each items as item}
     {#if item.separator}
       <div class="separator" role="separator"></div>
+    {:else if item.isToggle}
+      <div
+        class="menu-item toggle-item"
+        onmouseenter={() => activeSubmenu = null}
+        onclick={(e) => {
+          e.stopPropagation();
+          item.toggleValue = !item.toggleValue;
+          if (item.onToggle) item.onToggle(item.toggleValue);
+                }}
+        role="menuitemcheckbox"
+        aria-checked={item.toggleValue}
+        tabindex="0"
+      >
+        <span class="label">{item.label}</span>
+        <div class="toggle-switch" class:active={item.toggleValue}>
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    {:else if item.isToggle}
+      <div
+        class="menu-item toggle-item"
+        onmouseenter={() => activeSubmenu = null}
+        onclick={(e) => {
+          e.stopPropagation();
+          item.toggleValue = !item.toggleValue;
+          if (item.onToggle) item.onToggle(item.toggleValue);
+        }}
+        role="menuitemcheckbox"
+        aria-checked={item.toggleValue}
+        tabindex="0"
+      >
+        <span class="label">{item.label}</span>
+        <div class="toggle-switch" class:active={item.toggleValue}>
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
     {:else if item.children}
       <!-- Use div for items with submenus to avoid nested buttons -->
       <div 
@@ -105,9 +141,15 @@
               <button 
                 class="menu-item"
                 class:danger={child.danger}
-                onclick={() => {
-                  child.action?.();
-                  onclose();
+                onclick={(e) => {
+                  if (child.isToggle) {
+                    e.stopPropagation();
+                    child.toggleValue = !child.toggleValue;
+                    if (child.onToggle) child.onToggle(child.toggleValue);
+                  } else {
+                    child.action?.();
+                    onclose();
+                  }
                 }}
                 role="menuitem"
               >
@@ -116,6 +158,25 @@
             {/each}
           </div>
         {/if}
+      </div>
+
+    {:else if item.isToggle}
+      <div
+        class="menu-item toggle-item"
+        onmouseenter={() => activeSubmenu = null}
+        onclick={(e) => {
+          e.stopPropagation();
+          item.toggleValue = !item.toggleValue;
+          if (item.onToggle) item.onToggle(item.toggleValue);
+        }}
+        role="menuitemcheckbox"
+        aria-checked={item.toggleValue}
+        tabindex="0"
+      >
+        <span class="label">{item.label}</span>
+        <div class="toggle-switch" class:active={item.toggleValue}>
+          <div class="toggle-knob"></div>
+        </div>
       </div>
     {:else}
       <button 
@@ -178,6 +239,39 @@
 
   .menu-item.danger {
     color: #ff4444;
+  }
+
+
+  .toggle-item {
+    cursor: pointer;
+  }
+
+  .toggle-switch {
+    width: 32px;
+    height: 18px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.3s ease;
+  }
+
+  .toggle-switch.active {
+    background: var(--primary);
+  }
+
+  .toggle-knob {
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toggle-switch.active .toggle-knob {
+    transform: translateX(14px);
   }
 
   .menu-item.danger:hover {

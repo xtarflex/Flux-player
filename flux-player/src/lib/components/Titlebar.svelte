@@ -5,10 +5,10 @@
   import { goto } from '$app/navigation';
   import ProfileAvatar from './ProfileAvatar.svelte';
   import Icon from './ui/Icon.svelte';
-  import { settings } from '$lib/stores/settings';
+  import { settings, updateSetting } from '$lib/stores/settings';
   import { tooltip } from '$lib/actions/tooltip';
   import { page } from '$app/stores';
-  import { openMenu } from '$lib/stores/ui';
+  import { openMenu, closeMenu } from '$lib/stores/ui';
   import type { MenuItem } from '$lib/components/ui/context-menu';
   
   let appWindow: any;
@@ -120,18 +120,42 @@
 
     if (path.startsWith('/library')) {
       items = [
-        { label: 'Storage', action: () => goto('/settings?category=storage') },
+        { label: 'Offline Mode', isToggle: true, toggleValue: $settings.offlineMode, onToggle: (val) => updateSetting('offlineMode', val) },
+        {
+          label: 'Queue Settings',
+          children: [
+            { label: 'Allow Mixed Media', isToggle: true, toggleValue: $settings.allowMixedQueue, onToggle: (val) => updateSetting('allowMixedQueue', val) },
+            { label: 'Auto Queue: ' + $settings.autoQueueMode, action: () => {
+                const modes: ('Never' | 'Smart' | 'Always')[] = ['Never', 'Smart', 'Always'];
+                const next = modes[(modes.indexOf($settings.autoQueueMode) + 1) % 3];
+                updateSetting('autoQueueMode', next);
+                closeMenu();
+            } }
+          ]
+        },
+        { separator: true },
+        { label: 'Storage Setup', action: () => goto('/settings?category=storage') },
         { label: 'Appearance', action: () => goto('/settings?category=appearance') },
-        { label: 'Profile', action: () => goto('/settings?category=profile') },
       ];
     } else if (path.startsWith('/playing')) {
       items = [
-        { label: 'Performance', action: () => goto('/settings?category=playback') },
-        { label: 'Streaming', action: () => goto('/settings?category=streaming') },
+        { label: 'Hardware Acceleration', isToggle: true, toggleValue: $settings.hwAcceleration, onToggle: (val) => updateSetting('hwAcceleration', val) },
+        { label: 'Video/Audio Transitions', isToggle: true, toggleValue: $settings.videoAudioTransition, onToggle: (val) => updateSetting('videoAudioTransition', val) },
+        {
+          label: 'Subtitles',
+          children: [
+            { label: 'Auto-Fetch', isToggle: true, toggleValue: $settings.subtitleAutoFetch, onToggle: (val) => updateSetting('subtitleAutoFetch', val) },
+            { label: 'Fuzzy Match', isToggle: true, toggleValue: $settings.subtitleFuzzy, onToggle: (val) => updateSetting('subtitleFuzzy', val) },
+          ]
+        },
+        { separator: true },
+        { label: 'Performance Tweaks', action: () => goto('/settings?category=playback') },
       ];
     } else if (path.startsWith('/discovery')) {
       items = [
-        { label: 'Streaming', action: () => goto('/settings?category=streaming') },
+        { label: 'Offline Mode', isToggle: true, toggleValue: $settings.offlineMode, onToggle: (val) => updateSetting('offlineMode', val) },
+        { separator: true },
+        { label: 'Streaming Setup', action: () => goto('/settings?category=streaming') },
       ];
     } else if (path.startsWith('/playlists')) {
       items = [
@@ -139,7 +163,7 @@
       ];
     }
 
-    if (items.length > 0) {
+    if (items.length > 0 && !items[items.length - 1].separator) {
       items.push({ separator: true });
     }
     items.push({ label: 'More Settings', action: () => goto('/settings') });
