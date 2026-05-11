@@ -108,6 +108,20 @@
     volume = Math.round(Math.max(0, Math.min(1, volume + delta)) * 100) / 100;
     isMuted = volume === 0;
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (!controlsEnabled) return;
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      volume = Math.round(Math.min(1, volume + 0.05) * 100) / 100;
+      isMuted = volume === 0;
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      volume = Math.round(Math.max(0, volume - 0.05) * 100) / 100;
+      isMuted = volume === 0;
+    }
+  }
 </script>
 
 <div class="right-section">
@@ -206,6 +220,7 @@
       onpointerup={onPointerUp}
       onpointercancel={onPointerUp}
       onwheel={handleWheel}
+      onkeydown={handleKeyDown}
       ondblclick={toggleMute}
       aria-label="Volume Slider"
       role="slider"
@@ -312,6 +327,12 @@
     border: none;
     padding: 0;
     cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .volume-bars-wrapper:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
   }
 
   .volume-bars-wrapper.disabled {
