@@ -179,6 +179,7 @@
   }}
   role="button"
   tabindex="0"
+  aria-label="Dynamic Island"
 >
   {#if currentState === "idle"}
     <IslandLogo active={true} />
