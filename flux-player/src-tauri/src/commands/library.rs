@@ -47,6 +47,14 @@ pub async fn cache_tmdb_image<R: Runtime>(
         ));
     }
 
+    // Security: Validate image_type to prevent path traversal
+    let valid_types = ["posters", "backdrops", "album-art"];
+    if !valid_types.contains(&image_type.as_str()) {
+        return Err(crate::utils::error::AppError::InvalidInput(
+            "INVALID_IMAGE_TYPE".into(),
+        ));
+    }
+
     let app_dir = app.path().app_data_dir()?;
     let cache_dir = app_dir.join("cache").join("images").join(image_type);
 
@@ -59,7 +67,16 @@ pub async fn cache_tmdb_image<R: Runtime>(
     hasher.update(url.as_bytes());
     let hash = format!("{:x}", hasher.finalize())[..16].to_string();
     let file_extension = url.split('.').next_back().unwrap_or("jpg");
-    let file_name = format!("{}.{}", hash, file_extension);
+
+    // Security: Sanitize file_extension
+    let sanitized_ext =
+        if file_extension.chars().all(|c| c.is_ascii_alphanumeric()) && file_extension.len() <= 4 {
+            file_extension
+        } else {
+            "jpg"
+        };
+
+    let file_name = format!("{}.{}", hash, sanitized_ext);
     let target_path = cache_dir.join(&file_name);
 
     if !target_path.exists() {
