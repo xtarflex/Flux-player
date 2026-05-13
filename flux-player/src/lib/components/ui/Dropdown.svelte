@@ -90,6 +90,8 @@
     class:active={isOpen}
     onclick={() => isOpen = !isOpen}
     type="button"
+    aria-haspopup="listbox"
+    aria-expanded={isOpen}
   >
     <span class="selected-text">{value}</span>
     <svg 
@@ -105,7 +107,7 @@
   </button>
 
   {#if isOpen}
-    <div class="dropdown-menu glass">
+    <div class="dropdown-menu glass" role="listbox">
       {#each options as option, i}
         <button 
           class="dropdown-item" 
@@ -113,6 +115,8 @@
           class:highlighted={i === highlightedIndex}
           onclick={() => selectOption(option)}
           onmouseenter={() => highlightedIndex = i}
+          role="option"
+          aria-selected={option === value}
         >
           {option}
           {#if showCheckmark && option === value}
