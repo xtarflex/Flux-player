@@ -1,0 +1,4 @@
+## 2025-02-27 - Path Traversal & Extension Injection in Tauri Commands
+**Vulnerability:** A Tauri command `cache_tmdb_image` took user-provided `image_type` and `url` parameters without sanitization. The `image_type` was used to directly build a path using `join()`, and the file extension extracted from `url` was not restricted, risking both directory traversal and arbitrary extension injection.
+**Learning:** Tauri commands exposed to the frontend handle user-supplied input strings, which can act as a bridge for filesystem manipulation vulnerabilities if directly interpolated into `Path::join` without validation.
+**Prevention:** Validate all incoming string parameters used to construct paths against an allowlist and rigorously sanitize extensions (e.g. check for length and alphanumeric constraint) before appending to paths.
