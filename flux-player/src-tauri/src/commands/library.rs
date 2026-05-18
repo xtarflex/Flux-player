@@ -47,6 +47,13 @@ pub async fn cache_tmdb_image<R: Runtime>(
         ));
     }
 
+    // SECURITY: Validate image_type against an allowlist to prevent path traversal
+    if !["posters", "backdrops", "album-art"].contains(&image_type.as_str()) {
+        return Err(crate::utils::error::AppError::InvalidInput(
+            "INVALID_IMAGE_TYPE".into(),
+        ));
+    }
+
     let app_dir = app.path().app_data_dir()?;
     let cache_dir = app_dir.join("cache").join("images").join(image_type);
 
@@ -58,8 +65,28 @@ pub async fn cache_tmdb_image<R: Runtime>(
     let mut hasher = Sha256::new();
     hasher.update(url.as_bytes());
     let hash = format!("{:x}", hasher.finalize())[..16].to_string();
-    let file_extension = url.split('.').next_back().unwrap_or("jpg");
-    let file_name = format!("{}.{}", hash, file_extension);
+
+    // SECURITY: Sanitize file extension properly via URL parsing
+    let mut clean_ext = "jpg".to_string(); // Default to jpg
+    if let Ok(parsed_url) = url::Url::parse(&url) {
+        if let Some(mut path_segments) = parsed_url.path_segments() {
+            if let Some(file_name) = path_segments.next_back() {
+                if let Some(ext) = file_name.split('.').next_back() {
+                    // Only keep alphanumeric characters for the extension and limit length
+                    let sanitized: String = ext
+                        .chars()
+                        .filter(|c| c.is_ascii_alphanumeric())
+                        .take(5)
+                        .collect();
+                    if !sanitized.is_empty() {
+                        clean_ext = sanitized;
+                    }
+                }
+            }
+        }
+    }
+
+    let file_name = format!("{}.{}", hash, clean_ext);
     let target_path = cache_dir.join(&file_name);
 
     if !target_path.exists() {

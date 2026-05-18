@@ -1634,6 +1634,7 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
+ "url",
  "urlencoding",
  "walkdir",
  "windows 0.52.0",
