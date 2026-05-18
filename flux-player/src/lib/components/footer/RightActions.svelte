@@ -296,7 +296,10 @@
     transition: all 0.2s ease;
   }
 
-  .icon-btn-large:not(:disabled):hover {
+  .icon-btn-large:not(:disabled):hover,
+  .icon-btn-large:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
     color: var(--text-main);
     transform: scale(1.08);
   }
