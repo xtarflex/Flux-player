@@ -182,7 +182,12 @@ export function updateLocalProgress(path: string, position: number, forcedWatche
         item.is_watched = true;
       }
       
-      item.last_position = position;
+      // 2. Align optimistic UI with backend: reset position to 0 if finished or newly watched
+      if ((forcedWatched || position === 0) && item.is_watched) {
+        item.last_position = 0;
+      } else {
+        item.last_position = position;
+      }
     }
     return [...items];
   });
