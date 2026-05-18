@@ -162,7 +162,8 @@
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .pill-btn:not(:disabled):hover {
+  .pill-btn:not(:disabled):hover,
+  .pill-btn:focus-visible {
     color: var(--secondary);
     transform: scale(1.1);
   }
@@ -208,7 +209,10 @@
     transition: all 0.2s ease;
   }
 
-  .icon-btn:not(:disabled):hover {
+  .icon-btn:not(:disabled):hover,
+  .icon-btn:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
     color: var(--text-main);
   }
 

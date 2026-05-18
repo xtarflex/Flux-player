@@ -1,0 +1,3 @@
+## 2024-05-18 - Component-specific focus-visible states
+**Learning:** Found that custom buttons (`.pill-btn`, `.icon-btn`, `.icon-btn-large`) lacked explicit `:focus-visible` styling, making keyboard navigation difficult to track. Adding global styles to `app.css` caused conflicts with border-radius (inheriting parent radius instead of intrinsic shape) and violated "no custom CSS" boundaries.
+**Action:** Enhance component-specific focus-visible styling by extending the existing `:hover` pseudo-classes to include `:focus-visible` with a distinct outline (using existing design system colors), ensuring proper accessibility without breaking visual constraints.

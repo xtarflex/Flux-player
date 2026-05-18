@@ -138,7 +138,10 @@
     }
   }
 
-  .icon-btn:not(:disabled):hover {
+  .icon-btn:not(:disabled):hover,
+  .icon-btn:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
     color: var(--text-main);
   }
 
