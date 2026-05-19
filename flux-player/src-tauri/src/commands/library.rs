@@ -69,11 +69,16 @@ pub async fn cache_tmdb_image<R: Runtime>(
 
     // 🛡️ Sentinel: Sanitize file extension to prevent payload injection
     let ext_raw = url.split('.').next_back().unwrap_or("jpg");
-    let safe_ext: String = ext_raw.chars()
+    let safe_ext: String = ext_raw
+        .chars()
         .filter(|c| c.is_ascii_alphanumeric())
         .take(5)
         .collect();
-    let final_ext = if safe_ext.is_empty() { "jpg".to_string() } else { safe_ext };
+    let final_ext = if safe_ext.is_empty() {
+        "jpg".to_string()
+    } else {
+        safe_ext
+    };
 
     let file_name = format!("{}.{}", hash, final_ext);
     let target_path = cache_dir.join(&file_name);
