@@ -1,0 +1,4 @@
+## YYYY-MM-DD - [Title]
+## 2024-05-18 - [Avoid parsing overhead in transactional loops via pre-preparation]
+**Learning:** In the Rust backend (`src-tauri/src/database/queries.rs`), running `tx.execute` within a loop forces `rusqlite` to re-parse and re-optimize the statement on every iteration. This is a severe bottleneck for large bulk inserts (like media syncs). Furthermore, when preparing the statement (`tx.prepare`), the mutable borrow from the transaction must be explicitly released (e.g. by dropping `stmt` inside a block) before the transaction can be committed (`tx.commit()`), or else Rust's borrow checker will block compilation.
+**Action:** Always move `.prepare` outside of loop bodies for database operations that perform multiple identical SQL executions. Place the `stmt` creation in an explicit block or call `drop(stmt)` before committing the transaction.
