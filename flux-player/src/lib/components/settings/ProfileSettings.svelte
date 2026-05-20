@@ -61,7 +61,7 @@
       <div class="avatar-large">
         <!-- Reusing the squircle profile avatar from the topbar -->
         <ProfileAvatar />
-        <button class="edit-avatar-btn">
+        <button class="edit-avatar-btn" aria-label="Edit Avatar">
           <Icon name="edit" size={14} />
         </button>
       </div>

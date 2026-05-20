@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing ARIA labels in nested settings controls
+**Learning:** Found that custom nested elements (like avatar buttons, folder remove buttons) inside complex settings cards (`StorageSettings`, `ProfileSettings`) lacked ARIA labels despite top-level forms/cards having basic structural accessibility. Screen readers rely entirely on inner elements for specific interactive functions.
+**Action:** When auditing settings sections or deeply nested cards, check every individual clickable icon button for an `aria-label`, as these are the most commonly overlooked during macro-level development.
