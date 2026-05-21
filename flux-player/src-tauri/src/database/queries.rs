@@ -36,9 +36,12 @@ pub fn clean_stale_media<R: Runtime>(app: &AppHandle<R>, dir_path: &str) -> AppR
     let mut deleted_count = 0;
     if !stale_paths.is_empty() {
         let tx = conn.transaction()?;
-        for path in stale_paths {
-            tx.execute("DELETE FROM media WHERE path = ?1", rusqlite::params![path])?;
-            deleted_count += 1;
+        {
+            let mut stmt = tx.prepare("DELETE FROM media WHERE path = ?1")?;
+            for path in stale_paths {
+                stmt.execute(rusqlite::params![path])?;
+                deleted_count += 1;
+            }
         }
         tx.commit()?;
     }
@@ -55,10 +58,8 @@ pub fn save_media_items<R: Runtime>(
     let mut conn = rusqlite::Connection::open(db_path)?;
     let tx = conn.transaction()?;
 
-    for item in items {
-        let genres_json = serde_json::to_string(&item.genres).unwrap_or_else(|_| "[]".to_string());
-
-        tx.execute(
+    {
+        let mut stmt = tx.prepare(
             "INSERT INTO media (
                 path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, added_at,
                 synopsis, rating, genres, director, starring, series_tag, is_watched, needs_tmdb_scan
@@ -80,14 +81,21 @@ pub fn save_media_items<R: Runtime>(
                 starring=COALESCE(excluded.starring, starring),
                 series_tag=COALESCE(excluded.series_tag, series_tag),
                 needs_tmdb_scan=excluded.needs_tmdb_scan
-            ",
-            rusqlite::params![
-                &item.path, &item.title, item.year, &item.artist, &item.album,
-                &item.poster_path, &item.backdrop_path, &item.album_art_path,
-                item.duration, &item.media_type, item.added_at,
-                &item.synopsis, item.rating, &genres_json, &item.director, &item.starring, &item.series_tag, item.is_watched, item.needs_tmdb_scan
-            ],
+            "
         )?;
+
+        for item in items {
+            let genres_json = serde_json::to_string(&item.genres).unwrap_or_else(|_| "[]".to_string());
+
+            stmt.execute(
+                rusqlite::params![
+                    &item.path, &item.title, item.year, &item.artist, &item.album,
+                    &item.poster_path, &item.backdrop_path, &item.album_art_path,
+                    item.duration, &item.media_type, item.added_at,
+                    &item.synopsis, item.rating, &genres_json, &item.director, &item.starring, &item.series_tag, item.is_watched, item.needs_tmdb_scan
+                ],
+            )?;
+        }
     }
 
     tx.commit()?;
@@ -159,9 +167,11 @@ mod tests {
 
         if !stale_paths.is_empty() {
             let tx = conn.transaction().unwrap();
-            for path in stale_paths {
-                tx.execute("DELETE FROM media WHERE path = ?1", rusqlite::params![path])
-                    .unwrap();
+            {
+                let mut stmt = tx.prepare("DELETE FROM media WHERE path = ?1").unwrap();
+                for path in stale_paths {
+                    stmt.execute(rusqlite::params![path]).unwrap();
+                }
             }
             tx.commit().unwrap();
         }
