@@ -69,8 +69,16 @@ pub async fn cache_tmdb_image<R: Runtime>(
 
     // Sanitize file extension to prevent path traversal
     let raw_extension = url.split('.').next_back().unwrap_or("jpg");
-    let file_extension: String = raw_extension.chars().filter(|c| c.is_alphanumeric()).take(10).collect();
-    let file_extension = if file_extension.is_empty() { "jpg".to_string() } else { file_extension };
+    let file_extension: String = raw_extension
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .take(10)
+        .collect();
+    let file_extension = if file_extension.is_empty() {
+        "jpg".to_string()
+    } else {
+        file_extension
+    };
 
     let file_name = format!("{}.{}", hash, file_extension);
     let target_path = cache_dir.join(&file_name);
