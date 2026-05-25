@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tooltip } from '$lib/actions/tooltip';
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
   import type { MediaItem } from '$lib/stores/media';
@@ -42,6 +43,7 @@
     class:has-queue={hasMedia}
     aria-label="Open Queue Panel"
     onclick={() => console.log('Opens Queue Panel')}
+    use:tooltip={{ content: 'Queue', placement: 'top' }}
   >
     <div class="card-stack">
       {#if !hasMedia}
