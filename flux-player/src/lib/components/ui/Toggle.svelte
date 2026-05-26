@@ -66,6 +66,11 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
+  input:focus-visible + .slider {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+
   input:checked + .slider {
     background-color: var(--secondary);
     border-color: var(--secondary);
