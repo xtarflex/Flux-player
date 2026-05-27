@@ -124,6 +124,11 @@
     transform: rotate(90deg);
   }
 
+  .close-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
+  }
+
   .close-btn svg { width: 20px; height: 20px; }
 
   /* Hero Section */
@@ -256,6 +261,11 @@
     transform: translateY(-2px);
   }
 
+  .btn-play:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
+  }
+
   .btn-secondary {
     flex: 1;
     background: var(--glass-bg-mid);
@@ -271,6 +281,11 @@
   .btn-secondary:hover {
     filter: brightness(1.1);
     transform: translateY(-2px);
+  }
+
+  .btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
   }
 
   .description-section h3 {
