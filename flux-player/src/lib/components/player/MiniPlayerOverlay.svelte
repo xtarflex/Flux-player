@@ -29,6 +29,7 @@
       onclick={onExpand} 
       onmousedown={(e) => e.stopPropagation()}
       title="Return to Player"
+      aria-label="Return to Player"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
         <polyline points="15 18 9 12 15 6"/>
@@ -46,6 +47,7 @@
       onclick={onClose} 
       onmousedown={(e) => e.stopPropagation()}
       title="Close Player"
+      aria-label="Close Player"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -58,6 +60,7 @@
     <button class="mini-play-btn" 
       onclick={togglePlay}
       onmousedown={(e) => e.stopPropagation()}
+      aria-label={isPlaying ? 'Pause' : 'Play'}
     >
       {#if isPlaying}
         <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
