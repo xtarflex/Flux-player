@@ -1,0 +1,4 @@
+## 2024-05-28 - Securely Parsing Windows Registry Commands
+**Vulnerability:** Retrieving and blindly executing the `UninstallString` from the Windows registry creates a risk of command injection/execution vulnerabilities, as the string might contain unquoted paths with spaces and arguments, and could be manipulated by unauthorized modifications to the registry.
+**Learning:** Blindly passing registry strings to `Command::new` can lead to arbitrary code execution if an attacker modifies the string, or execution failures if arguments are interpreted as part of the path.
+**Prevention:** Always parse the registry string to explicitly separate the executable path from its arguments. Then, strictly validate the executable path to ensure it is absolute, exists on the file system, uses a safe extension (like `.exe`), and is located within a trusted directory (like Program Files or AppData) before spawning the process.

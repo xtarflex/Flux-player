@@ -632,16 +632,63 @@ pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
             .and_then(|key| key.get_value::<String, _>("UninstallString"));
 
         if let Ok(cmd) = uninstaller_cmd {
-            // Strip quotes if present
-            let clean_cmd = cmd.trim_matches('"').to_string();
-            println!("[Flux Uninstaller] Found via registry: {}", clean_cmd);
+            let mut exe_path = String::new();
+            let mut args: Vec<String> = Vec::new();
 
-            std::process::Command::new(clean_cmd)
-                .spawn()
-                .map_err(|e| AppError::Internal(e.to_string()))?;
+            if cmd.starts_with('"') {
+                if let Some(end_idx) = cmd[1..].find('"') {
+                    exe_path = cmd[1..=end_idx].to_string();
+                    let rem = &cmd[end_idx + 2..];
+                    if !rem.trim().is_empty() {
+                        args = rem.split_whitespace().map(|s| s.to_string()).collect();
+                    }
+                } else {
+                    exe_path = cmd.trim_matches('"').to_string();
+                }
+            } else {
+                if let Some(exe_idx) = cmd.to_lowercase().find(".exe") {
+                    exe_path = cmd[..=exe_idx + 3].to_string();
+                    let rem = &cmd[exe_idx + 4..];
+                    if !rem.trim().is_empty() {
+                        args = rem.split_whitespace().map(|s| s.to_string()).collect();
+                    }
+                } else {
+                    let mut parts = cmd.split_whitespace();
+                    if let Some(first) = parts.next() {
+                        exe_path = first.to_string();
+                        args = parts.map(|s| s.to_string()).collect();
+                    }
+                }
+            }
 
-            app.exit(0);
-            return Ok(());
+            let path = std::path::PathBuf::from(&exe_path);
+
+            let ext = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+            let is_safe_ext = ext == "exe" || ext == "bat" || ext == "cmd" || ext == "msi";
+
+            if path.is_absolute() && path.exists() && is_safe_ext {
+                println!(
+                    "[Flux Uninstaller] Found via registry: {} {:?}",
+                    exe_path, args
+                );
+
+                std::process::Command::new(exe_path)
+                    .args(args)
+                    .spawn()
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+
+                app.exit(0);
+                return Ok(());
+            } else {
+                println!(
+                    "[Flux Uninstaller] Registry command failed security validation: {}",
+                    cmd
+                );
+            }
         }
 
         // 2. TRY DEVELOPMENT FALLBACK (File Traversal)
