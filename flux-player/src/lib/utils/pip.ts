@@ -1,4 +1,5 @@
-import { getCurrentWindow, LogicalSize, LogicalPosition, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
+import { getCurrentWindow, LogicalSize, LogicalPosition } from '@tauri-apps/api/window';
+import type { PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
 import { currentMonitor } from '@tauri-apps/api/window';
 
 interface SavedWindowState {
