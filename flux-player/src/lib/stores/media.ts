@@ -125,6 +125,64 @@ export async function toggleFavorite(path: string) {
 }
 
 /**
+ * Toggles favorite status for a batch of media items.
+ * Optimistically updates the store first.
+ */
+export async function batchToggleFavorite(paths: string[]) {
+  if (paths.length === 0) return;
+
+  const items = get(mediaItems);
+
+  // 1. Determine target state
+  // Logic: If any item in the batch is NOT a favorite, we set all to favorite.
+  // Otherwise (if all are favorites), we unfavorite all.
+  const batchItems = items.filter(i => paths.includes(i.path));
+  const shouldFavorite = batchItems.some(i => !i.is_favorite);
+
+  // Store original states for rollback
+  const originalStates = new Map<string, boolean>();
+  batchItems.forEach(i => originalStates.set(i.path, !!i.is_favorite));
+
+  // 2. Optimistic Update
+  mediaItems.update(currentItems => {
+    return currentItems.map(item => {
+      if (paths.includes(item.path)) {
+        return { ...item, is_favorite: shouldFavorite };
+      }
+      return item;
+    });
+  });
+
+  // 3. Persist
+  try {
+    const success = await invoke<boolean>('batch_toggle_favorite_status', {
+      paths,
+      isFavorite: shouldFavorite
+    });
+
+    // Toast for feedback
+    window.dispatchEvent(new CustomEvent('flux-toast', {
+      detail: {
+        label: shouldFavorite ? `Added ${paths.length} items to Favorites` : `Removed ${paths.length} items from Favorites`,
+        icon: 'star'
+      }
+    }));
+  } catch (e) {
+    console.error('[MediaStore] Failed to update batch favorite in DB:', e);
+
+    // Rollback on fail
+    mediaItems.update(currentItems => {
+      return currentItems.map(item => {
+        if (originalStates.has(item.path)) {
+          return { ...item, is_favorite: originalStates.get(item.path) };
+        }
+        return item;
+      });
+    });
+  }
+}
+
+/**
  * Toggles the watched status for a media item via the Rust command.
  * Optimistically updates the store first.
  */
