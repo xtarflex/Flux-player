@@ -178,7 +178,12 @@ export function updateLocalProgress(path: string, position: number, forcedWatche
       const thresholdPos = threshold * item.duration;
 
       // 1. Mark as watched if threshold crossed OR specifically forced (e.g. finished)
-      if (!prevWatched && (forcedWatched || (prevPos < thresholdPos && position >= thresholdPos))) {
+      // Special case: if threshold is 0, any progress (position > 0) counts as crossing if we were at 0.
+      const isCrossing = thresholdPos === 0
+        ? (prevPos === 0 && position > 0)
+        : (prevPos < thresholdPos && position >= thresholdPos);
+
+      if (!prevWatched && (forcedWatched || isCrossing)) {
         item.is_watched = true;
       }
       

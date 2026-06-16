@@ -11,7 +11,11 @@
     "strict": true,
     "moduleResolution": "bundler",
     "allowArbitraryExtensions": true
-  }
+  },
+  "exclude": [
+    "src/lib/stores/*.test.ts",
+    "src/lib/stores/shims.ts"
+  ]
   // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
   // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
   //
