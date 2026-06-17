@@ -98,6 +98,11 @@
 *, *::before, *::after {
   box-sizing: border-box;
 }
+::selection {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
 
 body {
   background-color: transparent; /* Allows Tauri window transparency */

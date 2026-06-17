@@ -131,6 +131,53 @@ pub async fn refresh_media_metadata<R: Runtime>(app: AppHandle<R>, path: String)
 }
 
 #[tauri::command]
+pub fn clean_audio_title(title: String, artist: Option<String>) -> String {
+    use regex::Regex;
+
+    // 1. Remove URLs (www.site.com, site.com)
+    let re_url = Regex::new(r"(?i)\b(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)").unwrap();
+    let mut cleaned = re_url.replace_all(&title, "").to_string();
+
+    // 2. Remove common pirated site tags in brackets/parentheses or standalone
+    let re_pirate = Regex::new(
+        r"(?i)\[?(?:exclusive|music|nigeria|official music video|official video|official audio)\]?",
+    )
+    .unwrap();
+    cleaned = re_pirate.replace_all(&cleaned, "").to_string();
+
+    // 2.5 Remove artist name if provided
+    if let Some(artist_name) = artist {
+        if !artist_name.trim().is_empty() {
+            let escaped_artist = regex::escape(&artist_name);
+            let re_artist = Regex::new(&format!(
+                r"(?i)\s*[-_]*\s*\b{}\b\s*[-_]*\s*",
+                escaped_artist
+            ))
+            .unwrap();
+            cleaned = re_artist.replace_all(&cleaned, " ").to_string();
+        }
+    }
+
+    // 3. Remove track numbers (e.g., "01 - ", "1. ") at the beginning
+    let re_track = Regex::new(r"^\s*\d{1,3}\s*[-.]\s*").unwrap();
+    cleaned = re_track.replace(&cleaned, "").to_string();
+
+    // 4. Remove file extensions like .mp3, .wav, .flac
+    let re_ext = Regex::new(r"(?i)\.(?:mp3|wav|flac|aac|ogg|m4a)$").unwrap();
+    cleaned = re_ext.replace(&cleaned, "").to_string();
+
+    // 5. Remove trailing/leading junk characters (hyphens, underscores, dots) and extra whitespace
+    let re_junk = Regex::new(r"^[-_\.\s]+|[-_\.\s]+$").unwrap();
+    cleaned = re_junk.replace_all(&cleaned, "").to_string();
+
+    // 6. Clean up multiple whitespaces left behind
+    let re_spaces = Regex::new(r"\s{2,}").unwrap();
+    cleaned = re_spaces.replace_all(&cleaned, " ").to_string();
+
+    cleaned
+}
+
+#[tauri::command]
 pub async fn update_media_field<R: Runtime>(
     app: AppHandle<R>,
     path: String,

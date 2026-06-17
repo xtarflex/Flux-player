@@ -116,6 +116,24 @@
     if (e.key === 'Enter') saveEdit();
     if (e.key === 'Escape') editingField = null;
   }
+
+  async function handleCleanTitle() {
+    if (!editValue || editingField !== 'title') return;
+
+    try {
+      let textToClean = editValue;
+      const selection = window.getSelection()?.toString();
+
+      if (selection && selection.length > 0 && editValue.includes(selection)) {
+        const cleanedSelection = await invoke<string>('clean_audio_title', { title: selection, artist: $selectedItem?.artist });
+        editValue = editValue.replace(selection, cleanedSelection);
+      } else {
+        editValue = await invoke<string>('clean_audio_title', { title: editValue, artist: $selectedItem?.artist });
+      }
+    } catch (e) {
+      console.error("Flux DetailPanel: Clean title failed:", e);
+    }
+  }
 </script>
 
 <aside class="detail-panel">
@@ -251,6 +269,13 @@
           
           <div class="meta-actions">
             {#if editingField === 'title'}
+              {#if $selectedItem.type === 'audio'}
+                <button class="icon-action clean" onclick={handleCleanTitle} aria-label="Clean Title" use:tooltip={{ content: 'Clean Title (✨)', placement: 'top' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </button>
+              {/if}
               <button class="icon-action save" onclick={saveEdit} aria-label="Save" use:tooltip={{ content: 'Save', shortcut: 'Enter', placement: 'top' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12"/>
@@ -745,6 +770,10 @@
 
   .icon-action.save {
     color: var(--secondary);
+  }
+
+  .icon-action.clean {
+    color: #ffd700;
   }
 
   /* ===================== Unified Island Spinner ===================== */
