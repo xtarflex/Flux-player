@@ -1,10 +1,6 @@
-<script lang="ts">
-  // Bug Illustration Component
-  // Animated SVG that responds to hover state on parent cards
-</script>
+const fs = require('fs');
 
-<div class="bug-illustration-container">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
   <!-- Definitions for animations and gradients -->
   <defs>
     <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -134,7 +130,15 @@
     </g>
 
   </g>
-</svg>
+</svg>`;
+
+const componentContent = `<script lang="ts">
+  // Bug Illustration Component
+  // Animated SVG that responds to hover state on parent cards
+</script>
+
+<div class="bug-illustration-container">
+  ${svgContent}
 </div>
 
 <style>
@@ -251,3 +255,7 @@
     50% { transform: scale(1.2) rotate(10deg); }
   }
 </style>
+`;
+
+fs.writeFileSync('/app/flux-player/src/lib/components/ui/BugIllustration.svelte', componentContent);
+console.log('Updated BugIllustration.svelte');

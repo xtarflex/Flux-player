@@ -398,3 +398,13 @@ Ensured scanning reliability and user transparency for Beta release.
 - **BUG FIXES**:
     - **RESET**: Resolved "Reset Defaults" persistence bug. Implemented frontend `localStorage` cleanup to prevent old settings from re-syncing to the backend after a factory reset.
     - **CLEANUP**: Purged unused CSS selectors (`.illustration-popout`, `.popout-img`, `.poster-placeholder`) from Support and Detail components.
+
+## 2024-05-08 - Added Interactive Bug Illustration to Support Settings
+**Component:** \`BugIllustration.svelte\` and \`SupportSettings.svelte\`
+**Action:** Replaced existing SVG bug illustration with a new custom SVG featuring an interactive choreography hover animation.
+**Details:**
+- Converted an image of a magnifying glass over a bug into a complex SVG with segmented groups (`magnifying-glass`, `bug`, `gear`, `alert-icon`, `cloud`).
+- Created a staggered CSS keyframe animation sequence.
+- Bound the animation trigger to the hover state of the parent `.support-card` element using the `:global(.support-card:hover)` selector in Svelte.
+- Positioned the illustration via absolute positioning in the bottom right, using a `clip-path` on its wrapper `bug-illustration-wrapper` to clip the bottom strictly at the card's boundary while allowing the illustration to protrude freely on the right axis.
+- Applied responsive design to hide the component entirely on widths smaller than `900px` to maintain text readability on mobile/narrow layouts.
