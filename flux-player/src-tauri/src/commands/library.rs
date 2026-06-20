@@ -66,9 +66,23 @@ pub async fn cache_tmdb_image<R: Runtime>(
     hasher.update(url.as_bytes());
     let hash = format!("{:x}", hasher.finalize())[..16].to_string();
 
-    let raw_ext = url.split('?').next().unwrap_or(&url).split('.').next_back().unwrap_or("jpg");
-    let clean_ext: String = raw_ext.chars().filter(|c| c.is_ascii_alphanumeric()).take(10).collect();
-    let file_extension = if clean_ext.is_empty() { "jpg".to_string() } else { clean_ext };
+    let raw_ext = url
+        .split('?')
+        .next()
+        .unwrap_or(&url)
+        .split('.')
+        .next_back()
+        .unwrap_or("jpg");
+    let clean_ext: String = raw_ext
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .take(10)
+        .collect();
+    let file_extension = if clean_ext.is_empty() {
+        "jpg".to_string()
+    } else {
+        clean_ext
+    };
 
     let file_name = format!("{}.{}", hash, file_extension);
     let target_path = cache_dir.join(&file_name);
