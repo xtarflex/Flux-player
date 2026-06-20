@@ -113,20 +113,20 @@
 
 <div class="titlebar" data-tauri-drag-region>
   <div class="left-section" data-tauri-drag-region>
-    <div class="user-profile" data-tauri-drag-region>
+    <div class="user-profile">
       <ProfileAvatar size="small" />
-      <span class="pc-name" data-tauri-drag-region>{displayName}</span>
+      <span class="pc-name">{displayName}</span>
     </div>
   </div>
 
   <div class="center-section" data-tauri-drag-region>
-    <div id="onboard-dynamic-island" class="brand-badge-wrapper" data-tauri-drag-region>
+    <div class="brand-badge-wrapper" data-tauri-drag-region>
       <span class="app-name" data-tauri-drag-region>FLUX</span>
-      <span class="beta-tag">BETA</span>
+      <span class="beta-tag" data-tauri-drag-region>BETA</span>
     </div>
   </div>
 
-  <div class="right-section">
+  <div class="right-section" data-tauri-drag-region>
     <div class="action-group">
       <button 
         class="refresh-btn" 
