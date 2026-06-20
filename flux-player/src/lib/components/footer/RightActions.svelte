@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tooltip } from '$lib/actions/tooltip';
   import ContextMenu from '../ui/ContextMenu.svelte';
   import type { MenuItem } from '../ui/context-menu';
   import { activeMenu, openMenu } from '../../stores/ui';
@@ -133,6 +134,7 @@
     disabled={!controlsEnabled}
     onclick={openSpeedMenu}
     aria-label="Playback speed"
+    use:tooltip={{ content: 'Playback Speed', placement: 'top' }}
   >
     {playbackSpeed}x
   </button>
@@ -143,6 +145,7 @@
       class="icon-btn-large subtitles-btn" 
       aria-label="Subtitles"
       disabled={!controlsEnabled}
+      use:tooltip={{ content: 'Subtitles', placement: 'top' }}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" />
@@ -160,6 +163,7 @@
       class:active={isPiPActive}
       aria-label="Picture-in-Picture"
       onclick={togglePiP}
+      use:tooltip={{ content: 'Picture-in-Picture', placement: 'top' }}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" />
@@ -175,6 +179,7 @@
       aria-label="Visualizer"
       disabled={!controlsEnabled}
       onclick={() => console.log('Open Visualizer Options')}
+      use:tooltip={{ content: 'Visualizer Options', placement: 'top' }}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2v20M17 5v14M7 8v8M22 10v4M2 11v2" stroke="currentColor" />
@@ -190,6 +195,7 @@
     aria-label="Fullscreen"
     disabled={!controlsEnabled}
     onclick={toggleFullscreen}
+    use:tooltip={{ content: isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen', shortcut: 'F', placement: 'top' }}
   >
     {#if isFullscreen}
       <!-- Exit Fullscreen -->
@@ -228,6 +234,7 @@
       aria-valuemax="100"
       aria-valuenow={Math.round(volume * 100)}
       tabindex="0"
+      use:tooltip={{ content: isMuted ? 'Unmute' : 'Mute / Volume', placement: 'top' }}
     >
       <div class="volume-bars">
         {#each Array(5) as _, i}
