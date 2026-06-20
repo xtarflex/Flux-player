@@ -1,0 +1,4 @@
+## 2024-06-20 - Fix Path Traversal in cache_tmdb_image
+**Vulnerability:** Path traversal vulnerability in `cache_tmdb_image` where an unsanitized `image_type` parameter was used in `PathBuf::join`, potentially allowing an attacker to write files outside of the intended directory. Furthermore, the file extension extracted from the URL was not sanitized, allowing potentially arbitrary strings (like query parameters) to be appended to the file name.
+**Learning:** In Rust, `PathBuf::join` replaces the preceding path entirely if the appended segment evaluates as an absolute path. Even for relative paths, `..` segments could be used for directory traversal if not filtered.
+**Prevention:** Always validate user-provided path segments against a strict allowlist. Clean and sanitize any inputs (e.g., file extensions) used to construct file paths by checking lengths and ensuring they contain only safe characters.
