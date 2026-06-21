@@ -398,3 +398,12 @@ Ensured scanning reliability and user transparency for Beta release.
 - **BUG FIXES**:
     - **RESET**: Resolved "Reset Defaults" persistence bug. Implemented frontend `localStorage` cleanup to prevent old settings from re-syncing to the backend after a factory reset.
     - **CLEANUP**: Purged unused CSS selectors (`.illustration-popout`, `.popout-img`, `.poster-placeholder`) from Support and Detail components.
+
+## [2026-05-06] - Security Fix: Path Traversal in TMDB Image Cache
+
+- **ACTION**: Implemented strict validation and sanitization for the `cache_tmdb_image` Tauri command.
+- **SECURITY**:
+    - Restricted `image_type` to an allowlist of permitted directory names (`posters`, `backdrops`, `album-art`).
+    - Hardened file extension extraction with an alphanumeric-only check and a 5-character length limit.
+- **RATIONALE**: Directly addresses a potential path traversal vulnerability where user-supplied path segments were used in file I/O operations without validation.
+- **TESTING**: Added comprehensive unit tests for the validation logic in `library.rs` and verified with a standalone Rust verification script.

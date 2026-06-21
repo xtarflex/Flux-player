@@ -41,11 +41,7 @@ pub async fn cache_tmdb_image<R: Runtime>(
     url: String,
     image_type: String, // "posters" or "backdrops" or "album-art"
 ) -> AppResult<String> {
-    if url.is_empty() {
-        return Err(crate::utils::error::AppError::InvalidInput(
-            "EMPTY_URL".into(),
-        ));
-    }
+    let safe_extension = validate_and_sanitize_image_params(&url, &image_type)?;
 
     let app_dir = app.path().app_data_dir()?;
     let cache_dir = app_dir.join("cache").join("images").join(image_type);
@@ -58,8 +54,8 @@ pub async fn cache_tmdb_image<R: Runtime>(
     let mut hasher = Sha256::new();
     hasher.update(url.as_bytes());
     let hash = format!("{:x}", hasher.finalize())[..16].to_string();
-    let file_extension = url.split('.').next_back().unwrap_or("jpg");
-    let file_name = format!("{}.{}", hash, file_extension);
+
+    let file_name = format!("{}.{}", hash, safe_extension);
     let target_path = cache_dir.join(&file_name);
 
     if !target_path.exists() {
@@ -70,6 +66,79 @@ pub async fn cache_tmdb_image<R: Runtime>(
     }
 
     Ok(target_path.to_string_lossy().to_string())
+}
+
+fn validate_and_sanitize_image_params(url: &str, image_type: &str) -> AppResult<String> {
+    if url.is_empty() {
+        return Err(crate::utils::error::AppError::InvalidInput(
+            "EMPTY_URL".into(),
+        ));
+    }
+
+    // Security: Validate image_type to prevent path traversal
+    if !matches!(image_type, "posters" | "backdrops" | "album-art") {
+        return Err(crate::utils::error::AppError::InvalidInput(
+            "INVALID_IMAGE_TYPE".into(),
+        ));
+    }
+
+    // Security: Harden extension extraction to prevent traversal or malformed filenames
+    let file_extension = url.split('.').next_back().unwrap_or("jpg");
+    let safe_extension =
+        if file_extension.chars().all(|c| c.is_alphanumeric()) && file_extension.len() <= 5 {
+            file_extension.to_string()
+        } else {
+            "jpg".to_string()
+        };
+
+    Ok(safe_extension)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_and_sanitize_image_params() {
+        // Valid inputs
+        assert_eq!(
+            validate_and_sanitize_image_params("http://example.com/img.jpg", "posters").unwrap(),
+            "jpg"
+        );
+        assert_eq!(
+            validate_and_sanitize_image_params("http://example.com/img.png", "backdrops").unwrap(),
+            "png"
+        );
+        assert_eq!(
+            validate_and_sanitize_image_params("http://example.com/img.webp", "album-art").unwrap(),
+            "webp"
+        );
+
+        // Invalid image type
+        assert!(
+            validate_and_sanitize_image_params("http://example.com/img.jpg", "../illegal").is_err()
+        );
+        assert!(validate_and_sanitize_image_params("http://example.com/img.jpg", "other").is_err());
+
+        // Malicious extensions
+        assert_eq!(
+            validate_and_sanitize_image_params("http://example.com/img.with/path", "posters")
+                .unwrap(),
+            "jpg"
+        );
+        assert_eq!(
+            validate_and_sanitize_image_params("http://example.com/img.verylongext", "posters")
+                .unwrap(),
+            "jpg"
+        );
+        assert_eq!(
+            validate_and_sanitize_image_params("http://example.com/img.exe", "posters").unwrap(),
+            "exe"
+        ); // alphanumeric but safe due to length and placement
+
+        // Empty URL
+        assert!(validate_and_sanitize_image_params("", "posters").is_err());
+    }
 }
 
 #[tauri::command]
