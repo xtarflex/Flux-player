@@ -632,16 +632,54 @@ pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
             .and_then(|key| key.get_value::<String, _>("UninstallString"));
 
         if let Ok(cmd) = uninstaller_cmd {
-            // Strip quotes if present
-            let clean_cmd = cmd.trim_matches('"').to_string();
-            println!("[Flux Uninstaller] Found via registry: {}", clean_cmd);
+            // Parse uninstall string safely to separate executable and arguments
+            let (mut exe, mut args) = (cmd.clone(), Vec::new());
 
-            std::process::Command::new(clean_cmd)
-                .spawn()
-                .map_err(|e| AppError::Internal(e.to_string()))?;
+            if cmd.starts_with('"') {
+                if let Some(end) = cmd[1..].find('"') {
+                    exe = cmd[1..=end].to_string();
+                    args = cmd[end + 2..]
+                        .split_whitespace()
+                        .map(String::from)
+                        .collect();
+                }
+            } else {
+                let lower = cmd.to_ascii_lowercase();
+                if let Some(idx) = lower
+                    .rfind(".exe")
+                    .or(lower.rfind(".bat"))
+                    .or(lower.rfind(".cmd"))
+                    .or(lower.rfind(".msi"))
+                {
+                    let split = idx + 4;
+                    exe = cmd[..split].to_string();
+                    args = cmd[split..].split_whitespace().map(String::from).collect();
+                }
+            }
 
-            app.exit(0);
-            return Ok(());
+            let exe_path = std::path::Path::new(&exe);
+            let ext = exe_path
+                .extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+            let safe_exts = ["exe", "bat", "cmd", "msi"];
+
+            if exe_path.is_absolute() && safe_exts.contains(&ext.as_str()) && exe_path.exists() {
+                println!("[Flux Uninstaller] Safe execution via registry: {}", exe);
+                std::process::Command::new(exe_path)
+                    .args(&args)
+                    .spawn()
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+
+                app.exit(0);
+                return Ok(());
+            } else {
+                println!(
+                    "[Flux Uninstaller] Unsafe or non-existent path skipped: {}",
+                    exe
+                );
+            }
         }
 
         // 2. TRY DEVELOPMENT FALLBACK (File Traversal)
