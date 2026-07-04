@@ -40,6 +40,11 @@
     height: 0;
   }
 
+  input:focus-visible + .slider {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+
   .slider {
     position: absolute;
     cursor: pointer;
