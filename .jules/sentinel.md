@@ -1,0 +1,4 @@
+## 2024-07-04 - [Fix Path Traversal in Image Caching]
+**Vulnerability:** Path traversal vulnerability in `cache_tmdb_image` due to unvalidated `image_type` and unsafe file extension extraction from URL. This could allow attackers to write arbitrary files to restricted locations.
+**Learning:** In Tauri commands, user-provided path segments (like directory names or file extensions) must never be blindly concatenated using `PathBuf::join()`. The `split('.')` method on URLs is vulnerable to query parameter bypass (`.jpg?v=1`).
+**Prevention:** Validate user-provided path segments against a strict allowlist. When extracting extensions from raw URLs, strip query parameters first (`split('?').next()`), and strictly sanitize the extension string (alphanumeric, max length) before appending it to a path.
