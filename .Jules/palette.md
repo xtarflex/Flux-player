@@ -5,3 +5,7 @@
 ## 2026-05-11 - Focus Visibility for Slider Elements
 **Learning:** Found custom slider UI pattern (Volume Bars) without visible focus outlines `focus-visible` despite having `role="slider"` and being keyboard focusable. Also missing internal keyboard handlers for incrementing/decrementing values, relying instead on global window shortcuts.
 **Action:** When inspecting custom interactive elements, always verify that a visually distinct `:focus-visible` state exists and that localized `onkeydown` events map directional arrows to the slider's expected value changes.
+
+## 2026-07-04 - Focus Visibility for Toggle Element
+**Learning:** Found custom Toggle UI pattern without visible focus outlines `focus-visible` despite having keyboard focusable `<input>`.
+**Action:** When creating custom interactive elements with visually hidden inputs, ensure keyboard navigation accessibility by applying `:focus-visible` styling to their visible sibling elements.
