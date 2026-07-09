@@ -134,7 +134,7 @@ mod tests {
 
         for migration in &migrations {
             // Apply migration SQL
-            conn.execute_batch(migration.sql).expect(&format!(
+            conn.execute_batch(migration.sql).unwrap_or_else(|_| panic!(
                 "Migration {} ({}) failed to apply",
                 migration.version, migration.description
             ));
