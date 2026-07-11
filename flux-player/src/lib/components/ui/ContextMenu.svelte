@@ -176,6 +176,11 @@
     color: var(--text-main);
   }
 
+  .menu-item:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: -2px;
+  }
+
   .menu-item.danger {
     color: #ff4444;
   }
