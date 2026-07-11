@@ -161,6 +161,11 @@
     border-color: var(--secondary-muted);
   }
 
+  .dropdown-trigger:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+
   .dropdown-trigger.active {
     border-color: var(--secondary);
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
@@ -212,6 +217,11 @@
   .dropdown-item:hover, .dropdown-item.highlighted {
     background: var(--glass-bg-low);
     color: var(--text-main);
+  }
+
+  .dropdown-item:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: -2px;
   }
 
   .dropdown-item.selected {
