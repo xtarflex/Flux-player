@@ -25,7 +25,8 @@
 
 <div class="mini-overlay">
   <div class="mini-header">
-    <button class="mini-nav-btn" 
+    <button class="mini-nav-btn"
+      aria-label="Return to Player"
       onclick={onExpand} 
       onmousedown={(e) => e.stopPropagation()}
       title="Return to Player"
@@ -42,7 +43,8 @@
       {/if}
     </div>
 
-    <button class="mini-close-btn" 
+    <button class="mini-close-btn"
+      aria-label="Close Player"
       onclick={onClose} 
       onmousedown={(e) => e.stopPropagation()}
       title="Close Player"
@@ -55,7 +57,8 @@
   </div>
 
   <div class="mini-center-actions">
-    <button class="mini-play-btn" 
+    <button class="mini-play-btn"
+      aria-label={isPlaying ? 'Pause' : 'Play'}
       onclick={togglePlay}
       onmousedown={(e) => e.stopPropagation()}
     >
