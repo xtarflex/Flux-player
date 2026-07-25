@@ -35,6 +35,24 @@
     isDragging = false;
     (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (disabled) return;
+    let newProgress = progress;
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      newProgress = Math.min(1, progress + 0.05);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      newProgress = Math.max(0, progress - 0.05);
+    }
+
+    if (newProgress !== progress) {
+      progress = newProgress;
+      if (onSeek) onSeek(newProgress);
+    }
+  }
 </script>
 
 <div 
@@ -44,7 +62,9 @@
   onpointermove={onPointerMove}
   onpointerup={onPointerUp}
   onpointercancel={onPointerUp}
+  onkeydown={handleKeyDown}
   role="slider"
+  aria-label="Media progress"
   aria-valuemin="0"
   aria-valuemax="100"
   aria-valuenow={Math.round(progress * 100)}
@@ -82,6 +102,12 @@
 
   .scrubber-container.disabled:hover {
     height: 6px;
+  }
+
+  .scrubber-container:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
+    border-radius: 4px;
   }
 
   .scrubber-track {
