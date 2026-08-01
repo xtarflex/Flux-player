@@ -625,6 +625,11 @@
     transform: translateY(-2px);
   }
 
+  .empty-action-btn:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 4px;
+  }
+
   .empty-action-btn span {
     position: relative;
     z-index: 1;

@@ -5,3 +5,7 @@
 ## 2026-05-11 - Focus Visibility for Slider Elements
 **Learning:** Found custom slider UI pattern (Volume Bars) without visible focus outlines `focus-visible` despite having `role="slider"` and being keyboard focusable. Also missing internal keyboard handlers for incrementing/decrementing values, relying instead on global window shortcuts.
 **Action:** When inspecting custom interactive elements, always verify that a visually distinct `:focus-visible` state exists and that localized `onkeydown` events map directional arrows to the slider's expected value changes.
+
+## 2026-05-13 - Focus Visibility for Action Buttons and Inputs
+**Learning:** Found multiple instances of interactive elements lacking visible focus states (`:focus-visible`), such as action buttons, toggle switches, custom dropdowns, and range inputs. This makes keyboard navigation difficult or impossible for users relying on visual cues.
+**Action:** Always verify that a visually distinct `:focus-visible` state exists for all interactive elements, providing a clear outline or glow to indicate focus. Ensure the outline respects the component's boundaries and color scheme (e.g., using `var(--secondary)` for highlights).
