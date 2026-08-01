@@ -166,6 +166,11 @@
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
   }
 
+  .dropdown-trigger:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+
   .chevron {
     width: 18px;
     height: 18px;

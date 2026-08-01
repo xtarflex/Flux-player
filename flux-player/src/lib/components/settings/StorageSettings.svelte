@@ -284,6 +284,7 @@
               step="10" 
               value={scanFrequency} 
               oninput={(e) => updateFrequency(parseInt(e.currentTarget.value))}
+              aria-label="Scan Frequency"
             />
           </div>
         {/if}
@@ -635,6 +636,11 @@
     background: var(--glass-bg-high);
     border-radius: 2px;
     outline: none;
+  }
+
+  input[type="range"]:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 4px;
   }
 
   input[type="range"]::-webkit-slider-thumb {
