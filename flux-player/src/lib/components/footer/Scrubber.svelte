@@ -35,6 +35,24 @@
     isDragging = false;
     (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (disabled) return;
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      const newProgress = Math.min(1, progress + 0.05);
+      progress = newProgress;
+      if (onSeek) onSeek(newProgress);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      e.stopPropagation();
+      const newProgress = Math.max(0, progress - 0.05);
+      progress = newProgress;
+      if (onSeek) onSeek(newProgress);
+    }
+  }
 </script>
 
 <div 
@@ -44,7 +62,9 @@
   onpointermove={onPointerMove}
   onpointerup={onPointerUp}
   onpointercancel={onPointerUp}
+  onkeydown={handleKeyDown}
   role="slider"
+  aria-label="Seek progress"
   aria-valuemin="0"
   aria-valuemax="100"
   aria-valuenow={Math.round(progress * 100)}
@@ -72,6 +92,11 @@
 
   .scrubber-container:hover {
     height: 8px;
+  }
+
+  .scrubber-container:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
   }
 
   .scrubber-container.disabled {
