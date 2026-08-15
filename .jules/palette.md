@@ -1,0 +1,3 @@
+## 2026-05-11 - Scrubber Accessibility
+**Learning:** Found custom slider UI pattern (Scrubber) without visible focus outlines `focus-visible` despite having `role="slider"` and being keyboard focusable. Also missing internal keyboard handlers for incrementing/decrementing values, relying instead on global window shortcuts. Also needed `tabindex={disabled ? -1 : 0}` instead of hardcoded `tabindex="0"` to handle disabled state correctly for screen readers.
+**Action:** When inspecting custom interactive elements, always verify that a visually distinct `:focus-visible` state exists and that localized `onkeydown` events map directional arrows to the slider's expected value changes, and ensure tabindex respects disabled states.
