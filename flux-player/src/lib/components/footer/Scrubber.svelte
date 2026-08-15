@@ -35,6 +35,27 @@
     isDragging = false;
     (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (disabled) return;
+
+    // Seek by 5% on arrow keys
+    const step = 0.05;
+
+    if (['ArrowRight', 'ArrowUp'].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      let newProgress = Math.min(1, progress + step);
+      progress = newProgress;
+      if (onSeek) onSeek(newProgress);
+    } else if (['ArrowLeft', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      let newProgress = Math.max(0, progress - step);
+      progress = newProgress;
+      if (onSeek) onSeek(newProgress);
+    }
+  }
 </script>
 
 <div 
@@ -44,7 +65,9 @@
   onpointermove={onPointerMove}
   onpointerup={onPointerUp}
   onpointercancel={onPointerUp}
+  onkeydown={onKeyDown}
   role="slider"
+  aria-label="Seek progress"
   aria-valuemin="0"
   aria-valuemax="100"
   aria-valuenow={Math.round(progress * 100)}
@@ -72,6 +95,11 @@
 
   .scrubber-container:hover {
     height: 8px;
+  }
+
+  .scrubber-container:focus-visible {
+    outline: 2px solid var(--secondary, #8a2be2);
+    outline-offset: 2px;
   }
 
   .scrubber-container.disabled {
