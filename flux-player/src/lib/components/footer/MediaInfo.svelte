@@ -1,6 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { resolveResource } from '$lib/utils/media';
+  import { tooltip } from '$lib/actions/tooltip';
   let { 
     currentMedia, 
     hasMedia, 
@@ -40,6 +41,7 @@
     aria-label="Like" 
     disabled={!hasMedia}
     onclick={toggleLike}
+    use:tooltip={{ content: isLiked ? 'Unlike' : 'Like', placement: 'top' }}
   >
     <svg viewBox="0 0 24 24" fill={isLiked ? "var(--primary)" : "none"} stroke={isLiked ? "var(--primary)" : "currentColor"} stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M20.8 4.6a5.5 5.5 0 0 0-7.7 0l-1.1 1-1.1-1a5.5 5.5 0 0 0-7.8 7.8l1 1 7.9 7.9 7.9-7.9 1-1a5.5 5.5 0 0 0 0-7.8z"/>
