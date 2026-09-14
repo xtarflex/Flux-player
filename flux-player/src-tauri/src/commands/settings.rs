@@ -632,16 +632,91 @@ pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
             .and_then(|key| key.get_value::<String, _>("UninstallString"));
 
         if let Ok(cmd) = uninstaller_cmd {
-            // Strip quotes if present
-            let clean_cmd = cmd.trim_matches('"').to_string();
-            println!("[Flux Uninstaller] Found via registry: {}", clean_cmd);
+            // 1. Separate executable from args correctly
+            let (exe_path_str, args_str) = if cmd.starts_with('"') {
+                if let Some(end_quote_idx) = cmd[1..].find('"') {
+                    let end_idx = end_quote_idx + 1;
+                    let exe = &cmd[1..end_idx];
+                    let args = cmd[end_idx + 1..].trim();
+                    (exe.to_string(), args.to_string())
+                } else {
+                    (cmd.trim_matches('"').to_string(), String::new())
+                }
+            } else {
+                // If there are no quotes, it's safer to try and find the .exe and split there
+                if let Some(exe_idx) = cmd.to_lowercase().find(".exe") {
+                    let end_idx = exe_idx + 4;
+                    let exe = &cmd[..end_idx];
+                    let args = cmd[end_idx..].trim();
+                    (exe.to_string(), args.to_string())
+                } else {
+                    let parts: Vec<&str> = cmd.splitn(2, ' ').collect();
+                    if parts.len() == 2 {
+                        (parts[0].to_string(), parts[1].trim().to_string())
+                    } else {
+                        (cmd.to_string(), String::new())
+                    }
+                }
+            };
 
-            std::process::Command::new(clean_cmd)
-                .spawn()
-                .map_err(|e| AppError::Internal(e.to_string()))?;
+            // 2. Parse arguments preserving quotes
+            let mut args = Vec::new();
+            if !args_str.is_empty() {
+                let mut current_arg = String::new();
+                let mut in_quotes = false;
 
-            app.exit(0);
-            return Ok(());
+                for c in args_str.chars() {
+                    match c {
+                        '"' => {
+                            in_quotes = !in_quotes;
+                            current_arg.push(c);
+                        }
+                        ' ' if !in_quotes => {
+                            if !current_arg.is_empty() {
+                                args.push(current_arg.clone());
+                                current_arg.clear();
+                            }
+                        }
+                        _ => current_arg.push(c),
+                    }
+                }
+                if !current_arg.is_empty() {
+                    args.push(current_arg);
+                }
+            }
+
+            let exe_path = std::path::PathBuf::from(&exe_path_str);
+
+            if !exe_path.is_absolute() || !exe_path.exists() {
+                println!(
+                    "[Flux Uninstaller] Invalid or missing executable path: {}",
+                    exe_path_str
+                );
+            } else {
+                let valid_exts = ["exe", "bat", "cmd", "msi"];
+                let ext = exe_path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .map(|s| s.to_lowercase())
+                    .unwrap_or_default();
+
+                if !valid_exts.contains(&ext.as_str()) {
+                    println!("[Flux Uninstaller] Unsafe executable extension: {}", ext);
+                } else {
+                    println!(
+                        "[Flux Uninstaller] Found via registry: {} {:?}",
+                        exe_path_str, args
+                    );
+
+                    std::process::Command::new(exe_path_str)
+                        .args(args)
+                        .spawn()
+                        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+                    app.exit(0);
+                    return Ok(());
+                }
+            }
         }
 
         // 2. TRY DEVELOPMENT FALLBACK (File Traversal)
@@ -661,7 +736,7 @@ pub async fn open_uninstaller<R: Runtime>(app: AppHandle<R>) -> AppResult<()> {
                 }
 
                 if ps1_test.exists() {
-                    std::process::Command::new("powershell")
+                    std::process::Command::new("powershell.exe")
                         .arg("-File")
                         .arg(ps1_test)
                         .spawn()
