@@ -35,6 +35,22 @@
     isDragging = false;
     (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (disabled) return;
+    const step = 0.05; // 5% per keypress
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      progress = Math.min(1, progress + step);
+      if (onSeek) onSeek(progress);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      progress = Math.max(0, progress - step);
+      if (onSeek) onSeek(progress);
+    }
+  }
 </script>
 
 <div 
@@ -44,6 +60,7 @@
   onpointermove={onPointerMove}
   onpointerup={onPointerUp}
   onpointercancel={onPointerUp}
+  onkeydown={handleKeyDown}
   role="slider"
   aria-valuemin="0"
   aria-valuemax="100"
@@ -68,10 +85,16 @@
     z-index: 10;
     margin-top: 2px;
     margin-bottom: 8px;
+    border-radius: 4px;
   }
 
   .scrubber-container:hover {
     height: 8px;
+  }
+
+  .scrubber-container:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--secondary);
   }
 
   .scrubber-container.disabled {
