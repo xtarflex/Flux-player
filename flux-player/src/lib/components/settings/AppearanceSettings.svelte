@@ -167,8 +167,16 @@
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.05);
   }
 
+  .theme-card:has(input:focus-visible) {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+
   .theme-card input[type="radio"] {
-    display: none;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
   }
 
   .theme-icon {

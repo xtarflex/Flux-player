@@ -397,8 +397,16 @@
     color: var(--secondary);
   }
 
+  .radio-card:has(input:focus-visible) {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+
   .radio-card input {
-    display: none;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
   }
 
   .help-text {
@@ -477,6 +485,11 @@
     background-color: var(--text-muted);
     transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
+  }
+
+  input:focus-visible + .slider {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
   }
 
   input:checked + .slider {
