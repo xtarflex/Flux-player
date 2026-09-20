@@ -27,7 +27,7 @@
   let bufferingProgress = $state(45);
 
   // Real title and time for video playing state
-  let videoTitle = $derived((typeof $activeMedia?.title === 'string' ? $activeMedia.title : String($activeMedia?.title ?? "WATCHING...")).toUpperCase());
+  let videoTitle = $derived($activeMedia?.title?.toUpperCase() ?? "WATCHING...");
   let videoTime = $derived.by(() => {
     const d = $activeMedia?.duration ?? 0;
     const pos = d * $playbackState.progress;

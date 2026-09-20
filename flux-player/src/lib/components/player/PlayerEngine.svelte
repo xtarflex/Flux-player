@@ -136,9 +136,16 @@
       onReady?.();
 
       // ── Event Binding ─────────────────────────────────────────────────────
-      player.on('timeupdate', () => {
+      player.on('timeupdate', async () => {
         const item = get(activeMedia);
         if (!item || item.type !== 'video' || hasSavedFinished) return;
+
+        // Smart Power: Skip saves if window is minimized to reduce background noise
+        try {
+          if (await getCurrentWindow().isMinimized()) return;
+        } catch (e) {
+          // Fallback if permission or API fails
+        }
 
         const t = player.currentTime() ?? 0;
         const d = player.duration() ?? 0;
@@ -149,17 +156,8 @@
           // Throttling: Only schedule a save if it's been 30 seconds since the last one
           const now = Date.now();
           if (now - lastSaveTime > 30000) {
+            scheduleSave(item.path, t, d);
             lastSaveTime = now;
-
-            // Smart Power: Skip saves if window is minimized to reduce background noise
-            getCurrentWindow().isMinimized()
-              .then(minimized => {
-                if (!minimized) scheduleSave(item.path, t, d);
-              })
-              .catch(() => {
-                // Fallback if permission or API fails
-                scheduleSave(item.path, t, d);
-              });
           }
         }
       });
