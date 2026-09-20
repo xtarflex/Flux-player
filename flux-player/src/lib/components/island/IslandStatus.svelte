@@ -27,7 +27,7 @@
     {#if toast}
       <div class="toast-state">
         <Icon name={toast.icon} size={24} strokeWidth={2.5} class="toast-svg" />
-        <span class="status-msg">{toast.label.toUpperCase()}</span>
+        <span class="status-msg">{(typeof toast.label === 'string' ? toast.label : String(toast.label)).toUpperCase()}</span>
       </div>
     {:else if isScanning}
       <div class="loading-state">
