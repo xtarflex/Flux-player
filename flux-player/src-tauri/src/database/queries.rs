@@ -36,10 +36,16 @@ pub fn clean_stale_media<R: Runtime>(app: &AppHandle<R>, dir_path: &str) -> AppR
     let mut deleted_count = 0;
     if !stale_paths.is_empty() {
         let tx = conn.transaction()?;
+        // ⚡ Bolt: Prepared statements outside of loops for bulk operations.
+        // Preparing the statement once and executing it multiple times is significantly faster
+        // than preparing it for every item in the loop.
+        let mut stmt = tx.prepare("DELETE FROM media WHERE path = ?1")?;
         for path in stale_paths {
-            tx.execute("DELETE FROM media WHERE path = ?1", rusqlite::params![path])?;
+            stmt.execute(rusqlite::params![path])?;
             deleted_count += 1;
         }
+        // Drop the statement to borrow tx mutably for commit
+        drop(stmt);
         tx.commit()?;
     }
 
@@ -55,40 +61,61 @@ pub fn save_media_items<R: Runtime>(
     let mut conn = rusqlite::Connection::open(db_path)?;
     let tx = conn.transaction()?;
 
+    // ⚡ Bolt: Prepared statements outside of loops for bulk operations.
+    // Preparing the statement once and executing it multiple times is significantly faster
+    // than preparing it for every item in the loop.
+    let mut stmt = tx.prepare(
+        "INSERT INTO media (
+            path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, added_at,
+            synopsis, rating, genres, director, starring, series_tag, is_watched, needs_tmdb_scan
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+        ON CONFLICT(path) DO UPDATE SET
+            title=excluded.title,
+            year=COALESCE(excluded.year, year),
+            artist=COALESCE(excluded.artist, artist),
+            album=COALESCE(excluded.album, album),
+            poster_path=COALESCE(excluded.poster_path, poster_path),
+            backdrop_path=COALESCE(excluded.backdrop_path, backdrop_path),
+            album_art_path=COALESCE(excluded.album_art_path, album_art_path),
+            duration=COALESCE(excluded.duration, duration),
+            media_type=excluded.media_type,
+            synopsis=COALESCE(excluded.synopsis, synopsis),
+            rating=COALESCE(excluded.rating, rating),
+            genres=COALESCE(excluded.genres, genres),
+            director=COALESCE(excluded.director, director),
+            starring=COALESCE(excluded.starring, starring),
+            series_tag=COALESCE(excluded.series_tag, series_tag),
+            needs_tmdb_scan=excluded.needs_tmdb_scan
+        "
+    )?;
+
     for item in items {
         let genres_json = serde_json::to_string(&item.genres).unwrap_or_else(|_| "[]".to_string());
 
-        tx.execute(
-            "INSERT INTO media (
-                path, title, year, artist, album, poster_path, backdrop_path, album_art_path, duration, media_type, added_at,
-                synopsis, rating, genres, director, starring, series_tag, is_watched, needs_tmdb_scan
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
-            ON CONFLICT(path) DO UPDATE SET
-                title=excluded.title,
-                year=COALESCE(excluded.year, year),
-                artist=COALESCE(excluded.artist, artist),
-                album=COALESCE(excluded.album, album),
-                poster_path=COALESCE(excluded.poster_path, poster_path),
-                backdrop_path=COALESCE(excluded.backdrop_path, backdrop_path),
-                album_art_path=COALESCE(excluded.album_art_path, album_art_path),
-                duration=COALESCE(excluded.duration, duration),
-                media_type=excluded.media_type,
-                synopsis=COALESCE(excluded.synopsis, synopsis),
-                rating=COALESCE(excluded.rating, rating),
-                genres=COALESCE(excluded.genres, genres),
-                director=COALESCE(excluded.director, director),
-                starring=COALESCE(excluded.starring, starring),
-                series_tag=COALESCE(excluded.series_tag, series_tag),
-                needs_tmdb_scan=excluded.needs_tmdb_scan
-            ",
-            rusqlite::params![
-                &item.path, &item.title, item.year, &item.artist, &item.album,
-                &item.poster_path, &item.backdrop_path, &item.album_art_path,
-                item.duration, &item.media_type, item.added_at,
-                &item.synopsis, item.rating, &genres_json, &item.director, &item.starring, &item.series_tag, item.is_watched, item.needs_tmdb_scan
-            ],
-        )?;
+        stmt.execute(rusqlite::params![
+            &item.path,
+            &item.title,
+            item.year,
+            &item.artist,
+            &item.album,
+            &item.poster_path,
+            &item.backdrop_path,
+            &item.album_art_path,
+            item.duration,
+            &item.media_type,
+            item.added_at,
+            &item.synopsis,
+            item.rating,
+            &genres_json,
+            &item.director,
+            &item.starring,
+            &item.series_tag,
+            item.is_watched,
+            item.needs_tmdb_scan
+        ])?;
     }
+
+    drop(stmt);
 
     tx.commit()?;
     Ok(())
