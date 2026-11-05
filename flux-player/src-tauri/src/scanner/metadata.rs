@@ -610,6 +610,23 @@ pub fn clean_media_title(raw_title: &str) -> (String, Option<u32>, Option<String
         .get_or_init(|| regex::Regex::new(r"[\s\-_]+(?:\[[A-Za-z0-9]+\]|-[A-Za-z0-9]+)$").unwrap());
     title = group_re.replace(&title, "").to_string();
 
+    // Stage 6: Bare Series Fallback (For WondLa_1_3_720P -> "WondLa 1 3")
+    // If not caught earlier, and it ends with exactly two numbers, treat as S/E
+    if extracted_series.is_none() {
+        static BARE_SERIES_RE: OnceLock<regex::Regex> = OnceLock::new();
+        let bare_series_re = BARE_SERIES_RE.get_or_init(|| {
+            regex::Regex::new(r"(?i)^(.*?)(?:[\s\-_]+(\d{1,2}[\s\-_]+\d{1,4}))\s*$").unwrap()
+        });
+
+        if let Some(caps) = bare_series_re.captures(&title) {
+            if let (Some(t_match), Some(s_match)) = (caps.get(1), caps.get(2)) {
+                let s_tag = s_match.as_str().trim().to_uppercase();
+                title = t_match.as_str().trim().to_string();
+                extracted_series = Some(s_tag);
+            }
+        }
+    }
+
     // Final clean space crunch
     static SPACE_RE: OnceLock<regex::Regex> = OnceLock::new();
     let space_re = SPACE_RE.get_or_init(|| regex::Regex::new(r"\s+").unwrap());
@@ -731,5 +748,21 @@ mod tests {
 
         let (t, _, _) = clean_media_title("Movie.Name.[ReleaseGroup]");
         assert_eq!(t, "Movie Name");
+
+        // Edge case: underscores used for Season and Episode which get stripped out
+        let (t, y, s) = clean_media_title("WondLa_1_3_720P");
+        assert_eq!(t, "WondLa");
+        assert_eq!(y, None);
+        assert_eq!(s, Some("1 3".to_string()));
+
+        let (t, y, s) = clean_media_title("Catch.22.1.2.1080p");
+        assert_eq!(t, "Catch 22");
+        assert_eq!(y, None);
+        assert_eq!(s, Some("1 2".to_string()));
+
+        let (t, y, s) = clean_media_title("Apollo.13.1080p");
+        assert_eq!(t, "Apollo 13");
+        assert_eq!(y, None);
+        assert_eq!(s, None);
     }
 }
