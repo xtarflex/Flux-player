@@ -398,7 +398,12 @@
   }
 
   .radio-card input {
-    display: none;
+    position: absolute; opacity: 0; width: 0; height: 0;
+  }
+
+  .radio-card:has(input:focus-visible) {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
   }
 
   .help-text {
