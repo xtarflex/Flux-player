@@ -3,6 +3,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import Icon from "../ui/Icon.svelte";
+  import BugIllustration from "../ui/BugIllustration.svelte";
   import { checkForUpdates } from "../../utils/version";
   import { hasUpdateAvailable } from "../../stores/ui";
   import { confirm } from '@tauri-apps/plugin-dialog';
@@ -177,6 +178,11 @@
               <Icon name="github" size={18} />
               Report Issue on GitHub
             </button>
+          </div>
+          <div class="bug-illustration-wrapper">
+             <div class="bug-illustration-inner">
+               <BugIllustration />
+             </div>
           </div>
         </section>
 
@@ -452,7 +458,7 @@
     border: 1px solid var(--glass-border-mid);
     border-radius: 20px;
     padding: 2.5rem;
-    overflow: hidden;
+    /* overflow: hidden removed to allow right protrusion */
     min-height: 220px;
     display: flex;
     flex-direction: column;
@@ -656,4 +662,39 @@
   @media (max-width: 900px) {
     .support-grid-columns { grid-template-columns: 1fr; }
   }
+
+  /* Bug Illustration Styling */
+  .bug-illustration-wrapper {
+    position: absolute;
+    bottom: 0;
+    right: -40px; /* Protrude to the right */
+    width: 240px;
+    height: 240px;
+    z-index: 1;
+    pointer-events: none;
+    /* Clip path to cut off the bottom strictly at the card boundary, but allow the right to extend */
+    /* top, right, bottom, left */
+    clip-path: polygon(-50% -50%, 200% -50%, 200% 100%, -50% 100%);
+  }
+
+  .bug-illustration-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    /* We push the SVG slightly down so it gets visually cut off by the bottom clip */
+    bottom: -20px;
+    transition: transform 0.3s ease;
+  }
+
+  @media (max-width: 900px) {
+    .bug-illustration-wrapper {
+      display: none;
+    }
+  }
+
+
+  .support-card.featured {
+    overflow: visible !important;
+  }
+
 </style>
