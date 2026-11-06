@@ -338,7 +338,7 @@
               <div class="row"><span>F / F11</span> Fullscreen</div>
             </div>
           </div>
-          <button class="close-ref" onclick={() => showShortcutsRef = false}>✕</button>
+          <button class="close-ref" aria-label="Close shortcuts reference" onclick={() => showShortcutsRef = false}>✕</button>
         </div>
       </div>
     {/if}
