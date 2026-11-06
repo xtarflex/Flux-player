@@ -4,4 +4,7 @@ export interface MenuItem {
   children?: MenuItem[];
   separator?: boolean;
   danger?: boolean;
+  isToggle?: boolean;
+  toggleValue?: boolean;
+  onToggle?: (value: boolean) => void;
 }
