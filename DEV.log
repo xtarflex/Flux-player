@@ -398,3 +398,13 @@ Ensured scanning reliability and user transparency for Beta release.
 - **BUG FIXES**:
     - **RESET**: Resolved "Reset Defaults" persistence bug. Implemented frontend `localStorage` cleanup to prevent old settings from re-syncing to the backend after a factory reset.
     - **CLEANUP**: Purged unused CSS selectors (`.illustration-popout`, `.popout-img`, `.poster-placeholder`) from Support and Detail components.
+
+---
+
+## [2026-05-06] - Batch Favorite Implementation & Code Health
+
+- **ACTION**: Implemented the batch "Favorite" action in the media library.
+- **BACKEND**: Added `batch_toggle_favorite_status` Rust command in `library.rs` using SQLite transactions for atomicity and performance.
+- **STORE**: Implemented `batchToggleFavorite` in `media.ts` with a consistent toggle strategy (if any selected is NOT a favorite, mark all as favorites; otherwise, unmark all).
+- **UX**: Integrated optimistic updates and rollback logic to ensure a responsive UI and data integrity.
+- **RATIONALE**: Replaced placeholder `console.log` with actual functionality, improving library management efficiency for power users.

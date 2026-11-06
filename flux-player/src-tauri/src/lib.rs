@@ -53,6 +53,7 @@ pub fn run() {
             commands::library::get_playback_progress,
             commands::library::get_all_media,
             commands::library::toggle_favorite_status,
+            commands::library::batch_toggle_favorite_status,
             commands::library::toggle_media_watched_status,
             commands::settings::get_diagnostic_report,
             commands::settings::capture_screenshot,
