@@ -330,7 +330,11 @@
         case 'e':
           if (isCardFocused) {
             e.preventDefault();
-            window.dispatchEvent(new CustomEvent('flux-toast', { detail: { label: 'Edit Metadata', icon: 'settings' } }));
+            const id = active.getAttribute('data-id');
+            if (id) {
+              selectedMediaId.set(id);
+              viewMode = 'detail';
+            }
           }
           break;
         case 'r':
