@@ -247,7 +247,7 @@
               <Icon name={folder.type === 'video' ? 'movie' : 'music'} size={18} class="folder-icon" />
               <span class="folder-path">{folder.path}</span>
             </div>
-            <button class="btn-remove" onclick={() => removeFolder(index)}>
+            <button class="btn-remove" aria-label="Remove folder {folder.path}" onclick={() => removeFolder(index)}>
               <Icon name="close" size={16} />
             </button>
           </div>
