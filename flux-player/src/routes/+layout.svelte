@@ -232,11 +232,14 @@
 
     // Centralized folder picker trigger
     const handleImportEvent = () => importFolder();
+    const handleFeedbackEvent = () => { showFeedbackHUD = !showFeedbackHUD; };
     window.addEventListener('flux-import-folder', handleImportEvent);
+    window.addEventListener('flux-toggle-feedback', handleFeedbackEvent);
 
     return () => {
       window.removeEventListener('keydown', handleGlobalKeydown);
       window.removeEventListener('flux-import-folder', handleImportEvent);
+      window.removeEventListener('flux-toggle-feedback', handleFeedbackEvent);
       if (idleTimer) clearTimeout(idleTimer);
       unsubOnboarding();
       unsubLimit.then(u => u());
