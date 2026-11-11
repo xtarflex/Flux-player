@@ -3,8 +3,11 @@ pub mod metadata;
 pub mod tmdb;
 
 pub use metadata::MediaMetadata;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Runtime};
+use tokio::sync::Mutex;
 
 use std::collections::HashSet;
 
@@ -51,49 +54,54 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
 
     for (index, path) in new_paths.iter().enumerate() {
         // Emit progress for Stage 1 (Skeleton creation)
-        // We use a prefix or float calculation if we want a single bar,
+        // We could emit a distinct event like "flux-scan-skeleton-progress"
         // but for now we'll just emit progress normally.
         let _ = app.emit("flux-scan-progress", (index + 1, skeleton_total));
 
-        if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
-            let ext_lower = ext.to_lowercase();
-            let is_v = metadata::is_video(&ext_lower);
-            let is_a = metadata::is_audio(&ext_lower);
+        let file_stem = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default()
+            .to_string();
 
-            if is_v || is_a {
-                let file_stem = path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or_default();
-                let (cleaned_title, year, series) = metadata::clean_media_title(file_stem);
+        let ext = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_lowercase())
+            .unwrap_or_default();
 
-                skeletons.push(MediaMetadata {
-                    path: path.to_string_lossy().to_string(),
-                    title: cleaned_title,
-                    year,
-                    artist: None,
-                    album: None,
-                    poster_path: None,
-                    backdrop_path: None,
-                    album_art_path: None,
-                    duration: None,
-                    media_type: if is_v {
-                        "video".to_string()
-                    } else {
-                        "audio".to_string()
-                    },
-                    synopsis: None,
-                    rating: None,
-                    genres: Vec::new(),
-                    director: None,
-                    starring: None,
-                    series_tag: series,
-                    is_watched: false,
-                    added_at: now,
-                    needs_tmdb_scan: is_v, // Only videos strictly need TMDB enrichment by default
-                });
-            }
-        }
+        let (cleaned_title, year, _extracted_series) = metadata::clean_media_title(&file_stem);
+
+        let media_type = if metadata::is_video(&ext) {
+            "video".to_string()
+        } else if metadata::is_audio(&ext) {
+            "audio".to_string()
+        } else {
+            continue; // Skip unknown
+        };
+
+        let skeleton = MediaMetadata {
+            path: path.to_string_lossy().to_string(),
+            title: cleaned_title,
+            year,
+            artist: None,
+            album: None,
+            poster_path: None,
+            backdrop_path: None,
+            album_art_path: None,
+            duration: None, // Missing
+            media_type,
+            synopsis: None, // Missing
+            rating: None,
+            genres: Vec::new(),
+            director: None,
+            starring: None,
+            series_tag: None,
+            needs_tmdb_scan: true,
+            is_watched: false,
+            added_at: now,
+        };
+        skeletons.push(skeleton);
     }
 
     if !skeletons.is_empty() {
@@ -101,148 +109,216 @@ pub async fn scan_directory<R: Runtime>(app: AppHandle<R>, dir_path: String) -> 
         let _ = app.emit("flux-library-updated", ());
     }
 
-    // --- STAGE 2: Slow Pass (Incremental Enrichment) ---
-    let mut enriched_results = Vec::new();
-    let mut show_cache: std::collections::HashMap<String, MediaMetadata> =
-        std::collections::HashMap::new();
+    // --- STAGE 2: Slow Pass (Concurrent Incremental Enrichment) ---
+    let show_cache: Arc<Mutex<std::collections::HashMap<String, MediaMetadata>>> =
+        Arc::new(Mutex::new(std::collections::HashMap::new()));
 
     // Re-calculate total_new for Stage 2 (actual enrichment count)
     let total_to_enrich = new_paths.len();
+    let progress_counter = Arc::new(AtomicUsize::new(0));
 
-    for (index, path) in new_paths.into_iter().enumerate() {
-        // Emit progress to frontend for enrichment stage
-        let _ = app.emit("flux-scan-progress", (index + 1, total_to_enrich));
+    use futures::stream::{self, StreamExt};
 
-        if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
-            let ext_lower = ext.to_lowercase();
-            if metadata::is_video(&ext_lower) {
-                let file_stem = path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or_default();
-                let (cleaned_title, _, extracted_series) = metadata::clean_media_title(file_stem);
+    let mut stream = stream::iter(new_paths)
+        .map(|path| {
+            let app_clone = app.clone();
+            let cache_clone = Arc::clone(&show_cache);
+            let counter_clone = Arc::clone(&progress_counter);
 
-                let cached_show = if extracted_series.is_some() {
-                    show_cache.get(&cleaned_title).cloned()
-                } else {
-                    None
-                };
+            async move {
+                let current = counter_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                let _ = app_clone.emit("flux-scan-progress", (current, total_to_enrich));
 
-                if let Some(meta) =
-                    metadata::process_video(&app, &path, now, None, None, cached_show).await
-                {
-                    if extracted_series.is_some() && !show_cache.contains_key(&cleaned_title) {
-                        show_cache.insert(cleaned_title, meta.clone());
+                if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                    let ext_lower = ext.to_lowercase();
+
+                    if metadata::is_video(&ext_lower) {
+                        let file_stem = path
+                            .file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or_default();
+                        let (cleaned_title, _, extracted_series) =
+                            metadata::clean_media_title(file_stem);
+
+                        let cached_show = if extracted_series.is_some() {
+                            let cache = cache_clone.lock().await;
+                            cache.get(&cleaned_title).cloned()
+                        } else {
+                            None
+                        };
+
+                        if let Some(meta) =
+                            metadata::process_video(&app_clone, &path, now, None, None, cached_show)
+                                .await
+                        {
+                            if extracted_series.is_some() {
+                                let mut cache = cache_clone.lock().await;
+                                if let std::collections::hash_map::Entry::Vacant(e) =
+                                    cache.entry(cleaned_title)
+                                {
+                                    e.insert(meta.clone());
+                                }
+                            }
+
+                            let _ = crate::database::queries::save_media_items(
+                                &app_clone,
+                                vec![meta.clone()],
+                            );
+                            let _ = app_clone.emit("flux-item-enriched", meta.clone());
+                            return Some(meta);
+                        }
+                    } else if metadata::is_audio(&ext_lower) {
+                        if let Some(meta) =
+                            metadata::process_audio(&app_clone, &path, now, None, None, None).await
+                        {
+                            let _ = crate::database::queries::save_media_items(
+                                &app_clone,
+                                vec![meta.clone()],
+                            );
+                            let _ = app_clone.emit("flux-item-enriched", meta.clone());
+                            return Some(meta);
+                        }
                     }
-
-                    // Save individual item to DB
-                    let _ = crate::database::queries::save_media_items(&app, vec![meta.clone()]);
-                    let _ = app.emit("flux-item-enriched", meta.clone());
-                    enriched_results.push(meta);
                 }
-            } else if metadata::is_audio(&ext_lower) {
-                if let Some(meta) =
-                    metadata::process_audio(&app, &path, now, None, None, None).await
-                {
-                    let _ = crate::database::queries::save_media_items(&app, vec![meta.clone()]);
-                    let _ = app.emit("flux-item-enriched", meta.clone());
-                    enriched_results.push(meta);
-                }
+                None
             }
+        })
+        .buffer_unordered(10); // Buffer up to 10 HTTP requests and IO simultaneously!
+
+    let mut enriched_results = Vec::new();
+    while let Some(res) = stream.next().await {
+        if let Some(meta) = res {
+            enriched_results.push(meta);
         }
     }
 
+    let _ = app.emit("flux-library-updated", ());
     enriched_results
 }
 
 pub async fn healing_sync<R: Runtime>(app: AppHandle<R>) -> usize {
-    let db_path = match crate::database::connection::get_db_path(&app) {
-        Ok(p) => p,
-        Err(_) => return 0,
-    };
+    use futures::stream::{self, StreamExt};
+    let show_cache: Arc<Mutex<std::collections::HashMap<String, MediaMetadata>>> =
+        Arc::new(Mutex::new(std::collections::HashMap::new()));
 
+    // 1. Fetch missing items securely
     let paths_to_heal = {
-        let conn = match rusqlite::Connection::open(&db_path) {
+        let db_path = match crate::database::connection::get_db_path(&app) {
+            Ok(p) => p,
+            Err(_) => return 0,
+        };
+        let conn = match rusqlite::Connection::open(db_path) {
             Ok(c) => c,
             Err(_) => return 0,
         };
-        let mut stmt = match conn.prepare("SELECT path, added_at, title, poster_path FROM media WHERE needs_tmdb_scan = 1 AND media_type = 'video'") {
+
+        let mut stmt = match conn.prepare(
+            "SELECT path, added_at, title, poster_path FROM media WHERE needs_tmdb_scan = 1",
+        ) {
             Ok(s) => s,
             Err(_) => return 0,
         };
 
-        let mut rows = match stmt.query([]) {
-            Ok(r) => r,
-            Err(_) => return 0,
-        };
-
         let mut paths = Vec::new();
-        while let Ok(Some(row)) = rows.next() {
-            let p: String = row.get(0).unwrap_or_default();
-            let a: i64 = row.get(1).unwrap_or_default();
-            let t: Option<String> = row.get(2).ok();
-            let po: Option<String> = row.get(3).ok();
-            paths.push((p, a as u64, t, po));
+        if let Ok(mut rows) = stmt.query([]) {
+            while let Ok(Some(row)) = rows.next() {
+                let path: String = row.get(0).unwrap_or_default();
+                let added_at: u64 = row.get(1).unwrap_or(0);
+                let title: Option<String> = row.get(2).ok();
+                let poster: Option<String> = row.get(3).ok();
+                paths.push((path, added_at, title, poster));
+            }
         }
         paths
     };
 
     if paths_to_heal.is_empty() {
-        return 0;
+        return 0; // Everything is clean, no backlog.
     }
 
+    let mut healed_count = 0;
     let total_to_heal = paths_to_heal.len();
-    if total_to_heal == 0 {
-        return 0;
-    }
+    println!(
+        "[Flux Scanner] Healing Sync: Found {} items to heal.",
+        total_to_heal
+    );
+    let progress_counter = Arc::new(AtomicUsize::new(0));
 
-    let mut show_cache: std::collections::HashMap<String, MediaMetadata> =
-        std::collections::HashMap::new();
-    let mut results = Vec::new();
+    let mut stream = stream::iter(paths_to_heal)
+        .map(|(path_str, added_at, ex_title, ex_poster)| {
+            let app_clone = app.clone();
+            let cache_clone = Arc::clone(&show_cache);
+            let counter_clone = Arc::clone(&progress_counter);
 
-    for (index, (path_str, added_at, ex_title, ex_poster)) in paths_to_heal.into_iter().enumerate()
-    {
-        let _ = app.emit("flux-heal-progress", (index + 1, total_to_heal));
+            async move {
+                let current = counter_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                let _ = app_clone.emit("flux-scan-progress", (current, total_to_heal));
 
-        let path = std::path::Path::new(&path_str);
-        if !path.exists() {
-            continue;
-        }
+                let path = std::path::PathBuf::from(&path_str);
+                if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                    let ext_lower = ext.to_lowercase();
+                    if metadata::is_video(&ext_lower) {
+                        let file_stem = path
+                            .file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or_default();
+                        let (cleaned_title, _, extracted_series) =
+                            metadata::clean_media_title(file_stem);
 
-        let file_stem = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or_default();
-        let (cleaned_title, _, extracted_series) = metadata::clean_media_title(file_stem);
+                        let cached_show = if extracted_series.is_some() {
+                            let cache = cache_clone.lock().await;
+                            cache.get(&cleaned_title).cloned()
+                        } else {
+                            None
+                        };
 
-        let cached_show = if extracted_series.is_some() {
-            show_cache.get(&cleaned_title).cloned()
-        } else {
-            None
-        };
+                        if let Some(meta) = metadata::process_video(
+                            &app_clone,
+                            &path,
+                            added_at,
+                            ex_title,
+                            ex_poster,
+                            cached_show,
+                        )
+                        .await
+                        {
+                            if extracted_series.is_some() {
+                                let mut cache = cache_clone.lock().await;
+                                if let std::collections::hash_map::Entry::Vacant(e) =
+                                    cache.entry(cleaned_title)
+                                {
+                                    e.insert(meta.clone());
+                                }
+                            }
 
-        if let Some(meta) =
-            metadata::process_video(&app, path, added_at, ex_title, ex_poster, cached_show).await
-        {
-            let quota_exceeded = meta.needs_tmdb_scan;
-            if !quota_exceeded {
-                // Update show_cache for siblings in this batch
-                if extracted_series.is_some() {
-                    show_cache.insert(cleaned_title.clone(), meta.clone());
+                            let _ = crate::database::queries::save_media_items(
+                                &app_clone,
+                                vec![meta.clone()],
+                            );
+                            let _ = app_clone.emit("flux-item-enriched", meta.clone());
+                            return 1;
+                        }
+                    }
                 }
-                results.push(meta);
-            } else {
-                // Network error / Out of quota: Stop healing this batch
-                break;
+                0
             }
-        }
+        })
+        .buffer_unordered(10);
+
+    while let Some(res) = stream.next().await {
+        healed_count += res;
     }
 
-    let healed_count = results.len();
     if healed_count > 0 {
-        let _ = crate::database::queries::save_media_items(&app, results);
+        println!(
+            "[Flux Scanner] Healing Sync complete. {} items healed.",
+            healed_count
+        );
         let _ = app.emit("flux-library-updated", ());
     }
 
     healed_count
 }
+
+#[cfg(test)]
+mod concurrent_tests;
