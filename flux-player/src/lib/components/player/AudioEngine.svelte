@@ -20,6 +20,7 @@
 
   let audioEl: HTMLAudioElement;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let hasSavedFinished = $state(false);
 
   /**
    * Debounced SQLite progress save — 3s after last timeupdate.
@@ -28,6 +29,7 @@
    * @param duration - Total duration in seconds.
    */
   function scheduleSave(path: string, current: number, duration: number, isFinished: boolean = false) {
+    if (hasSavedFinished) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       try {
@@ -50,6 +52,8 @@
    * Immediate, non-debounced save for critical events (pause, end).
    */
   async function saveNow(path: string, current: number, duration: number, isFinished: boolean = false) {
+    if (isFinished) hasSavedFinished = true;
+    else if (hasSavedFinished) return;
     if (saveTimer) {
       clearTimeout(saveTimer);
       saveTimer = null;
@@ -116,6 +120,7 @@
       // ── Pre-emptive Save (The Switch Fix) ──────────────────────────────────
       // If we HAD an item playing and it's changing (not just initial mount), save it.
       if (lastItemPath && (!item || item.path !== lastItemPath)) {
+        hasSavedFinished = false;
         console.log(`[AudioEngine] Pre-emptive save for: ${lastItemPath}`);
         saveNow(lastItemPath, audioEl.currentTime, audioEl.duration);
       }
