@@ -49,6 +49,7 @@ pub fn run() {
             commands::library::heal_library,
             commands::library::refresh_media_metadata,
             commands::library::update_media_field,
+            commands::library::clean_audio_title,
             commands::library::save_playback_progress,
             commands::library::get_playback_progress,
             commands::library::get_all_media,
