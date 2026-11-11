@@ -10,6 +10,7 @@
   import SupportSettings from '$lib/components/settings/SupportSettings.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
 
   let activeCategory = $state('appearance');
 
@@ -22,6 +23,18 @@
     { id: 'shortcuts', label: 'Shortcuts', icon: 'keyboard', description: 'Global keys' },
     { id: 'support', label: 'Support', icon: 'help', description: 'Help & Maintenance' }
   ];
+
+  // Subscribe to page store to handle reactive category changes when navigating
+  // from outside while already on the settings page, or initial load with query param
+  $effect(() => {
+    const currentUrl = $page.url;
+    const categoryParam = currentUrl.searchParams.get('category');
+    if (categoryParam) {
+      if (categories.some(c => c.id === categoryParam)) {
+        activeCategory = categoryParam;
+      }
+    }
+  });
 
   function setCategory(id: string) {
     activeCategory = id;
